@@ -18,6 +18,7 @@ fn renderer(atlas_page_side: u32, atlas_page_budget: usize) -> Renderer {
     Renderer::with_options(&RendererOptions {
         atlas_page_side,
         atlas_page_budget,
+        ..RendererOptions::default()
     })
     .expect("this Mac runs Metal 4")
 }

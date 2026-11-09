@@ -3,6 +3,9 @@ use morok_style::{Color, ShadowLayer};
 use crate::geometry::point::Point;
 use crate::geometry::rect::Rect;
 use crate::geometry::sides::Sides;
+use crate::media::canvas_id::CanvasId;
+use crate::media::icon_id::IconId;
+use crate::media::image_id::ImageId;
 use crate::paint::box_frame::BoxFrame;
 use crate::paint::gradient_fill::GradientFill;
 use crate::paint::group_effects::GroupEffects;
@@ -65,4 +68,23 @@ pub enum DisplayItem {
         effects: GroupEffects,
     },
     PopGroup,
+    /// The picture of an image, placed by its `object-fit` and cut to the box of the element.
+    Image {
+        image: ImageId,
+        /// Where the whole picture lies; it may reach past `clip`.
+        dest: Rect,
+        /// The content box of the element: only what lies inside is drawn.
+        clip: Rect,
+    },
+    /// An icon rasterized to fill `dest`, tinted with `color` unless it has colors of its own.
+    Icon {
+        icon: IconId,
+        dest: Rect,
+        color: Color,
+    },
+    /// A region the application draws itself, cut to `dest`.
+    Canvas {
+        canvas: CanvasId,
+        dest: Rect,
+    },
 }

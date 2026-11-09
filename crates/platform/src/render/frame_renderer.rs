@@ -1,3 +1,4 @@
+use std::fmt::{self, Debug, Formatter};
 use std::ptr::NonNull;
 
 use morok_core::DisplayList;
@@ -9,8 +10,9 @@ use objc2_metal::{
     MTLTexture,
 };
 
+use crate::canvas::canvas_painter::CanvasPainter;
 use crate::render::atlas_kind::AtlasKind;
-use crate::render::display_list_encoder::DisplayListEncoder;
+use crate::render::display_list_encoder::{DisplayListEncoder, MediaSources};
 use crate::render::frame_execution::{FrameExecution, OpenGroup, Target};
 use crate::render::frame_resources::FrameResources;
 use crate::render::renderer::Renderer;
@@ -30,7 +32,6 @@ const FRAME_TIMEOUT_MILLISECONDS: u64 = 10_000;
 ///
 /// The GPU reads the buffers of a frame after the frame was handed over, so the renderer
 /// rotates through as many sets of buffers as the surface may have frames in flight.
-#[derive(Debug)]
 pub(crate) struct FrameRenderer {
     renderer: Renderer,
     encoder: DisplayListEncoder,
@@ -51,6 +52,8 @@ pub(crate) struct FrameRenderer {
     /// Scratch space of the execution of a frame.
     targets: Vec<Target>,
     open_groups: Vec<OpenGroup>,
+    /// Draws the canvases of the surface; none draws nothing into them.
+    canvas_painter: Option<Box<dyn CanvasPainter>>,
 }
 
 impl FrameRenderer {
@@ -86,7 +89,13 @@ impl FrameRenderer {
             submitted_frames: 0,
             targets: Vec::new(),
             open_groups: Vec::new(),
+            canvas_painter: None,
         }
+    }
+
+    /// Names who draws the canvases of the surface.
+    pub(crate) fn set_canvas_painter(&mut self, painter: Box<dyn CanvasPainter>) {
+        self.canvas_painter = Some(painter);
     }
 
     /// Makes a texture this renderer draws into available to its command buffers.
@@ -111,8 +120,19 @@ impl FrameRenderer {
         let resources = &mut self.frames[position];
         let mut glyph_atlases = self.renderer.glyph_atlases();
         glyph_atlases.begin_frame();
-        self.encoder
-            .encode(display_list, geometry, resources, &mut glyph_atlases);
+        let icons = self.renderer.icons();
+        let images = self.renderer.images();
+        self.encoder.encode(
+            display_list,
+            geometry,
+            resources,
+            &mut glyph_atlases,
+            MediaSources {
+                icons: &icons,
+                images: &images,
+            },
+        );
+        drop(icons);
         resources.bind_buffers();
         for (kind, resident_pages) in [
             (AtlasKind::Mask, &mut self.resident_mask_pages),
@@ -133,10 +153,16 @@ impl FrameRenderer {
         if let Some(screen) = screen {
             self.command_buffer.useResidencySet(screen.residency_set);
         }
+        let mut image_textures = self.renderer.image_textures();
+        image_textures.begin_frame();
+        self.command_buffer.useResidencySet(image_textures.residency_set());
         FrameExecution {
             renderer: &self.renderer,
             resources,
             glyph_atlases: &glyph_atlases,
+            images: &images,
+            image_textures: &mut image_textures,
+            canvas_painter: self.canvas_painter.as_deref_mut(),
             command_buffer: &self.command_buffer,
             render_pass: &self.render_pass,
             residency_set: &self.residency_set,
@@ -184,6 +210,17 @@ impl FrameRenderer {
                 .waitUntilSignaledValue_timeoutMS(frame, FRAME_TIMEOUT_MILLISECONDS),
             "the GPU finishes frame {frame} within {FRAME_TIMEOUT_MILLISECONDS} ms"
         );
+    }
+}
+
+impl Debug for FrameRenderer {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("FrameRenderer")
+            .field("frames_in_flight", &self.frames.len())
+            .field("submitted_frames", &self.submitted_frames)
+            .field("has_canvas_painter", &self.canvas_painter.is_some())
+            .finish_non_exhaustive()
     }
 }
 

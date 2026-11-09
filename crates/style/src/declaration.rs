@@ -25,6 +25,7 @@ use crate::paint::background_image::BackgroundImage;
 use crate::paint::box_shadow::BoxShadow;
 use crate::paint::color_value::ColorValue;
 use crate::paint::line_style::LineStyle;
+use crate::paint::object_fit::ObjectFit;
 use crate::side::Side;
 use crate::text::font_style::FontStyle;
 use crate::text::font_variant_numeric::FontVariantNumeric;
@@ -109,4 +110,5 @@ pub enum Declaration {
     /// `none` is an empty list.
     BackdropFilter(Cow<'static, [BackdropFilterFunction]>),
     MixBlendMode(BlendMode),
+    ObjectFit(ObjectFit),
 }

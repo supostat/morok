@@ -20,6 +20,16 @@ impl<T: Copy> Sides<T> {
             left: value,
         }
     }
+
+    /// The same sides with `map` applied to each.
+    pub fn map<U>(self, map: impl Fn(T) -> U) -> Sides<U> {
+        Sides {
+            top: map(self.top),
+            right: map(self.right),
+            bottom: map(self.bottom),
+            left: map(self.left),
+        }
+    }
 }
 
 impl<T> Index<Side> for Sides<T> {

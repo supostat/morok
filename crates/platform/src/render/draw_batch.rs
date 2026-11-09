@@ -1,5 +1,18 @@
+use morok_core::ImageId;
+
 use crate::render::atlas_kind::AtlasKind;
 use crate::render::pixel_rect::PixelRect;
+
+/// Where the texels of a picture lie.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum PictureSource {
+    AtlasPage {
+        atlas: AtlasKind,
+        page: usize,
+    },
+    /// The texture of an image too large for the atlas.
+    ImageTexture(ImageId),
+}
 
 /// What the instances of a batch are and which pipeline draws them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -10,6 +23,8 @@ pub(crate) enum BatchSource {
         atlas: AtlasKind,
         page: usize,
     },
+    /// Pictures read from one texture.
+    Images(PictureSource),
 }
 
 /// Consecutive instances of one buffer drawn by one call under one scissor rectangle.

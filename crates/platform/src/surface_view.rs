@@ -14,6 +14,7 @@ use objc2_metal::{MTLDrawable, MTLResidencySet};
 use objc2_quartz_core::{CADisplayLink, CALayer, CAMetalDrawable, CAMetalLayer};
 
 use crate::appearance::color_scheme_of;
+use crate::canvas::canvas_painter::CanvasPainter;
 use crate::frame_loop::FrameLoop;
 use crate::frame_requester::FrameRequester;
 use crate::frame_statistics::FrameStatistics;
@@ -145,6 +146,10 @@ impl SurfaceView {
     /// The size of the surface in CSS pixels.
     pub(crate) fn viewport(&self) -> Size {
         self.target_geometry().viewport
+    }
+
+    pub(crate) fn set_canvas_painter(&self, painter: Box<dyn CanvasPainter>) {
+        self.ivars().frame_renderer.borrow_mut().set_canvas_painter(painter);
     }
 
     pub(crate) fn statistics(&self) -> FrameStatistics {

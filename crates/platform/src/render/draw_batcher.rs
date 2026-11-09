@@ -1,5 +1,5 @@
 use crate::render::atlas_kind::AtlasKind;
-use crate::render::draw_batch::{BatchSource, DrawBatch};
+use crate::render::draw_batch::{BatchSource, DrawBatch, PictureSource};
 use crate::render::frame_command::FrameCommand;
 use crate::render::pixel_rect::PixelRect;
 use crate::render::tile_occupancy::TileOccupancy;
@@ -77,6 +77,29 @@ impl DrawBatcher {
     pub(crate) fn glyphs_cover(&mut self, pixels: PixelRect) {
         self.glyph_pixels.mark(pixels);
         self.clear_pixels = None;
+    }
+
+    /// The image instance at `position` of its buffer, read from `source` under `scissor`.
+    /// Pictures are few: the open runs close and the picture is drawn in its place, joining
+    /// the picture drawn just before it when both read one texture.
+    pub(crate) fn image(
+        &mut self,
+        position: usize,
+        scissor: PixelRect,
+        source: PictureSource,
+        draws: &mut Vec<FrameCommand>,
+    ) {
+        self.flush(draws);
+        let batch_source = BatchSource::Images(source);
+        if let Some(FrameCommand::Draw(batch)) = draws.last_mut()
+            && batch.source == batch_source
+            && batch.scissor == scissor
+            && batch.first_instance + batch.instance_count == position
+        {
+            batch.instance_count += 1;
+            return;
+        }
+        draws.push(FrameCommand::Draw(DrawBatch::starting(batch_source, scissor, position)));
     }
 
     /// Closes the open runs: the frame has no more instances.

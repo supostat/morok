@@ -8,6 +8,7 @@ use objc2_metal::{
     MTLDevice, MTLOrigin, MTLRegion, MTLSize, MTLStorageMode, MTLTexture, MTLTextureDescriptor, MTLTextureUsage,
 };
 
+use crate::canvas::canvas_painter::CanvasPainter;
 use crate::frame_image::FrameImage;
 use crate::render::frame_renderer::FrameRenderer;
 use crate::render::renderer::{PIXEL_FORMAT, Renderer};
@@ -60,6 +61,11 @@ impl OffscreenTarget {
             texture,
             geometry,
         }
+    }
+
+    /// Names who draws the canvases of the surface.
+    pub fn set_canvas_painter(&mut self, painter: Box<dyn CanvasPainter>) {
+        self.frame_renderer.set_canvas_painter(painter);
     }
 
     /// Draws the display list on a transparent surface and returns without waiting for the GPU.

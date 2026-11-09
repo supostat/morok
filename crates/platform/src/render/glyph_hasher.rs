@@ -1,19 +1,19 @@
 use std::collections::{HashMap, HashSet};
 use std::hash::{BuildHasherDefault, Hasher};
 
-use crate::render::glyph_key::GlyphKey;
+use crate::render::atlas_key::AtlasKey;
 
 /// The multiplier of the Fx hash: a fast hash for small keys of integers, which glyph keys are.
 const MULTIPLIER: u64 = 0x517c_c1b7_2722_0a95;
 const ROTATION: u32 = 5;
 
-/// Hashes the integer fields of a glyph key with a few multiplications: the keys come from
-/// fonts, not from a stranger, so the hash need not defend against them.
+/// Hashes the integer fields of an atlas key with a few multiplications: the keys come from
+/// fonts and the application, not from a stranger, so the hash need not defend against them.
 #[derive(Debug, Default)]
 pub(crate) struct GlyphHasher(u64);
 
-pub(crate) type GlyphMap<Value> = HashMap<GlyphKey, Value, BuildHasherDefault<GlyphHasher>>;
-pub(crate) type GlyphSet = HashSet<GlyphKey, BuildHasherDefault<GlyphHasher>>;
+pub(crate) type GlyphMap<Value> = HashMap<AtlasKey, Value, BuildHasherDefault<GlyphHasher>>;
+pub(crate) type GlyphSet = HashSet<AtlasKey, BuildHasherDefault<GlyphHasher>>;
 
 impl GlyphHasher {
     fn mix(&mut self, word: u64) {

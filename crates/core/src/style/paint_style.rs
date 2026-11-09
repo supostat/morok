@@ -1,4 +1,4 @@
-use morok_style::{Color, LineStyle, Shadow, Token};
+use morok_style::{Color, LineStyle, ObjectFit, Shadow, Token};
 
 use crate::geometry::corners::Corners;
 use crate::geometry::sides::Sides;
@@ -35,6 +35,7 @@ pub struct PaintStyle {
     pub outline_style: LineStyle,
     pub outline_color: Color,
     pub outline_offset: f32,
+    pub object_fit: ObjectFit,
 }
 
 impl PaintStyle {
@@ -57,6 +58,7 @@ impl PaintStyle {
             outline_style: LineStyle::None,
             outline_color: color,
             outline_offset: 0.0,
+            object_fit: ObjectFit::Fill,
         }
     }
 

@@ -5,7 +5,7 @@ use std::process::Command;
 
 const SHADER_DIRECTORY: &str = "shaders";
 /// The shaders with entry points; `shapes.metal` is included by each of them.
-const SHADERS: [&str; 3] = ["rect", "glyph", "effects"];
+const SHADERS: [&str; 4] = ["rect", "glyph", "effects", "image"];
 const XCRUN: &str = "/usr/bin/xcrun";
 
 fn main() {

@@ -14,6 +14,7 @@ use crate::render::glyph_instance::GlyphInstance;
 use crate::render::gpu_buffer::GpuBuffer;
 use crate::render::gradient_stop_entry::GradientStopEntry;
 use crate::render::group_pass::GroupPass;
+use crate::render::image_instance::ImageInstance;
 use crate::render::rect_instance::RectInstance;
 use crate::render::texture_pool::TexturePool;
 use crate::render::transform_entry::TransformEntry;
@@ -27,13 +28,15 @@ const TRANSFORMS_BINDING: usize = 5;
 const COMPOSITE_INSTANCES_BINDING: usize = 6;
 const FILTERS_BINDING: usize = 7;
 const BLUR_UNIFORMS_BINDING: usize = 8;
-const BUFFER_BINDINGS: usize = 9;
+const IMAGE_INSTANCES_BINDING: usize = 9;
+const BUFFER_BINDINGS: usize = 10;
 /// The atlas page of a glyph batch, the picture of a composite or the source of a blur pass.
 const TEXTURE_BINDING: usize = 0;
 const TEXTURE_BINDINGS: usize = 1;
 
 const INITIAL_INSTANCES: usize = 256;
 const INITIAL_GLYPH_INSTANCES: usize = 1024;
+const INITIAL_IMAGE_INSTANCES: usize = 8;
 const INITIAL_GRADIENT_STOPS: usize = 32;
 const INITIAL_CLIPS: usize = 16;
 const INITIAL_TRANSFORMS: usize = 8;
@@ -47,6 +50,7 @@ const INITIAL_PASSES: usize = 4;
 pub(crate) struct FrameResources {
     pub(crate) instances: GpuBuffer<RectInstance>,
     pub(crate) glyph_instances: GpuBuffer<GlyphInstance>,
+    pub(crate) image_instances: GpuBuffer<ImageInstance>,
     pub(crate) gradient_stops: GpuBuffer<GradientStopEntry>,
     pub(crate) clips: GpuBuffer<ClipShape>,
     pub(crate) transforms: GpuBuffer<TransformEntry>,
@@ -80,6 +84,7 @@ impl FrameResources {
         Self {
             instances: GpuBuffer::with_capacity(device, residency_set, INITIAL_INSTANCES),
             glyph_instances: GpuBuffer::with_capacity(device, residency_set, INITIAL_GLYPH_INSTANCES),
+            image_instances: GpuBuffer::with_capacity(device, residency_set, INITIAL_IMAGE_INSTANCES),
             gradient_stops: GpuBuffer::with_capacity(device, residency_set, INITIAL_GRADIENT_STOPS),
             clips: GpuBuffer::with_capacity(device, residency_set, INITIAL_CLIPS),
             transforms: GpuBuffer::with_capacity(device, residency_set, INITIAL_TRANSFORMS),
@@ -102,6 +107,7 @@ impl FrameResources {
         self.allocator.reset();
         self.instances.clear();
         self.glyph_instances.clear();
+        self.image_instances.clear();
         self.gradient_stops.clear();
         self.clips.clear();
         self.transforms.clear();
@@ -127,6 +133,7 @@ impl FrameResources {
             (COMPOSITE_INSTANCES_BINDING, self.composites.gpu_address()),
             (FILTERS_BINDING, self.filters.gpu_address()),
             (BLUR_UNIFORMS_BINDING, self.blur_passes.gpu_address()),
+            (IMAGE_INSTANCES_BINDING, self.image_instances.gpu_address()),
         ];
         for (binding, address) in bindings {
             // SAFETY: the binding is below the bind count of the table and the address is that
@@ -142,6 +149,16 @@ impl FrameResources {
         unsafe {
             self.argument_table
                 .setAddress_atIndex(self.uniforms.gpu_address_of(pass), UNIFORMS_BINDING);
+        }
+    }
+
+    /// Points the rect shader at the instances as they are now: a canvas adds to them while
+    /// the frame is drawn.
+    pub(crate) fn bind_instances(&self) {
+        // SAFETY: as for the uniforms.
+        unsafe {
+            self.argument_table
+                .setAddress_atIndex(self.instances.gpu_address(), INSTANCES_BINDING);
         }
     }
 

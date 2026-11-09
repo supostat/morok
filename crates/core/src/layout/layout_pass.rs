@@ -13,6 +13,7 @@ use crate::geometry::size::Size;
 use crate::layout::child_nodes::ChildNodes;
 use crate::layout::element_styles::ElementStyles;
 use crate::layout::taffy_style::TaffyStyle;
+use crate::media::media_content::MediaContent;
 use crate::role::Role;
 use crate::text::line_metrics::LineMetrics;
 use crate::text::text_request::TextRequest;
@@ -112,6 +113,16 @@ impl LayoutPass<'_> {
             &styles.taffy_style(id),
             |handle, basis| styles.calc_value(handle, basis),
             |known_dimensions, available_space| {
+                if let MediaContent::Image {
+                    natural_size: Some(natural),
+                    ..
+                } = element.media
+                {
+                    return taffy::Size {
+                        width: known_dimensions.width.unwrap_or(natural.width),
+                        height: known_dimensions.height.unwrap_or(natural.height),
+                    };
+                }
                 if element.role != Role::Text {
                     return taffy::Size::ZERO;
                 }

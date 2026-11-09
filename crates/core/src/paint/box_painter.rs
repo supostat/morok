@@ -3,6 +3,9 @@ use morok_style::{BackgroundImage, Declaration, ShadowLayer, StyleSheet, TextDec
 use crate::element::Element;
 use crate::geometry::point::Point;
 use crate::geometry::rect::Rect;
+use crate::geometry::sides::Sides;
+use crate::media::media_content::MediaContent;
+use crate::media::object_placement::object_rect;
 use crate::paint::box_frame::{BoxFrame, fitted_radii};
 use crate::paint::display_item::DisplayItem;
 use crate::paint::display_list::DisplayList;
@@ -61,6 +64,53 @@ impl BoxPainter<'_> {
         if element.role == Role::Text && paint.color.alpha > 0.0 {
             Self::paint_text(element, display_list);
         }
+        Self::paint_media(element, &frame, display_list);
+    }
+
+    /// Appends the picture, icon or canvas of a leaf inside its content box. An image whose
+    /// picture has not arrived shows its box alone.
+    fn paint_media(element: &Element, frame: &BoxFrame, display_list: &mut DisplayList) {
+        let content_box = Self::content_box(element, frame);
+        if content_box.is_empty() {
+            return;
+        }
+        match element.media {
+            MediaContent::None => {}
+            MediaContent::Image { image, natural_size } => {
+                if let Some(natural) = natural_size {
+                    display_list.items.push(DisplayItem::Image {
+                        image,
+                        dest: object_rect(natural, &content_box, element.style.paint.object_fit),
+                        clip: content_box,
+                    });
+                }
+            }
+            MediaContent::Icon(icon) => display_list.items.push(DisplayItem::Icon {
+                icon,
+                dest: content_box,
+                color: element.style.paint.color,
+            }),
+            MediaContent::Canvas(canvas) => display_list.items.push(DisplayItem::Canvas {
+                canvas,
+                dest: content_box,
+            }),
+        }
+    }
+
+    /// The padding box without the padding, as layout resolved it.
+    fn content_box(element: &Element, frame: &BoxFrame) -> Rect {
+        let padding_box = frame.padding_box();
+        let padding = element
+            .style
+            .layout
+            .padding
+            .map(|side| side.against(element.border_box.width).max(0.0));
+        padding_box.expanded(Sides {
+            top: -padding.top,
+            right: -padding.right,
+            bottom: -padding.bottom,
+            left: -padding.left,
+        })
     }
 
     /// Appends the lines of a text: under each line its underline, then its glyphs run by

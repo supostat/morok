@@ -9,9 +9,9 @@ use objc2_metal::{
 };
 
 use crate::atlas_usage::AtlasUsage;
+use crate::render::atlas_key::AtlasKey;
 use crate::render::glyph_extent::GlyphExtent;
 use crate::render::glyph_hasher::GlyphMap;
-use crate::render::glyph_key::GlyphKey;
 use crate::render::shared_texture::SharedTexture;
 use crate::render::shelf_packer::ShelfPacker;
 
@@ -30,7 +30,7 @@ struct AtlasPage {
     packer: ShelfPacker,
     /// The last frame that drew a glyph of the page.
     last_used: u64,
-    glyphs: Vec<GlyphKey>,
+    entries: Vec<AtlasKey>,
 }
 
 /// Rasterized glyphs of one pixel format in shelf-packed pages. Pages are added up to a
@@ -78,22 +78,22 @@ impl Atlas {
         self.frame += 1;
     }
 
-    pub(crate) fn get(&mut self, glyph: &GlyphKey) -> Option<AtlasEntry> {
-        let entry = *self.entries.get(glyph)?;
+    pub(crate) fn get(&mut self, key: &AtlasKey) -> Option<AtlasEntry> {
+        let entry = *self.entries.get(key)?;
         self.pages[entry.page].last_used = self.frame;
         Some(entry)
     }
 
-    /// Stores the pixels of a glyph, rows from the top. Returns none for a glyph larger than
-    /// a page: it has no place in an atlas.
-    pub(crate) fn insert(&mut self, glyph: GlyphKey, extent: GlyphExtent, pixels: &[u8]) -> Option<AtlasEntry> {
+    /// Stores the pixels of an entry, rows from the top. Returns none for one larger than a
+    /// page: it has no place in an atlas.
+    pub(crate) fn insert(&mut self, key: AtlasKey, extent: GlyphExtent, pixels: &[u8]) -> Option<AtlasEntry> {
         if extent.width > self.page_side || extent.height > self.page_side {
             return None;
         }
         let (page, x, y) = self.place(extent.width, extent.height);
         let held = &mut self.pages[page];
         held.last_used = self.frame;
-        held.glyphs.push(glyph);
+        held.entries.push(key);
         let region = MTLRegion {
             origin: MTLOrigin {
                 x: x as usize,
@@ -117,7 +117,7 @@ impl Atlas {
             );
         }
         let entry = AtlasEntry { page, x, y, extent };
-        self.entries.insert(glyph, entry);
+        self.entries.insert(key, entry);
         self.rasterized_glyphs += 1;
         Some(entry)
     }
@@ -172,8 +172,8 @@ impl Atlas {
 
     fn evict(&mut self, page: usize) {
         let held = &mut self.pages[page];
-        for glyph in held.glyphs.drain(..) {
-            self.entries.remove(&glyph);
+        for key in held.entries.drain(..) {
+            self.entries.remove(&key);
         }
         held.packer.clear();
         self.evicted_pages += 1;
@@ -200,7 +200,7 @@ impl Atlas {
             texture: SharedTexture(texture),
             packer: ShelfPacker::new(self.page_side),
             last_used: self.frame,
-            glyphs: Vec::new(),
+            entries: Vec::new(),
         });
         self.pages.len() - 1
     }

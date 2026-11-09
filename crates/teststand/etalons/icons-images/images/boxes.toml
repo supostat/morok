@@ -1,0 +1,181 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 580.0
+height = 260.0
+
+[[light]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 580.0
+height = 224.0
+
+[[light]]
+node = "#2 .pictures"
+x = 16.0
+y = 16.0
+width = 548.0
+height = 192.0
+
+[[light]]
+node = "#3 .picture.fill"
+x = 32.0
+y = 32.0
+width = 96.0
+height = 64.0
+
+[[light]]
+node = "#4 .picture.contain"
+x = 144.0
+y = 32.0
+width = 96.0
+height = 64.0
+
+[[light]]
+node = "#5 .picture.cover"
+x = 256.0
+y = 32.0
+width = 96.0
+height = 64.0
+
+[[light]]
+node = "#6 .picture.none"
+x = 368.0
+y = 32.0
+width = 96.0
+height = 64.0
+
+[[light]]
+node = "#7 .picture.scale-down"
+x = 32.0
+y = 112.0
+width = 96.0
+height = 64.0
+
+[[light]]
+node = "#8 .picture.tall.fill"
+x = 144.0
+y = 112.0
+width = 48.0
+height = 80.0
+
+[[light]]
+node = "#9 .picture.tall.contain"
+x = 208.0
+y = 112.0
+width = 48.0
+height = 80.0
+
+[[light]]
+node = "#10 .picture.tall.cover"
+x = 272.0
+y = 112.0
+width = 48.0
+height = 80.0
+
+[[light]]
+node = "#11 .picture.tall.none"
+x = 336.0
+y = 112.0
+width = 48.0
+height = 80.0
+
+[[light]]
+node = "#12 .picture.tall.scale-down"
+x = 400.0
+y = 112.0
+width = 48.0
+height = 80.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 580.0
+height = 260.0
+
+[[dark]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 580.0
+height = 224.0
+
+[[dark]]
+node = "#2 .pictures"
+x = 16.0
+y = 16.0
+width = 548.0
+height = 192.0
+
+[[dark]]
+node = "#3 .picture.fill"
+x = 32.0
+y = 32.0
+width = 96.0
+height = 64.0
+
+[[dark]]
+node = "#4 .picture.contain"
+x = 144.0
+y = 32.0
+width = 96.0
+height = 64.0
+
+[[dark]]
+node = "#5 .picture.cover"
+x = 256.0
+y = 32.0
+width = 96.0
+height = 64.0
+
+[[dark]]
+node = "#6 .picture.none"
+x = 368.0
+y = 32.0
+width = 96.0
+height = 64.0
+
+[[dark]]
+node = "#7 .picture.scale-down"
+x = 32.0
+y = 112.0
+width = 96.0
+height = 64.0
+
+[[dark]]
+node = "#8 .picture.tall.fill"
+x = 144.0
+y = 112.0
+width = 48.0
+height = 80.0
+
+[[dark]]
+node = "#9 .picture.tall.contain"
+x = 208.0
+y = 112.0
+width = 48.0
+height = 80.0
+
+[[dark]]
+node = "#10 .picture.tall.cover"
+x = 272.0
+y = 112.0
+width = 48.0
+height = 80.0
+
+[[dark]]
+node = "#11 .picture.tall.none"
+x = 336.0
+y = 112.0
+width = 48.0
+height = 80.0
+
+[[dark]]
+node = "#12 .picture.tall.scale-down"
+x = 400.0
+y = 112.0
+width = 48.0
+height = 80.0

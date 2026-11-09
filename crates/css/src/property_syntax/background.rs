@@ -1,10 +1,10 @@
 use cssparser::{Parser, Token};
-use morok_style::{BackgroundImage, BoxShadow, ColorValue, Declaration};
+use morok_style::{BackgroundImage, BoxShadow, ColorValue, Declaration, ObjectFit};
 
 use crate::compiled_tokens::CompiledTokens;
 use crate::problem::Problem;
 use crate::property::Property;
-use crate::property_syntax::{accepts_keyword, color, gradient, peek};
+use crate::property_syntax::{accepts_keyword, color, gradient, keyword, peek};
 use crate::span::Span;
 use crate::token_reference;
 use crate::value_error::{ValueError, ValueResult};
@@ -13,6 +13,13 @@ const NONE: &str = "none";
 const URL: &str = "url";
 
 const COLOR: &str = "a color token, `transparent` or `currentColor`";
+const OBJECT_FITS: [(&str, ObjectFit); 5] = [
+    ("fill", ObjectFit::Fill),
+    ("contain", ObjectFit::Contain),
+    ("cover", ObjectFit::Cover),
+    ("none", ObjectFit::None),
+    ("scale-down", ObjectFit::ScaleDown),
+];
 const IMAGE: &str = "`none`, `linear-gradient()` or `radial-gradient()`";
 
 pub(crate) const PROPERTIES: &[Property] = &[
@@ -40,6 +47,11 @@ pub(crate) const PROPERTIES: &[Property] = &[
         name: "color",
         expectation: COLOR,
         parse: |tokens, input| Ok(vec![Declaration::Color(color::parse(tokens, input)?)]),
+    },
+    Property {
+        name: "object-fit",
+        expectation: "`fill`, `contain`, `cover`, `none` or `scale-down`",
+        parse: |_, input| Ok(vec![Declaration::ObjectFit(keyword(input, &OBJECT_FITS)?)]),
     },
 ];
 

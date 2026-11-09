@@ -74,6 +74,7 @@ pub use paint::gradient::Gradient;
 pub use paint::gradient_direction::GradientDirection;
 pub use paint::line_style::LineStyle;
 pub use paint::linear_gradient::LinearGradient;
+pub use paint::object_fit::ObjectFit;
 pub use paint::radial_extent::RadialExtent;
 pub use paint::radial_gradient::RadialGradient;
 pub use paint::radial_shape::RadialShape;

@@ -1,24 +1,28 @@
 use bytemuck::Zeroable;
 use morok_core::{
-    BoxFrame, DisplayItem, DisplayList, Filter, FontId, GradientFill, GradientShape, GroupEffects, ItemRange, Point,
-    Rect, Sides, Transform,
+    BoxFrame, CanvasId, DisplayItem, DisplayList, Filter, FontId, GradientFill, GradientShape, GroupEffects, IconId,
+    ImageId, ItemRange, Point, Rect, Sides, Transform,
 };
 use morok_style::{BlendMode, Color, ShadowLayer};
 
+use crate::media::icon_library::IconLibrary;
+use crate::media::image_store::{ImageState, ImageStore};
 use crate::render::active_clip::ActiveClip;
 use crate::render::atlas_kind::AtlasKind;
+use crate::render::atlases::Atlases;
 use crate::render::clip_shape::ClipShape;
+use crate::render::draw_batch::PictureSource;
 use crate::render::draw_batcher::DrawBatcher;
 use crate::render::filter_entry::FilterEntry;
 use crate::render::frame_command::FrameCommand;
 use crate::render::frame_resources::FrameResources;
 use crate::render::frame_uniforms::FrameUniforms;
-use crate::render::glyph_atlases::GlyphAtlases;
 use crate::render::glyph_instance::GlyphInstance;
 use crate::render::glyph_key::GlyphKey;
 use crate::render::glyph_rasterizer::SUBPIXEL_PHASES;
 use crate::render::gradient_stop_entry::GradientStopEntry;
 use crate::render::group_pass::{BackdropPass, GroupPass};
+use crate::render::image_instance::ImageInstance;
 use crate::render::pixel_rect::PixelRect;
 use crate::render::premultiplied_color::premultiplied;
 use crate::render::rect_instance::RectInstance;
@@ -65,7 +69,8 @@ impl DisplayListEncoder {
         display_list: &DisplayList,
         geometry: &TargetGeometry,
         resources: &mut FrameResources,
-        glyph_atlases: &mut GlyphAtlases,
+        glyph_atlases: &mut Atlases,
+        media: MediaSources<'_>,
     ) {
         resources.begin_frame();
         resources.uniforms.push(FrameUniforms {
@@ -92,6 +97,7 @@ impl DisplayListEncoder {
             batcher: &mut self.batcher,
             resources,
             glyph_atlases,
+            media,
         };
         let mut items = display_list.items().iter();
         while let Some(item) = items.next() {
@@ -106,6 +112,13 @@ impl DisplayListEncoder {
     }
 }
 
+/// The icons and images a frame may draw.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct MediaSources<'a> {
+    pub(crate) icons: &'a IconLibrary,
+    pub(crate) images: &'a ImageStore,
+}
+
 /// One run of the encoder over a display list.
 struct FrameEncoding<'a> {
     display_list: &'a DisplayList,
@@ -116,7 +129,8 @@ struct FrameEncoding<'a> {
     open_groups: &'a mut Vec<OpenGroup>,
     batcher: &'a mut DrawBatcher,
     resources: &'a mut FrameResources,
-    glyph_atlases: &'a mut GlyphAtlases,
+    glyph_atlases: &'a mut Atlases,
+    media: MediaSources<'a>,
 }
 
 /// A background and the border drawn right after it around the same box.
@@ -196,7 +210,119 @@ impl FrameEncoding<'_> {
             }
             DisplayItem::PushGroup { effects } => self.push_group(&effects),
             DisplayItem::PopGroup => self.pop_group(),
+            DisplayItem::Image { image, dest, clip } => self.image(image, &dest, &clip),
+            DisplayItem::Icon { icon, dest, color } => self.icon(icon, &dest, color),
+            DisplayItem::Canvas { canvas, dest } => self.canvas(canvas, &dest),
         }
+    }
+
+    /// The part of the picture inside `clip`, stretched as `dest` stretches the whole picture.
+    /// A small picture comes from the color atlas, a large one from a texture of its own; one
+    /// not decoded yet draws nothing.
+    fn image(&mut self, image: ImageId, dest: &Rect, clip: &Rect) {
+        let Some(ImageState::Decoded(decoded)) = self.media.images.state(image) else {
+            return;
+        };
+        let visible = Rect::new(
+            dest.x.max(clip.x),
+            dest.y.max(clip.y),
+            dest.right().min(clip.right()) - dest.x.max(clip.x),
+            dest.bottom().min(clip.bottom()) - dest.y.max(clip.y),
+        );
+        if visible.is_empty() || dest.is_empty() {
+            return;
+        }
+        let bounds = [visible.x, visible.y, visible.width, visible.height];
+        let pixels = self.visible_pixels(bounds);
+        if pixels.is_empty() {
+            return;
+        }
+        let texels_per_pixel_x = decoded.width as f32 / dest.width;
+        let texels_per_pixel_y = decoded.height as f32 / dest.height;
+        let (source, origin) = match self.glyph_atlases.image(image, &decoded) {
+            Some(placed) => (
+                PictureSource::AtlasPage {
+                    atlas: placed.atlas,
+                    page: placed.entry.page,
+                },
+                [placed.entry.x as f32, placed.entry.y as f32],
+            ),
+            None => (PictureSource::ImageTexture(image), [0.0, 0.0]),
+        };
+        let clip_shape = self.active_clip();
+        let position = self.resources.image_instances.len();
+        self.resources.image_instances.push(ImageInstance {
+            bounds,
+            texels: [
+                origin[0] + (visible.x - dest.x) * texels_per_pixel_x,
+                origin[1] + (visible.y - dest.y) * texels_per_pixel_y,
+                visible.width * texels_per_pixel_x,
+                visible.height * texels_per_pixel_y,
+            ],
+            clips_start: clip_shape.rounded_start as u32,
+            clips_count: clip_shape.rounded_count as u32,
+            transform: self.transform_entry(),
+            padding: 0,
+        });
+        self.batcher
+            .image(position, clip_shape.scissor, source, &mut self.resources.commands);
+        self.cover(pixels);
+    }
+
+    /// The icon rasterized to the device pixels of `dest`, drawn texel for pixel like a glyph:
+    /// tinted with `color` from the mask atlas, or in its own colors from the color atlas.
+    fn icon(&mut self, icon: IconId, dest: &Rect, color: Color) {
+        let scale = self.scale;
+        let width = (dest.width * scale).round().max(1.0) as u32;
+        let height = (dest.height * scale).round().max(1.0) as u32;
+        let Some(placed) = self.glyph_atlases.icon(icon, width, height, self.media.icons) else {
+            return;
+        };
+        let left = (dest.x * scale).round();
+        let top = (dest.y * scale).round();
+        let bounds = [left / scale, top / scale, width as f32 / scale, height as f32 / scale];
+        let pixels = self.visible_pixels(bounds);
+        if pixels.is_empty() {
+            return;
+        }
+        let clip = self.active_clip();
+        let position = self.resources.glyph_instances.len();
+        self.resources.glyph_instances.push(GlyphInstance {
+            bounds,
+            color: premultiplied(color),
+            atlas_origin: [placed.entry.x as f32, placed.entry.y as f32],
+            clips_start: clip.rounded_start as u32,
+            clips_count: clip.rounded_count as u32,
+            is_color: u32::from(placed.atlas == AtlasKind::Color),
+            transform: self.transform_entry(),
+            padding: [0; 2],
+        });
+        self.batcher.glyph(
+            position,
+            clip.scissor,
+            placed.atlas,
+            placed.entry.page,
+            &mut self.resources.commands,
+        );
+        self.batcher.glyphs_cover(pixels);
+        self.cover(pixels);
+    }
+
+    /// Hands the content box to the application, clipped to it and to the clips in force.
+    fn canvas(&mut self, canvas: CanvasId, dest: &Rect) {
+        let bounds = [dest.x, dest.y, dest.width, dest.height];
+        let pixels = self.visible_pixels(bounds);
+        if pixels.is_empty() {
+            return;
+        }
+        self.batcher.finish(&mut self.resources.commands);
+        self.resources.commands.push(FrameCommand::Canvas {
+            canvas,
+            pixels,
+            scissor: pixels,
+            transform: self.transform_entry(),
+        });
+        self.cover(pixels);
     }
 
     /// The transform the items being encoded are placed by.

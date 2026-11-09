@@ -7,14 +7,21 @@ use objc2_metal::{
     MTLViewport,
 };
 
+use morok_core::CanvasId;
+
+use crate::canvas::canvas_encoder::CanvasEncoder;
+use crate::canvas::canvas_painter::CanvasPainter;
+use crate::canvas::canvas_region::CanvasRegion;
+use crate::media::image_store::{ImageState, ImageStore};
+use crate::media::image_textures::ImageTextures;
+use crate::render::atlases::Atlases;
 use crate::render::blur_uniforms::BlurUniforms;
 use crate::render::clip_shape::ClipShape;
 use crate::render::composite_instance::CompositeInstance;
-use crate::render::draw_batch::{BatchSource, DrawBatch};
+use crate::render::draw_batch::{BatchSource, DrawBatch, PictureSource};
 use crate::render::frame_command::FrameCommand;
 use crate::render::frame_resources::FrameResources;
 use crate::render::frame_uniforms::FrameUniforms;
-use crate::render::glyph_atlases::GlyphAtlases;
 use crate::render::group_pass::BackdropPass;
 use crate::render::pixel_rect::PixelRect;
 use crate::render::renderer::Renderer;
@@ -49,7 +56,10 @@ pub(crate) struct OpenGroup {
 pub(crate) struct FrameExecution<'a> {
     pub(crate) renderer: &'a Renderer,
     pub(crate) resources: &'a mut FrameResources,
-    pub(crate) glyph_atlases: &'a GlyphAtlases,
+    pub(crate) glyph_atlases: &'a Atlases,
+    pub(crate) images: &'a ImageStore,
+    pub(crate) image_textures: &'a mut ImageTextures,
+    pub(crate) canvas_painter: Option<&'a mut (dyn CanvasPainter + 'static)>,
     pub(crate) command_buffer: &'a ProtocolObject<dyn MTL4CommandBuffer>,
     pub(crate) render_pass: &'a MTL4RenderPassDescriptor,
     pub(crate) residency_set: &'a ProtocolObject<dyn MTLResidencySet>,
@@ -78,9 +88,44 @@ impl FrameExecution<'_> {
                 FrameCommand::Draw(batch) => self.draw(&batch),
                 FrameCommand::BeginGroup(group) => self.begin_group(group),
                 FrameCommand::EndGroup(group) => self.end_group(group),
+                FrameCommand::Canvas {
+                    canvas,
+                    pixels,
+                    scissor,
+                    transform,
+                } => self.canvas(canvas, pixels, scissor, transform),
             }
         }
         self.end_pass();
+    }
+
+    /// Hands the pass to the application for the canvas, clipped to it; the state of the pass
+    /// is the kit's again afterwards.
+    fn canvas(&mut self, canvas: CanvasId, pixels: PixelRect, scissor: PixelRect, transform: u32) {
+        let Some(scissor) = self.scissor_in_target(scissor) else {
+            return;
+        };
+        let Some(painter) = self.canvas_painter.as_deref_mut() else {
+            return;
+        };
+        let pass = self.pass.as_deref().expect("a pass is open while commands are drawn");
+        pass.setScissorRect(scissor);
+        let scale = self.geometry.scale;
+        let mut encoder = CanvasEncoder {
+            pass,
+            region: CanvasRegion {
+                x: pixels.x as f32 / scale,
+                y: pixels.y as f32 / scale,
+                width: pixels.width as f32 / scale,
+                height: pixels.height as f32 / scale,
+                scale,
+            },
+            resources: self.resources,
+            renderer: self.renderer,
+            transform,
+        };
+        painter.draw(canvas, &mut encoder);
+        self.bind_argument_table(pass);
     }
 
     fn target(&self) -> &Target {
@@ -151,17 +196,36 @@ impl FrameExecution<'_> {
         let Some(scissor) = self.scissor_in_target(batch.scissor) else {
             return;
         };
+        let renderer = self.renderer;
+        let (pipeline, texture) = match batch.source {
+            BatchSource::Rects => (renderer.rect_pipeline(), None),
+            BatchSource::Glyphs { atlas, page } => (
+                renderer.glyph_pipeline(),
+                Some(self.glyph_atlases.atlas(atlas).texture(page).retain()),
+            ),
+            BatchSource::Images(PictureSource::AtlasPage { atlas, page }) => (
+                renderer.image_pipeline(),
+                Some(self.glyph_atlases.atlas(atlas).texture(page).retain()),
+            ),
+            BatchSource::Images(PictureSource::ImageTexture(image)) => {
+                let Some(ImageState::Decoded(decoded)) = self.images.state(image) else {
+                    return;
+                };
+                (
+                    renderer.image_pipeline(),
+                    Some(self.image_textures.texture(image, &decoded).retain()),
+                )
+            }
+        };
+        if let Some(texture) = &texture {
+            self.resources.bind_texture(texture);
+        }
         let pass = self.pass();
         pass.setScissorRect(scissor);
-        match batch.source {
-            BatchSource::Rects => pass.setRenderPipelineState(self.renderer.rect_pipeline()),
-            BatchSource::Glyphs { atlas, page } => {
-                self.resources
-                    .bind_texture(self.glyph_atlases.atlas(atlas).texture(page));
-                self.bind_argument_table(pass);
-                pass.setRenderPipelineState(self.renderer.glyph_pipeline());
-            }
+        if texture.is_some() {
+            self.bind_argument_table(pass);
         }
+        pass.setRenderPipelineState(pipeline);
         draw_quads(pass, batch.instance_count, batch.first_instance);
     }
 

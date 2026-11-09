@@ -59,6 +59,9 @@ fn item_kinds(scene: &Scene) -> Vec<(&'static str, Rect)> {
             DisplayItem::PopClip => ("pop clip", Rect::ZERO),
             DisplayItem::PushGroup { effects } => ("push group", effects.frame.border_box),
             DisplayItem::PopGroup => ("pop group", Rect::ZERO),
+            DisplayItem::Image { dest, .. } => ("image", *dest),
+            DisplayItem::Icon { dest, .. } => ("icon", *dest),
+            DisplayItem::Canvas { dest, .. } => ("canvas", *dest),
         });
     }
     kinds

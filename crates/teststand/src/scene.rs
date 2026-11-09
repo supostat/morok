@@ -2,6 +2,7 @@ use morok_core::{ElementId, ElementTree, Rect, Role, Size, TextShaper};
 use morok_style::{States, StyleSheet, Theme};
 
 use crate::element_box::ElementBox;
+use crate::media_source::{IconSource, ImageSource};
 use crate::rendering::DEVICE_SCALE;
 
 const ROOT_NODE: &str = "root";
@@ -13,6 +14,10 @@ const TEXT_NODE: &str = "text";
 pub struct Scene {
     tree: ElementTree,
     style_sheet: StyleSheet,
+    /// The icons of the scene with the elements that show them.
+    icons: Vec<(ElementId, IconSource)>,
+    /// The images of the scene with the elements that show them.
+    images: Vec<(ElementId, ImageSource)>,
 }
 
 impl Scene {
@@ -20,6 +25,8 @@ impl Scene {
         Self {
             tree: ElementTree::new(style_sheet.clone(), theme),
             style_sheet,
+            icons: Vec::new(),
+            images: Vec::new(),
         }
     }
 
@@ -47,9 +54,61 @@ impl Scene {
         element
     }
 
+    /// Adds an icon with the given classes as the last child of `parent`; both sides draw the
+    /// same SVG.
+    ///
+    /// # Panics
+    ///
+    /// When the stylesheets of the suite name no such class.
+    pub fn add_icon(&mut self, parent: ElementId, class_names: &[&str], icon: IconSource) -> ElementId {
+        let element = self.add_with_role(parent, Role::Icon, class_names);
+        self.icons.push((element, icon));
+        element
+    }
+
+    /// Adds an image with the given classes as the last child of `parent`; both sides show the
+    /// same encoded picture.
+    ///
+    /// # Panics
+    ///
+    /// When the stylesheets of the suite name no such class.
+    pub fn add_image(&mut self, parent: ElementId, class_names: &[&str], image: ImageSource) -> ElementId {
+        let element = self.add_with_role(parent, Role::Image, class_names);
+        self.images.push((element, image));
+        element
+    }
+
     /// Puts the element in the given states for the whole case.
     pub fn set_state(&mut self, element: ElementId, states: States) {
         self.tree.set_state(element, states, true);
+    }
+
+    pub(crate) fn icons(&self) -> &[(ElementId, IconSource)] {
+        &self.icons
+    }
+
+    pub(crate) fn images(&self) -> &[(ElementId, ImageSource)] {
+        &self.images
+    }
+
+    pub(crate) fn tree_mut(&mut self) -> &mut ElementTree {
+        &mut self.tree
+    }
+
+    /// The icon of the element, when it shows one.
+    pub(crate) fn icon_of(&self, element: ElementId) -> Option<IconSource> {
+        self.icons
+            .iter()
+            .find(|(shown_by, _)| *shown_by == element)
+            .map(|(_, icon)| *icon)
+    }
+
+    /// The image of the element, when it shows one.
+    pub(crate) fn image_of(&self, element: ElementId) -> Option<ImageSource> {
+        self.images
+            .iter()
+            .find(|(shown_by, _)| *shown_by == element)
+            .map(|(_, image)| *image)
     }
 
     pub(crate) fn tree(&self) -> &ElementTree {
@@ -98,6 +157,8 @@ impl Scene {
                 let description = match (classes.is_empty(), self.tree.role(element)) {
                     (false, _) => classes.as_str(),
                     (true, Role::Text) => TEXT_NODE,
+                    (true, Role::Icon) => "icon",
+                    (true, Role::Image) => "image",
                     (true, _) if element == self.tree.root() => ROOT_NODE,
                     (true, _) => "element",
                 };

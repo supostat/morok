@@ -1,0 +1,94 @@
+/* Icons at the sizes of the design book, in the text color, and pictures under every object-fit. */
+
+.stage {
+  padding: var(--space-4);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Icons: one glyph at every size, a row of glyphs at the default size, an icon with colors of its own. */
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-4);
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+}
+
+.icon.tiny {
+  width: 12px;
+  height: 12px;
+}
+
+.icon.small {
+  width: 14px;
+  height: 14px;
+}
+
+.icon.compact {
+  width: 16px;
+  height: 16px;
+}
+
+.icon.large {
+  width: 28px;
+  height: 28px;
+}
+
+.icon.huge {
+  width: 48px;
+  height: 48px;
+}
+
+.row.muted {
+  color: var(--color-text-3);
+}
+
+.row.accented {
+  color: var(--color-accent);
+}
+
+/* Pictures: a box of each proportion under every object-fit. */
+.pictures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  padding: var(--space-4);
+}
+
+.picture {
+  width: 96px;
+  height: 64px;
+  background-color: var(--color-surface-sunken);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+}
+
+.picture.tall {
+  width: 48px;
+  height: 80px;
+}
+
+.picture.fill {
+  object-fit: fill;
+}
+
+.picture.contain {
+  object-fit: contain;
+}
+
+.picture.cover {
+  object-fit: cover;
+}
+
+.picture.none {
+  object-fit: none;
+}
+
+.picture.scale-down {
+  object-fit: scale-down;
+}

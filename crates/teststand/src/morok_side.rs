@@ -1,4 +1,7 @@
-use morok_platform::{CoreTextShaper, OffscreenTarget, Renderer};
+use std::thread;
+use std::time::{Duration, Instant};
+
+use morok_platform::{CoreTextShaper, ImageStatus, OffscreenTarget, Renderer};
 use morok_style::ColorScheme;
 
 use crate::case::Case;
@@ -33,6 +36,18 @@ impl MorokSide {
 
     fn render(&mut self, suite: &CompiledSuite<'_>, case: &Case, color_scheme: ColorScheme) -> Rendering {
         let mut scene = suite.scene(case, color_scheme);
+        for (element, icon) in scene.icons().to_vec() {
+            let id = self
+                .renderer
+                .add_icon(icon.svg)
+                .expect("the icons of a suite are SVG the kit reads");
+            scene.tree_mut().set_icon(element, id);
+        }
+        for (element, image) in scene.images().to_vec() {
+            let id = self.renderer.add_image(image.encoded.to_vec());
+            let size = self.decoded_size(id);
+            scene.tree_mut().set_image(element, id, Some(size));
+        }
         scene.frame(case.viewport, &mut self.text_shaper);
         let tree = scene.tree();
         Rendering {
@@ -40,4 +55,25 @@ impl MorokSide {
             boxes: scene.element_boxes(scene.elements().into_iter().map(|element| tree.surface_box(element))),
         }
     }
+
+    /// Waits for the decoder of the image: a case is drawn with its pictures in place.
+    fn decoded_size(&self, image: morok_core::ImageId) -> morok_core::Size {
+        let started = Instant::now();
+        loop {
+            match self.renderer.image_status(image) {
+                ImageStatus::Decoded(size) => return size,
+                ImageStatus::Unreadable => panic!("the images of a suite are files the system reads"),
+                ImageStatus::Decoding => {
+                    assert!(
+                        started.elapsed() < DECODING_TIMEOUT,
+                        "an image of a suite decodes in time"
+                    );
+                    thread::sleep(DECODING_POLL);
+                }
+            }
+        }
+    }
 }
+
+const DECODING_TIMEOUT: Duration = Duration::from_secs(10);
+const DECODING_POLL: Duration = Duration::from_millis(2);

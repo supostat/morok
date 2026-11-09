@@ -12,6 +12,10 @@ use crate::geometry::size::Size;
 use crate::geometry::transform::Transform;
 use crate::layout::geometry_pass::GeometryPass;
 use crate::layout::layout_pass::LayoutPass;
+use crate::media::canvas_id::CanvasId;
+use crate::media::icon_id::IconId;
+use crate::media::image_id::ImageId;
+use crate::media::media_content::MediaContent;
 use crate::paint::box_painter::BoxPainter;
 use crate::paint::damage::Damage;
 use crate::paint::display_list::DisplayList;
@@ -281,6 +285,51 @@ impl ElementTree {
         held.dirty.insert(Dirty::PAINT);
         let is_attached = held.is_attached;
         self.elements.invalidate_text(element);
+        if is_attached {
+            self.elements.invalidate_layout(element);
+            self.has_unpainted_changes = true;
+            self.request_frame();
+        }
+    }
+
+    /// Shows the image in a [`Role::Image`] element. The picture takes `natural_size` CSS
+    /// pixels once decoded; until the host knows it, the element shows its box alone and is
+    /// laid out without a size of its own.
+    ///
+    /// # Panics
+    ///
+    /// When the element is not an image.
+    pub fn set_image(&mut self, element: ElementId, image: ImageId, natural_size: Option<Size>) {
+        self.set_media(element, Role::Image, MediaContent::Image { image, natural_size });
+    }
+
+    /// Shows the icon in a [`Role::Icon`] element, tinted with the `color` of the element.
+    ///
+    /// # Panics
+    ///
+    /// When the element is not an icon.
+    pub fn set_icon(&mut self, element: ElementId, icon: IconId) {
+        self.set_media(element, Role::Icon, MediaContent::Icon(icon));
+    }
+
+    /// Hands the content box of a [`Role::Canvas`] element to the application to draw into.
+    ///
+    /// # Panics
+    ///
+    /// When the element is not a canvas.
+    pub fn set_canvas(&mut self, element: ElementId, canvas: CanvasId) {
+        self.set_media(element, Role::Canvas, MediaContent::Canvas(canvas));
+    }
+
+    fn set_media(&mut self, element: ElementId, role: Role, media: MediaContent) {
+        let held = &mut self.elements[element];
+        assert!(held.role == role, "{:?} shows no {role:?}", held.role);
+        if held.media == media {
+            return;
+        }
+        held.media = media;
+        held.dirty.insert(Dirty::PAINT);
+        let is_attached = held.is_attached;
         if is_attached {
             self.elements.invalidate_layout(element);
             self.has_unpainted_changes = true;

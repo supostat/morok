@@ -10,6 +10,7 @@ use objc2_app_kit::{NSBackingStoreType, NSWindow, NSWindowStyleMask};
 use objc2_foundation::{NSPoint, NSRect, NSSize, NSString};
 
 use crate::application::Application;
+use crate::canvas::canvas_painter::CanvasPainter;
 use crate::frame_statistics::FrameStatistics;
 use crate::surface_content::SurfaceContent;
 use crate::surface_view::SurfaceView;
@@ -82,6 +83,11 @@ impl<Content> Window<Content> {
 
     pub fn frame_statistics(&self) -> FrameStatistics {
         self.view.statistics()
+    }
+
+    /// Names who draws the canvases of the window.
+    pub fn set_canvas_painter(&self, painter: Box<dyn CanvasPainter>) {
+        self.view.set_canvas_painter(painter);
     }
 }
 

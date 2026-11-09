@@ -4,6 +4,7 @@ use taffy::{Cache, DetailedLayoutInfo, Layout};
 use crate::dirty::Dirty;
 use crate::element_id::ElementId;
 use crate::geometry::rect::Rect;
+use crate::media::media_content::MediaContent;
 use crate::paint::painted_element::PaintedElement;
 use crate::role::Role;
 use crate::style::computed_style::ComputedStyle;
@@ -23,6 +24,8 @@ pub(crate) struct Element {
     pub(crate) states: States,
     pub(crate) inline_style: InlineStyle,
     pub(crate) text: String,
+    /// The picture, icon or canvas of a leaf of those roles.
+    pub(crate) media: MediaContent,
     pub(crate) dirty: Dirty,
     pub(crate) style: ComputedStyle,
     pub(crate) layout_cache: Cache,
@@ -49,6 +52,7 @@ impl Element {
             states: States::NONE,
             inline_style: InlineStyle::default(),
             text: String::new(),
+            media: MediaContent::None,
             dirty: Dirty::STYLE.union(Dirty::PAINT).union(Dirty::TEXT),
             style: ComputedStyle::INITIAL,
             layout_cache: Cache::new(),

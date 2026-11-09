@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use morok_core::{ElementId, Role};
 
 use crate::marker_classes;
@@ -8,7 +10,8 @@ pub(crate) const TEXT_ATTRIBUTE: &str = "data-text";
 
 /// The markup Chrome lays the tree of the scene out from: one `div` per element, in document
 /// order, with the classes of the element and the marker classes of its states. A text holds
-/// its characters.
+/// its characters; an icon is its SVG inline, so that `currentColor` is the color of the
+/// element; an image is an `img` with its file as a data URL.
 ///
 /// # Panics
 ///
@@ -23,7 +26,7 @@ fn write_element(scene: &Scene, element: ElementId, markup: &mut String) {
     let tree = scene.tree();
     let role = tree.role(element);
     assert!(
-        matches!(role, Role::Element | Role::Text),
+        matches!(role, Role::Element | Role::Text | Role::Icon | Role::Image),
         "the stand has no markup for {role:?}"
     );
     let classes: Vec<String> = scene
@@ -31,12 +34,32 @@ fn write_element(scene: &Scene, element: ElementId, markup: &mut String) {
         .map(str::to_owned)
         .chain(marker_classes::of_states(tree.states(element)))
         .collect();
-    markup.push_str("<div");
-    if !classes.is_empty() {
-        markup.push_str(" class=\"");
-        markup.push_str(&classes.join(" "));
-        markup.push('"');
+    let class_attribute = if classes.is_empty() {
+        String::new()
+    } else {
+        format!(" class=\"{}\"", classes.join(" "))
+    };
+    match role {
+        Role::Icon => {
+            let icon = scene.icon_of(element).expect("an icon element shows an icon");
+            markup.push_str(&icon.svg.replacen(SVG_TAG, &format!("{SVG_TAG}{class_attribute}"), 1));
+            return;
+        }
+        Role::Image => {
+            let image = scene.image_of(element).expect("an image element shows an image");
+            let _ = write!(
+                markup,
+                "<img{class_attribute} src=\"data:{};base64,{}\">",
+                image.media_type,
+                base64(image.encoded)
+            );
+            return;
+        }
+        Role::Element | Role::Text => {}
+        Role::Canvas | Role::Scroll => unreachable!("the roles were checked above"),
     }
+    markup.push_str("<div");
+    markup.push_str(&class_attribute);
     if role == Role::Text {
         markup.push(' ');
         markup.push_str(TEXT_ATTRIBUTE);
@@ -47,6 +70,29 @@ fn write_element(scene: &Scene, element: ElementId, markup: &mut String) {
         write_element(scene, *child, markup);
     }
     markup.push_str("</div>");
+}
+
+const SVG_TAG: &str = "<svg";
+const BASE64_ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+/// The standard base64 of the bytes, padded.
+fn base64(bytes: &[u8]) -> String {
+    let mut encoded = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let mut word = 0_u32;
+        for (position, byte) in chunk.iter().enumerate() {
+            word |= u32::from(*byte) << (16 - 8 * position);
+        }
+        for position in 0..4 {
+            if position <= chunk.len() {
+                let index = (word >> (18 - 6 * position)) & 0x3f;
+                encoded.push(BASE64_ALPHABET[index as usize] as char);
+            } else {
+                encoded.push('=');
+            }
+        }
+    }
+    encoded
 }
 
 fn write_escaped(text: &str, markup: &mut String) {

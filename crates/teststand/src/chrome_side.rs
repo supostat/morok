@@ -39,8 +39,13 @@ const ARGUMENTS: [&str; 2] = ["force-color-profile=srgb", "disable-gpu"];
 const SCALE_ARGUMENT: &str = "force-device-scale-factor";
 /// Leaves the scale of the browser as it is when the size of a page is set.
 const NO_SCALE_OVERRIDE: f64 = 0.0;
-const FONTS_ARE_LOADED: &str = "document.fonts.ready.then(() => true)";
-const ELEMENT_BOXES: &str = "Array.from(document.body.querySelectorAll('div'), element => {\
+/// Fonts and pictures are loaded before the page is read; a picture that failed is loaded too.
+const FONTS_ARE_LOADED: &str = "Promise.all([document.fonts.ready, \
+    ...Array.from(document.images, image => image.complete ? Promise.resolve() : \
+    new Promise(resolve => { image.onload = resolve; image.onerror = resolve; }))]).then(() => true)";
+/// The elements of the tree: the `div` of an element, the `svg` of an icon and the `img` of an
+/// image, in document order; what an SVG holds inside is no element of the tree.
+const ELEMENT_BOXES: &str = "Array.from(document.body.querySelectorAll('div, svg, img'), element => {\
     const box = element.getBoundingClientRect();\
     return [box.x, box.y, box.width, box.height];\
     })";

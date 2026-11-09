@@ -10,8 +10,15 @@ use objc2_metal::{
     MTLCreateSystemDefaultDevice, MTLDevice, MTLGPUFamily, MTLLibrary, MTLPixelFormat, MTLRenderPipelineState,
 };
 
+use morok_core::{IconId, ImageId, Size};
+
 use crate::atlas_statistics::AtlasStatistics;
-use crate::render::glyph_atlases::GlyphAtlases;
+use crate::image_statistics::ImageStatistics;
+use crate::image_status::ImageStatus;
+use crate::media::icon_library::IconLibrary;
+use crate::media::image_store::{ImageState, ImageStore};
+use crate::media::image_textures::ImageTextures;
+use crate::render::atlases::Atlases;
 use crate::renderer_error::RendererError;
 use crate::renderer_options::RendererOptions;
 
@@ -24,6 +31,8 @@ const COMPOSITE_VERTEX_FUNCTION: &str = "composite_vertex";
 const COMPOSITE_FRAGMENT_FUNCTION: &str = "composite_fragment";
 const BLUR_VERTEX_FUNCTION: &str = "blur_vertex";
 const BLUR_FRAGMENT_FUNCTION: &str = "blur_fragment";
+const IMAGE_VERTEX_FUNCTION: &str = "image_vertex";
+const IMAGE_FRAGMENT_FUNCTION: &str = "image_fragment";
 
 /// Pipelines compiled at the same moment by separate Metal 4 compilers never come back from the
 /// driver, so the renderers of a process compile theirs one after another.
@@ -47,7 +56,12 @@ pub struct Renderer {
     composite_pipeline: Retained<ProtocolObject<dyn MTLRenderPipelineState>>,
     /// One pass of a Gaussian blur into a cleared target.
     blur_pipeline: Retained<ProtocolObject<dyn MTLRenderPipelineState>>,
-    glyph_atlases: Arc<Mutex<GlyphAtlases>>,
+    /// The picture of an image, sampled with filtering, over a quad of any size.
+    image_pipeline: Retained<ProtocolObject<dyn MTLRenderPipelineState>>,
+    glyph_atlases: Arc<Mutex<Atlases>>,
+    icons: Arc<Mutex<IconLibrary>>,
+    images: Arc<Mutex<ImageStore>>,
+    image_textures: Arc<Mutex<ImageTextures>>,
 }
 
 impl Renderer {
@@ -68,7 +82,7 @@ impl Renderer {
         let library = device
             .newLibraryWithData_error(&DispatchData::from_static_bytes(SHADERS))
             .map_err(|error| metal_error("shader library", &error))?;
-        let (rect_pipeline, glyph_pipeline, composite_pipeline, blur_pipeline) = {
+        let (rect_pipeline, glyph_pipeline, composite_pipeline, blur_pipeline, image_pipeline) = {
             let _one_at_a_time = PIPELINE_COMPILATION.lock().unwrap_or_else(PoisonError::into_inner);
             let compiler = device
                 .newCompilerWithDescriptor_error(&MTL4CompilerDescriptor::new())
@@ -102,17 +116,82 @@ impl Renderer {
                     BLUR_FRAGMENT_FUNCTION,
                     Blending::Replace,
                 )?,
+                pipeline(
+                    &compiler,
+                    &library,
+                    IMAGE_VERTEX_FUNCTION,
+                    IMAGE_FRAGMENT_FUNCTION,
+                    Blending::Over,
+                )?,
             )
         };
         Ok(Self {
-            glyph_atlases: Arc::new(Mutex::new(GlyphAtlases::new(&device, options))),
+            glyph_atlases: Arc::new(Mutex::new(Atlases::new(&device, options))),
+            icons: Arc::new(Mutex::new(IconLibrary::default())),
+            images: Arc::new(Mutex::new(ImageStore::default())),
+            image_textures: Arc::new(Mutex::new(ImageTextures::new(&device, options.image_byte_budget))),
             device,
             queue,
             rect_pipeline,
             glyph_pipeline,
             composite_pipeline,
             blur_pipeline,
+            image_pipeline,
         })
+    }
+
+    /// Takes an icon as SVG. `currentColor` in it is the `color` of the element that shows
+    /// the icon; an icon painted in nothing but `currentColor` is tinted by the shader.
+    pub fn add_icon(&self, svg: &str) -> Result<IconId, RendererError> {
+        self.icons()
+            .add(svg)
+            .map_err(|error| RendererError::UnreadableIcon(error.to_string()))
+    }
+
+    /// Takes an encoded image — PNG, JPEG, HEIC or any format the system reads — and decodes
+    /// it on a thread of its own; [`image_status`](Self::image_status) tells when it is ready.
+    pub fn add_image(&self, encoded: Vec<u8>) -> ImageId {
+        self.images().add(encoded)
+    }
+
+    /// # Panics
+    ///
+    /// When the renderer never gave out the id.
+    pub fn image_status(&self, image: ImageId) -> ImageStatus {
+        match self.images().state(image).expect("the renderer gave the image id out") {
+            ImageState::Decoding => ImageStatus::Decoding,
+            ImageState::Unreadable => ImageStatus::Unreadable,
+            ImageState::Decoded(decoded) => ImageStatus::Decoded(Size {
+                width: decoded.width as f32,
+                height: decoded.height as f32,
+            }),
+        }
+    }
+
+    /// What the textures of large images take and have done so far.
+    pub fn image_statistics(&self) -> ImageStatistics {
+        let textures = self.image_textures();
+        ImageStatistics {
+            texture_bytes: textures.bytes(),
+            uploads: textures.uploads(),
+            evictions: textures.evictions(),
+        }
+    }
+
+    pub(crate) fn icons(&self) -> MutexGuard<'_, IconLibrary> {
+        self.icons.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    pub(crate) fn images(&self) -> MutexGuard<'_, ImageStore> {
+        self.images.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    pub(crate) fn image_textures(&self) -> MutexGuard<'_, ImageTextures> {
+        self.image_textures.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    pub(crate) fn image_pipeline(&self) -> &ProtocolObject<dyn MTLRenderPipelineState> {
+        &self.image_pipeline
     }
 
     /// How full the glyph atlases are and what they have done so far.
@@ -120,7 +199,7 @@ impl Renderer {
         self.glyph_atlases().statistics()
     }
 
-    pub(crate) fn glyph_atlases(&self) -> MutexGuard<'_, GlyphAtlases> {
+    pub(crate) fn glyph_atlases(&self) -> MutexGuard<'_, Atlases> {
         self.glyph_atlases.lock().unwrap_or_else(PoisonError::into_inner)
     }
 

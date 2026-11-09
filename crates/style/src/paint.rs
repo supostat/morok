@@ -6,6 +6,7 @@ pub(crate) mod gradient;
 pub(crate) mod gradient_direction;
 pub(crate) mod line_style;
 pub(crate) mod linear_gradient;
+pub(crate) mod object_fit;
 pub(crate) mod radial_extent;
 pub(crate) mod radial_gradient;
 pub(crate) mod radial_shape;

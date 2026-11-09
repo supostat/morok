@@ -203,6 +203,7 @@ impl<'a> StyleResolver<'a> {
             Declaration::OutlineStyle(line_style) => paint.outline_style = *line_style,
             Declaration::OutlineColor(color) => paint.outline_color = self.color(*color, current_color),
             Declaration::OutlineOffset(offset) => paint.outline_offset = ResolvedLength::pixels_of(offset, theme),
+            Declaration::ObjectFit(fit) => paint.object_fit = *fit,
             Declaration::Color(_) => {}
             Declaration::FontFamily(families) => text.font_family = Some(*families),
             Declaration::FontSize(size) => text.font_size = ResolvedLength::pixels_of(size, theme).max(0.0),

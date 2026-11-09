@@ -6,10 +6,10 @@ use morok_style::{
     CompoundSelector, ContentAlignment, Corner, Declaration, Display, Easing, FilterFunction, FlexDirection, FlexWrap,
     FontFamilies, FontStyle, FontVariantNumeric, FontWeight, FontWeightValue, Gradient, GradientDirection,
     GridAutoFlow, GridLine, ItemAlignment, Leading, Length, LengthPercentage, LengthPercentageAuto, LineHeight,
-    LineStyle, LinearGradient, Milliseconds, Overflow, Pixels, Position, RadialExtent, RadialGradient, RadialShape,
-    RepeatCount, Selector, SelfAlignment, Shadow, ShadowLayer, Side, States, StepPosition, StyleRule, StyleSheet,
-    TextAlign, TextDecoration, TextOverflow, Theme, Token, TokenTerm, TrackBreadth, TrackListItem, TrackSize,
-    TransformFunction, WhiteSpace,
+    LineStyle, LinearGradient, Milliseconds, ObjectFit, Overflow, Pixels, Position, RadialExtent, RadialGradient,
+    RadialShape, RepeatCount, Selector, SelfAlignment, Shadow, ShadowLayer, Side, States, StepPosition, StyleRule,
+    StyleSheet, TextAlign, TextDecoration, TextOverflow, Theme, Token, TokenTerm, TrackBreadth, TrackListItem,
+    TrackSize, TransformFunction, WhiteSpace,
 };
 use proc_macro2::{Ident, Literal, TokenStream};
 use quote::{format_ident, quote};
@@ -75,6 +75,7 @@ unit_enum_literals!(
     GridAutoFlow,
     ItemAlignment,
     LineStyle,
+    ObjectFit,
     Overflow,
     Position,
     RadialExtent,
@@ -623,6 +624,7 @@ impl SchemaLiteral for Declaration {
             Self::Filter(functions) => one(functions),
             Self::BackdropFilter(functions) => one(functions),
             Self::MixBlendMode(mode) => one(mode),
+            Self::ObjectFit(fit) => one(fit),
         };
         variant("Declaration", self, &arguments, schema)
     }

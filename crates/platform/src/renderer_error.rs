@@ -10,6 +10,8 @@ pub enum RendererError {
     Metal4Unsupported,
     /// Metal refused to create an object the renderer cannot work without.
     Metal { object: &'static str, reason: String },
+    /// The SVG of an icon does not parse.
+    UnreadableIcon(String),
 }
 
 impl Display for RendererError {
@@ -18,6 +20,7 @@ impl Display for RendererError {
             Self::NoDevice => formatter.write_str("this Mac has no Metal device"),
             Self::Metal4Unsupported => formatter.write_str("the Metal device does not support Metal 4"),
             Self::Metal { object, reason } => write!(formatter, "Metal created no {object}: {reason}"),
+            Self::UnreadableIcon(reason) => write!(formatter, "the icon is not an SVG the kit reads: {reason}"),
         }
     }
 }
