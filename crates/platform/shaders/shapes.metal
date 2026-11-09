@@ -13,11 +13,50 @@ struct RoundedRect {
     float4 vertical_radii;
 };
 
+// The target a pass draws into: a window of the surface in device pixels, at `origin` of the
+// surface, `target_size` pixels large.
 struct FrameUniforms {
     float2 viewport_size;
     float scale;
     float padding;
+    float2 origin;
+    float2 target_size;
 };
+
+// A 2D affine transform of the surface, as CSS `matrix(a, b, c, d, tx, ty)`, with its inverse
+// and the factor it scales lengths by. Entry 0 is the identity.
+struct TransformEntry {
+    float4 forward_linear;
+    float2 forward_offset;
+    float2 padding_forward;
+    float4 inverse_linear;
+    float2 inverse_offset;
+    float scale_factor;
+    float padding_inverse;
+};
+
+// A clip shape in the coordinates its transform maps to the surface.
+struct ClipShape {
+    RoundedRect shape;
+    uint transform;
+    uint padding[3];
+};
+
+static float2 transform_point(float4 linear, float2 offset, float2 point) {
+    return float2(linear.x * point.x + linear.z * point.y + offset.x, linear.y * point.x + linear.w * point.y + offset.y);
+}
+
+// The position in clip space of a point of the surface drawn into the target of `frame`.
+static float4 clip_position(float2 surface_point, FrameUniforms frame) {
+    const float2 in_target = surface_point * frame.scale - frame.origin;
+    const float2 normalized = in_target / frame.target_size * 2.0 - 1.0;
+    return float4(normalized.x, -normalized.y, 0.0, 1.0);
+}
+
+// The point of the surface a fragment of the target lies on.
+static float2 surface_point_of(float2 position, FrameUniforms frame) {
+    return (position + frame.origin) / frame.scale;
+}
 
 // The signed distance from a point to the edge of a rounded rectangle, negative inside. Exact
 // for circular corners; for elliptical ones a first-order estimate that is exact on the edge,
@@ -44,4 +83,12 @@ static float edge_coverage(float distance, float scale) {
 
 static float rounded_rect_coverage(float2 surface_point, RoundedRect shape, float scale) {
     return edge_coverage(rounded_rect_distance(surface_point, shape), scale);
+}
+
+// The coverage of a clip shape at a point of the surface: the point is carried into the
+// coordinates of the shape, and the edge is as wide as a device pixel is there.
+static float clip_coverage(float2 surface_point, ClipShape clip, const device TransformEntry* transforms, float scale) {
+    const TransformEntry transform = transforms[clip.transform];
+    const float2 local_point = transform_point(transform.inverse_linear, transform.inverse_offset, surface_point);
+    return rounded_rect_coverage(local_point, clip.shape, scale * transform.scale_factor);
 }

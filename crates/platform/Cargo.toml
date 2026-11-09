@@ -72,6 +72,7 @@ objc2-metal = { workspace = true, features = [
   "MTL4RenderPipeline",
   "MTLAllocation",
   "MTLBuffer",
+  "MTLCommandEncoder",
   "MTLDevice",
   "MTLDrawable",
   "MTLEvent",

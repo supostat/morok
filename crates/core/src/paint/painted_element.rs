@@ -10,4 +10,7 @@ pub(crate) struct PaintedElement {
     pub(crate) visual_bounds: Rect,
     pub(crate) box_items: ItemRange,
     pub(crate) outline_items: ItemRange,
+    /// For an element that paints as a group: everything the group drew on the surface, the
+    /// reach of its filters included.
+    pub(crate) group_bounds: Rect,
 }

@@ -16,6 +16,9 @@ pub(crate) struct GpuBuffer<Entry> {
     entries: *mut Entry,
     capacity: usize,
     length: usize,
+    /// Buffers outgrown during the frame: a draw encoded before the growth still reads them,
+    /// so they live until the frame is over.
+    retired: Vec<Retained<ProtocolObject<dyn MTLBuffer>>>,
     entry: PhantomData<Entry>,
 }
 
@@ -39,6 +42,7 @@ impl<Entry: Pod> GpuBuffer<Entry> {
             buffer,
             capacity,
             length: 0,
+            retired: Vec::new(),
             entry: PhantomData,
         }
     }
@@ -47,8 +51,17 @@ impl<Entry: Pod> GpuBuffer<Entry> {
         self.length
     }
 
+    /// Empties the buffer for a new frame; the GPU must have finished the previous one.
     pub(crate) fn clear(&mut self) {
         self.length = 0;
+        if self.retired.is_empty() {
+            return;
+        }
+        for retired in self.retired.drain(..) {
+            self.residency_set
+                .removeAllocation(ProtocolObject::<dyn MTLAllocation>::from_ref(&*retired));
+        }
+        self.residency_set.commit();
     }
 
     pub(crate) fn push(&mut self, entry: Entry) {
@@ -79,6 +92,20 @@ impl<Entry: Pod> GpuBuffer<Entry> {
         self.buffer.gpuAddress()
     }
 
+    /// The address the shaders read the entry at `index` at.
+    ///
+    /// # Panics
+    ///
+    /// When no entry was written at `index`.
+    pub(crate) fn gpu_address_of(&self, index: usize) -> MTLGPUAddress {
+        assert!(
+            index < self.length,
+            "entry {index} of a buffer of {} entries",
+            self.length
+        );
+        self.buffer.gpuAddress() + (index * size_of::<Entry>()) as MTLGPUAddress
+    }
+
     fn grow(&mut self) {
         let capacity = self.capacity * 2;
         let buffer = allocate::<Entry>(&self.device, capacity);
@@ -86,11 +113,10 @@ impl<Entry: Pod> GpuBuffer<Entry> {
         // SAFETY: both buffers hold at least `length` entries and are separate allocations.
         unsafe { entries.copy_from_nonoverlapping(self.entries, self.length) };
         self.residency_set
-            .removeAllocation(ProtocolObject::<dyn MTLAllocation>::from_ref(&*self.buffer));
-        self.residency_set
             .addAllocation(ProtocolObject::<dyn MTLAllocation>::from_ref(&*buffer));
         self.residency_set.commit();
-        self.buffer = buffer;
+        let outgrown = std::mem::replace(&mut self.buffer, buffer);
+        self.retired.push(outgrown);
         self.entries = entries;
         self.capacity = capacity;
     }
@@ -98,8 +124,10 @@ impl<Entry: Pod> GpuBuffer<Entry> {
 
 impl<Entry> Drop for GpuBuffer<Entry> {
     fn drop(&mut self) {
-        self.residency_set
-            .removeAllocation(ProtocolObject::<dyn MTLAllocation>::from_ref(&*self.buffer));
+        for buffer in self.retired.iter().chain([&self.buffer]) {
+            self.residency_set
+                .removeAllocation(ProtocolObject::<dyn MTLAllocation>::from_ref(&**buffer));
+        }
         self.residency_set.commit();
     }
 }

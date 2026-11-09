@@ -218,8 +218,8 @@ fn an_unknown_or_not_yet_rendered_property_is_an_error() {
             column: 6,
         },
         Rejection {
-            stylesheet: ".a { opacity: 0.5; }",
-            message: "`opacity` is not a supported property",
+            stylesheet: ".a { object-fit: cover; }",
+            message: "`object-fit` is not a supported property",
             column: 6,
         },
         Rejection {

@@ -5,6 +5,7 @@ use morok_style::{
 
 use crate::style::computed_style::ComputedStyle;
 use crate::style::declaration_source::DeclarationSource;
+use crate::style::effect_style::EffectStyle;
 use crate::style::inline_style::InlineStyle;
 use crate::style::layout_style::LayoutStyle;
 use crate::style::paint_style::{INITIAL_COLOR, PaintStyle, TRANSPARENT};
@@ -39,6 +40,7 @@ impl<'a> StyleResolver<'a> {
             layout: LayoutStyle::INITIAL,
             paint: PaintStyle::initial(color),
             text: parent.map_or(TextStyle::INITIAL, |parent| parent.text.inherited()),
+            effects: EffectStyle::INITIAL,
         };
         for &rule in matched_rules.iter() {
             for (position, declaration) in self.rule(rule).declarations.iter().enumerate() {
@@ -134,7 +136,12 @@ impl<'a> StyleResolver<'a> {
     fn apply(self, style: &mut ComputedStyle, declaration: &Declaration, source: DeclarationSource) {
         let theme = self.theme;
         let current_color = style.paint.color;
-        let ComputedStyle { layout, paint, text } = style;
+        let ComputedStyle {
+            layout,
+            paint,
+            text,
+            effects,
+        } = style;
         match declaration {
             Declaration::Display(display) => layout.display = *display,
             Declaration::Position(position) => layout.positioning = Positioning::from(*position),
@@ -218,6 +225,32 @@ impl<'a> StyleResolver<'a> {
             Declaration::TextOverflow(overflow) => text.text_overflow = *overflow,
             Declaration::WhiteSpace(white_space) => text.white_space = *white_space,
             Declaration::FontVariantNumeric(numeric) => text.font_variant_numeric = *numeric,
+            Declaration::Opacity(_)
+            | Declaration::Transform(_)
+            | Declaration::TransformOrigin(..)
+            | Declaration::Filter(_)
+            | Declaration::BackdropFilter(_)
+            | Declaration::MixBlendMode(_) => self.apply_effect(effects, declaration, source),
+        }
+    }
+
+    /// The properties that composite the element and its content as a group. A list stays
+    /// where it is declared and is read from there; an empty one is no list at all.
+    fn apply_effect(self, effects: &mut EffectStyle, declaration: &Declaration, source: DeclarationSource) {
+        let theme = self.theme;
+        match declaration {
+            Declaration::Opacity(opacity) => effects.opacity = opacity.clamp(0.0, 1.0),
+            Declaration::Transform(functions) => effects.transform = (!functions.is_empty()).then_some(source),
+            Declaration::TransformOrigin(horizontal, vertical) => {
+                effects.transform_origin_x = ResolvedLength::of(horizontal, theme);
+                effects.transform_origin_y = ResolvedLength::of(vertical, theme);
+            }
+            Declaration::Filter(functions) => effects.filter = (!functions.is_empty()).then_some(source),
+            Declaration::BackdropFilter(functions) => {
+                effects.backdrop_filter = (!functions.is_empty()).then_some(source);
+            }
+            Declaration::MixBlendMode(mode) => effects.mix_blend_mode = *mode,
+            _ => unreachable!("only the effect properties are applied here"),
         }
     }
 }

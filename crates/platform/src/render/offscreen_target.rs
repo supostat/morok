@@ -48,7 +48,7 @@ impl OffscreenTarget {
             )
         };
         descriptor.setStorageMode(MTLStorageMode::Shared);
-        descriptor.setUsage(MTLTextureUsage::RenderTarget);
+        descriptor.setUsage(MTLTextureUsage::RenderTarget | MTLTextureUsage::ShaderRead);
         let texture = renderer
             .device()
             .newTextureWithDescriptor(&descriptor)

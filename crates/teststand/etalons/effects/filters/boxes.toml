@@ -1,0 +1,209 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 480.0
+height = 300.0
+
+[[light]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 480.0
+height = 360.0
+
+[[light]]
+node = "#2 .cards"
+x = 16.0
+y = 16.0
+width = 448.0
+height = 328.0
+
+[[light]]
+node = "#3 .card.gray"
+x = 32.0
+y = 32.0
+width = 88.0
+height = 56.0
+
+[[light]]
+node = "#4 .card.half-gray"
+x = 144.0
+y = 32.0
+width = 88.0
+height = 56.0
+
+[[light]]
+node = "#5 .card.bright"
+x = 256.0
+y = 32.0
+width = 88.0
+height = 56.0
+
+[[light]]
+node = "#6 .card.dim"
+x = 32.0
+y = 112.0
+width = 88.0
+height = 56.0
+
+[[light]]
+node = "#7 .card.contrasty"
+x = 144.0
+y = 112.0
+width = 88.0
+height = 56.0
+
+[[light]]
+node = "#8 .card.flat"
+x = 256.0
+y = 112.0
+width = 88.0
+height = 56.0
+
+[[light]]
+node = "#9 .card.vivid"
+x = 32.0
+y = 192.0
+width = 88.0
+height = 56.0
+
+[[light]]
+node = "#10 .card.pale"
+x = 144.0
+y = 192.0
+width = 88.0
+height = 56.0
+
+[[light]]
+node = "#11 .card.thin"
+x = 256.0
+y = 192.0
+width = 88.0
+height = 56.0
+
+[[light]]
+node = "#12 .card.soft"
+x = 32.0
+y = 272.0
+width = 88.0
+height = 56.0
+
+[[light]]
+node = "#13 .card.graded"
+x = 144.0
+y = 272.0
+width = 88.0
+height = 56.0
+
+[[light]]
+node = "#14 .card"
+x = 256.0
+y = 272.0
+width = 88.0
+height = 56.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 480.0
+height = 300.0
+
+[[dark]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 480.0
+height = 360.0
+
+[[dark]]
+node = "#2 .cards"
+x = 16.0
+y = 16.0
+width = 448.0
+height = 328.0
+
+[[dark]]
+node = "#3 .card.gray"
+x = 32.0
+y = 32.0
+width = 88.0
+height = 56.0
+
+[[dark]]
+node = "#4 .card.half-gray"
+x = 144.0
+y = 32.0
+width = 88.0
+height = 56.0
+
+[[dark]]
+node = "#5 .card.bright"
+x = 256.0
+y = 32.0
+width = 88.0
+height = 56.0
+
+[[dark]]
+node = "#6 .card.dim"
+x = 32.0
+y = 112.0
+width = 88.0
+height = 56.0
+
+[[dark]]
+node = "#7 .card.contrasty"
+x = 144.0
+y = 112.0
+width = 88.0
+height = 56.0
+
+[[dark]]
+node = "#8 .card.flat"
+x = 256.0
+y = 112.0
+width = 88.0
+height = 56.0
+
+[[dark]]
+node = "#9 .card.vivid"
+x = 32.0
+y = 192.0
+width = 88.0
+height = 56.0
+
+[[dark]]
+node = "#10 .card.pale"
+x = 144.0
+y = 192.0
+width = 88.0
+height = 56.0
+
+[[dark]]
+node = "#11 .card.thin"
+x = 256.0
+y = 192.0
+width = 88.0
+height = 56.0
+
+[[dark]]
+node = "#12 .card.soft"
+x = 32.0
+y = 272.0
+width = 88.0
+height = 56.0
+
+[[dark]]
+node = "#13 .card.graded"
+x = 144.0
+y = 272.0
+width = 88.0
+height = 56.0
+
+[[dark]]
+node = "#14 .card"
+x = 256.0
+y = 272.0
+width = 88.0
+height = 56.0

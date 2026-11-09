@@ -37,7 +37,7 @@ impl MorokSide {
         let tree = scene.tree();
         Rendering {
             image: OffscreenTarget::new(&self.renderer, case.viewport, DEVICE_SCALE).render(tree.display_list()),
-            boxes: scene.element_boxes(scene.elements().into_iter().map(|element| tree.border_box(element))),
+            boxes: scene.element_boxes(scene.elements().into_iter().map(|element| tree.surface_box(element))),
         }
     }
 }

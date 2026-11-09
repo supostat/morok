@@ -2,6 +2,7 @@ pub(crate) mod background;
 pub(crate) mod border;
 pub(crate) mod calc;
 pub(crate) mod color;
+pub(crate) mod effect;
 pub(crate) mod flex;
 pub(crate) mod gradient;
 pub(crate) mod grid;

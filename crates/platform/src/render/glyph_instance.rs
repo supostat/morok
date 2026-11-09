@@ -15,5 +15,7 @@ pub(crate) struct GlyphInstance {
     pub(crate) clips_count: u32,
     /// Whether the texels are colors rather than coverage.
     pub(crate) is_color: u32,
-    pub(crate) padding: [u32; 3],
+    /// The transform of the instance, in the transform buffer of the frame.
+    pub(crate) transform: u32,
+    pub(crate) padding: [u32; 2],
 }

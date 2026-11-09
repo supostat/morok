@@ -1,0 +1,181 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 520.0
+height = 136.0
+
+[[light]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 520.0
+height = 136.0
+
+[[light]]
+node = "#2 .backdrops"
+x = 16.0
+y = 16.0
+width = 488.0
+height = 104.0
+
+[[light]]
+node = "#3 .field"
+x = 32.0
+y = 32.0
+width = 72.0
+height = 72.0
+
+[[light]]
+node = "#4 .disc.multiply"
+x = 44.0
+y = 44.0
+width = 48.0
+height = 48.0
+
+[[light]]
+node = "#5 .field"
+x = 128.0
+y = 32.0
+width = 72.0
+height = 72.0
+
+[[light]]
+node = "#6 .disc.screen"
+x = 140.0
+y = 44.0
+width = 48.0
+height = 48.0
+
+[[light]]
+node = "#7 .field"
+x = 224.0
+y = 32.0
+width = 72.0
+height = 72.0
+
+[[light]]
+node = "#8 .disc.overlay"
+x = 236.0
+y = 44.0
+width = 48.0
+height = 48.0
+
+[[light]]
+node = "#9 .field"
+x = 320.0
+y = 32.0
+width = 72.0
+height = 72.0
+
+[[light]]
+node = "#10 .disc.darken"
+x = 332.0
+y = 44.0
+width = 48.0
+height = 48.0
+
+[[light]]
+node = "#11 .field"
+x = 416.0
+y = 32.0
+width = 72.0
+height = 72.0
+
+[[light]]
+node = "#12 .disc.lighten"
+x = 428.0
+y = 44.0
+width = 48.0
+height = 48.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 520.0
+height = 136.0
+
+[[dark]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 520.0
+height = 136.0
+
+[[dark]]
+node = "#2 .backdrops"
+x = 16.0
+y = 16.0
+width = 488.0
+height = 104.0
+
+[[dark]]
+node = "#3 .field"
+x = 32.0
+y = 32.0
+width = 72.0
+height = 72.0
+
+[[dark]]
+node = "#4 .disc.multiply"
+x = 44.0
+y = 44.0
+width = 48.0
+height = 48.0
+
+[[dark]]
+node = "#5 .field"
+x = 128.0
+y = 32.0
+width = 72.0
+height = 72.0
+
+[[dark]]
+node = "#6 .disc.screen"
+x = 140.0
+y = 44.0
+width = 48.0
+height = 48.0
+
+[[dark]]
+node = "#7 .field"
+x = 224.0
+y = 32.0
+width = 72.0
+height = 72.0
+
+[[dark]]
+node = "#8 .disc.overlay"
+x = 236.0
+y = 44.0
+width = 48.0
+height = 48.0
+
+[[dark]]
+node = "#9 .field"
+x = 320.0
+y = 32.0
+width = 72.0
+height = 72.0
+
+[[dark]]
+node = "#10 .disc.darken"
+x = 332.0
+y = 44.0
+width = 48.0
+height = 48.0
+
+[[dark]]
+node = "#11 .field"
+x = 416.0
+y = 32.0
+width = 72.0
+height = 72.0
+
+[[dark]]
+node = "#12 .disc.lighten"
+x = 428.0
+y = 44.0
+width = 48.0
+height = 48.0

@@ -95,7 +95,8 @@ impl SurfaceView {
         let layer = CAMetalLayer::new();
         layer.setDevice(Some(renderer.device()));
         layer.setPixelFormat(PIXEL_FORMAT);
-        layer.setFramebufferOnly(true);
+        // A backdrop filter reads what the surface already shows.
+        layer.setFramebufferOnly(false);
         // SAFETY: the name is a constant of Core Graphics.
         layer.setColorspace(CGColorSpace::with_name(Some(unsafe { kCGColorSpaceSRGB })).as_deref());
         let state = SurfaceState {

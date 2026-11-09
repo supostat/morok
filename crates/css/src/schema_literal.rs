@@ -2,13 +2,14 @@ use std::borrow::Cow;
 use std::fmt;
 
 use morok_style::{
-    BackgroundImage, BoxShadow, Class, ClassStyle, Color, ColorStop, ColorValue, CompoundSelector, ContentAlignment,
-    Corner, Declaration, Display, Easing, FlexDirection, FlexWrap, FontFamilies, FontStyle, FontVariantNumeric,
-    FontWeight, FontWeightValue, Gradient, GradientDirection, GridAutoFlow, GridLine, ItemAlignment, Leading, Length,
-    LengthPercentage, LengthPercentageAuto, LineHeight, LineStyle, LinearGradient, Milliseconds, Overflow, Pixels,
-    Position, RadialExtent, RadialGradient, RadialShape, RepeatCount, Selector, SelfAlignment, Shadow, ShadowLayer,
-    Side, States, StepPosition, StyleRule, StyleSheet, TextAlign, TextDecoration, TextOverflow, Theme, Token,
-    TokenTerm, TrackBreadth, TrackListItem, TrackSize, WhiteSpace,
+    BackdropFilterFunction, BackgroundImage, BlendMode, BoxShadow, Class, ClassStyle, Color, ColorStop, ColorValue,
+    CompoundSelector, ContentAlignment, Corner, Declaration, Display, Easing, FilterFunction, FlexDirection, FlexWrap,
+    FontFamilies, FontStyle, FontVariantNumeric, FontWeight, FontWeightValue, Gradient, GradientDirection,
+    GridAutoFlow, GridLine, ItemAlignment, Leading, Length, LengthPercentage, LengthPercentageAuto, LineHeight,
+    LineStyle, LinearGradient, Milliseconds, Overflow, Pixels, Position, RadialExtent, RadialGradient, RadialShape,
+    RepeatCount, Selector, SelfAlignment, Shadow, ShadowLayer, Side, States, StepPosition, StyleRule, StyleSheet,
+    TextAlign, TextDecoration, TextOverflow, Theme, Token, TokenTerm, TrackBreadth, TrackListItem, TrackSize,
+    TransformFunction, WhiteSpace,
 };
 use proc_macro2::{Ident, Literal, TokenStream};
 use quote::{format_ident, quote};
@@ -63,6 +64,7 @@ macro_rules! unit_enum_literals {
 }
 
 unit_enum_literals!(
+    BlendMode,
     ContentAlignment,
     Corner,
     Display,
@@ -526,6 +528,45 @@ impl SchemaLiteral for BackgroundImage {
     }
 }
 
+impl SchemaLiteral for TransformFunction {
+    fn literal(&self, schema: &TokenStream) -> TokenStream {
+        match self {
+            Self::Translate(x, y) => variant("TransformFunction", self, &two(x, y), schema),
+            Self::TranslateX(offset) | Self::TranslateY(offset) => {
+                variant("TransformFunction", self, &one(offset), schema)
+            }
+            Self::Scale(x, y) => variant("TransformFunction", self, &two(x, y), schema),
+            Self::ScaleX(factor) | Self::ScaleY(factor) | Self::Rotate(factor) => {
+                variant("TransformFunction", self, &one(factor), schema)
+            }
+        }
+    }
+}
+
+impl SchemaLiteral for FilterFunction {
+    fn literal(&self, schema: &TokenStream) -> TokenStream {
+        match self {
+            Self::Blur(radius) => variant("FilterFunction", self, &one(radius), schema),
+            Self::Brightness(amount)
+            | Self::Contrast(amount)
+            | Self::Grayscale(amount)
+            | Self::Saturate(amount)
+            | Self::Opacity(amount) => variant("FilterFunction", self, &one(amount), schema),
+        }
+    }
+}
+
+impl SchemaLiteral for BackdropFilterFunction {
+    fn literal(&self, schema: &TokenStream) -> TokenStream {
+        match self {
+            Self::Blur(radius) => variant("BackdropFilterFunction", self, &one(radius), schema),
+            Self::Brightness(amount) | Self::Saturate(amount) => {
+                variant("BackdropFilterFunction", self, &one(amount), schema)
+            }
+        }
+    }
+}
+
 impl SchemaLiteral for Declaration {
     fn literal(&self, schema: &TokenStream) -> TokenStream {
         let arguments = match self {
@@ -576,6 +617,12 @@ impl SchemaLiteral for Declaration {
             Self::TextOverflow(overflow) => one(overflow),
             Self::WhiteSpace(white_space) => one(white_space),
             Self::FontVariantNumeric(variant) => one(variant),
+            Self::Opacity(opacity) => one(opacity),
+            Self::Transform(functions) => one(functions),
+            Self::TransformOrigin(horizontal, vertical) => two(horizontal, vertical),
+            Self::Filter(functions) => one(functions),
+            Self::BackdropFilter(functions) => one(functions),
+            Self::MixBlendMode(mode) => one(mode),
         };
         variant("Declaration", self, &arguments, schema)
     }

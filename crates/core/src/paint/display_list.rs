@@ -1,4 +1,5 @@
 use crate::paint::display_item::DisplayItem;
+use crate::paint::filter::Filter;
 use crate::paint::gradient_stop::GradientStop;
 use crate::paint::item_range::ItemRange;
 use crate::text::shaped_glyph::ShapedGlyph;
@@ -9,6 +10,7 @@ pub struct DisplayList {
     pub(crate) items: Vec<DisplayItem>,
     pub(crate) gradient_stops: Vec<GradientStop>,
     pub(crate) glyphs: Vec<ShapedGlyph>,
+    pub(crate) filters: Vec<Filter>,
 }
 
 impl DisplayList {
@@ -26,9 +28,15 @@ impl DisplayList {
         &self.glyphs[glyphs.as_range()]
     }
 
+    /// The filters of one group of the list, in the order they apply.
+    pub fn filters(&self, filters: ItemRange) -> &[Filter] {
+        &self.filters[filters.as_range()]
+    }
+
     pub(crate) fn clear(&mut self) {
         self.items.clear();
         self.gradient_stops.clear();
         self.glyphs.clear();
+        self.filters.clear();
     }
 }

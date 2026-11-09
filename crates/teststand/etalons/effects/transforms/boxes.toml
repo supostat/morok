@@ -1,0 +1,139 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 640.0
+height = 160.0
+
+[[light]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 640.0
+height = 128.0
+
+[[light]]
+node = "#2 .tiles"
+x = 16.0
+y = 16.0
+width = 608.0
+height = 96.0
+
+[[light]]
+node = "#3 .tile"
+x = 40.0
+y = 40.0
+width = 48.0
+height = 48.0
+
+[[light]]
+node = "#4 .tile.moved"
+x = 132.0
+y = 48.0
+width = 48.0
+height = 48.0
+
+[[light]]
+node = "#5 .tile.grown"
+x = 194.0
+y = 34.0
+width = 60.0
+height = 60.0
+
+[[light]]
+node = "#6 .tile.squashed"
+x = 268.0
+y = 52.0
+width = 72.0
+height = 24.0
+
+[[light]]
+node = "#7 .tile.turned"
+x = 350.05887
+y = 30.058874
+width = 67.88226
+height = 67.88225
+
+[[light]]
+node = "#8 .tile.hinged"
+x = 416.0
+y = 40.0
+width = 65.569214
+height = 65.56922
+
+[[light]]
+node = "#9 .tile.carried"
+x = 536.9292
+y = 40.92917
+width = 46.1416
+height = 46.141663
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 640.0
+height = 160.0
+
+[[dark]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 640.0
+height = 128.0
+
+[[dark]]
+node = "#2 .tiles"
+x = 16.0
+y = 16.0
+width = 608.0
+height = 96.0
+
+[[dark]]
+node = "#3 .tile"
+x = 40.0
+y = 40.0
+width = 48.0
+height = 48.0
+
+[[dark]]
+node = "#4 .tile.moved"
+x = 132.0
+y = 48.0
+width = 48.0
+height = 48.0
+
+[[dark]]
+node = "#5 .tile.grown"
+x = 194.0
+y = 34.0
+width = 60.0
+height = 60.0
+
+[[dark]]
+node = "#6 .tile.squashed"
+x = 268.0
+y = 52.0
+width = 72.0
+height = 24.0
+
+[[dark]]
+node = "#7 .tile.turned"
+x = 350.05887
+y = 30.058874
+width = 67.88226
+height = 67.88225
+
+[[dark]]
+node = "#8 .tile.hinged"
+x = 416.0
+y = 40.0
+width = 65.569214
+height = 65.56922
+
+[[dark]]
+node = "#9 .tile.carried"
+x = 536.9292
+y = 40.92917
+width = 46.1416
+height = 46.141663

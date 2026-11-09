@@ -4,22 +4,19 @@ use morok_core::DisplayList;
 use objc2::rc::Retained;
 use objc2::runtime::ProtocolObject;
 use objc2_metal::{
-    MTL4CommandBuffer, MTL4CommandEncoder, MTL4CommandQueue, MTL4RenderCommandEncoder, MTL4RenderPassDescriptor,
-    MTLAllocation, MTLClearColor, MTLDevice, MTLDrawable, MTLEvent, MTLLoadAction, MTLPrimitiveType, MTLRenderStages,
-    MTLResidencySet, MTLResidencySetDescriptor, MTLScissorRect, MTLSharedEvent, MTLStoreAction, MTLTexture,
-    MTLViewport,
+    MTL4CommandBuffer, MTL4CommandQueue, MTL4RenderPassDescriptor, MTLAllocation, MTLClearColor, MTLDevice,
+    MTLDrawable, MTLEvent, MTLLoadAction, MTLResidencySet, MTLResidencySetDescriptor, MTLSharedEvent, MTLStoreAction,
+    MTLTexture,
 };
 
 use crate::render::atlas_kind::AtlasKind;
 use crate::render::display_list_encoder::DisplayListEncoder;
-use crate::render::draw_batch::BatchSource;
+use crate::render::frame_execution::{FrameExecution, OpenGroup, Target};
 use crate::render::frame_resources::FrameResources;
-use crate::render::pixel_rect::PixelRect;
 use crate::render::renderer::Renderer;
 use crate::render::screen_target::ScreenTarget;
 use crate::render::target_geometry::TargetGeometry;
 
-const QUAD_VERTICES: usize = 4;
 const TRANSPARENT: MTLClearColor = MTLClearColor {
     red: 0.0,
     green: 0.0,
@@ -51,6 +48,9 @@ pub(crate) struct FrameRenderer {
     /// Takes the number of every frame the GPU finished.
     finished_frames: Retained<ProtocolObject<dyn MTLSharedEvent>>,
     submitted_frames: u64,
+    /// Scratch space of the execution of a frame.
+    targets: Vec<Target>,
+    open_groups: Vec<OpenGroup>,
 }
 
 impl FrameRenderer {
@@ -84,6 +84,8 @@ impl FrameRenderer {
             resident_color_pages: 0,
             finished_frames: device.newSharedEvent().expect("Metal creates a shared event"),
             submitted_frames: 0,
+            targets: Vec::new(),
+            open_groups: Vec::new(),
         }
     }
 
@@ -125,52 +127,25 @@ impl FrameRenderer {
         }
         self.residency_set.commit();
 
-        // SAFETY: a render pass has a color attachment at index 0.
-        let attachment = unsafe { self.render_pass.colorAttachments().objectAtIndexedSubscript(0) };
-        attachment.setTexture(Some(target));
         self.command_buffer
             .beginCommandBufferWithAllocator(&resources.allocator);
         self.command_buffer.useResidencySet(&self.residency_set);
         if let Some(screen) = screen {
             self.command_buffer.useResidencySet(screen.residency_set);
         }
-        let pass = self
-            .command_buffer
-            .renderCommandEncoderWithDescriptor(&self.render_pass)
-            .expect("Metal begins a render pass");
-        let stages = MTLRenderStages::Vertex | MTLRenderStages::Fragment;
-        pass.setArgumentTable_atStages(&resources.argument_table, stages);
-        pass.setViewport(MTLViewport {
-            originX: 0.0,
-            originY: 0.0,
-            width: geometry.pixel_width as f64,
-            height: geometry.pixel_height as f64,
-            znear: 0.0,
-            zfar: 1.0,
-        });
-        for batch in &resources.draws {
-            pass.setScissorRect(scissor_rect(batch.scissor));
-            match batch.source {
-                BatchSource::Rects => pass.setRenderPipelineState(self.renderer.rect_pipeline()),
-                BatchSource::Glyphs { atlas, page } => {
-                    resources.bind_atlas_page(glyph_atlases.atlas(atlas).texture(page));
-                    pass.setArgumentTable_atStages(&resources.argument_table, stages);
-                    pass.setRenderPipelineState(self.renderer.glyph_pipeline());
-                }
-            }
-            // SAFETY: the instances of the batch were written to the buffer of their kind that
-            // the argument table points at.
-            unsafe {
-                pass.drawPrimitives_vertexStart_vertexCount_instanceCount_baseInstance(
-                    MTLPrimitiveType::TriangleStrip,
-                    0,
-                    QUAD_VERTICES,
-                    batch.instance_count,
-                    batch.first_instance,
-                );
-            }
+        FrameExecution {
+            renderer: &self.renderer,
+            resources,
+            glyph_atlases: &glyph_atlases,
+            command_buffer: &self.command_buffer,
+            render_pass: &self.render_pass,
+            residency_set: &self.residency_set,
+            geometry,
+            targets: &mut self.targets,
+            open_groups: &mut self.open_groups,
+            pass: None,
         }
-        pass.endEncoding();
+        .run(target);
         self.command_buffer.endCommandBuffer();
 
         let queue = self.renderer.queue();
@@ -216,14 +191,5 @@ impl Drop for FrameRenderer {
     /// The GPU may still read the buffers of the last frames.
     fn drop(&mut self) {
         self.wait_until_rendered();
-    }
-}
-
-fn scissor_rect(pixels: PixelRect) -> MTLScissorRect {
-    MTLScissorRect {
-        x: pixels.x,
-        y: pixels.y,
-        width: pixels.width,
-        height: pixels.height,
     }
 }

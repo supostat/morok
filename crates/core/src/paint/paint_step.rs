@@ -9,4 +9,8 @@ pub(crate) enum PaintStep {
     /// The entries up to the matching [`PaintStep::PopClip`] are clipped by this element.
     PushClip(ElementId),
     PopClip,
+    /// The entries up to the matching [`PaintStep::PopGroup`] — the element, its content and
+    /// its positioned descendants — are transformed and composited as one.
+    PushGroup(ElementId),
+    PopGroup,
 }

@@ -1,5 +1,6 @@
 pub(crate) mod computed_style;
 pub(crate) mod declaration_source;
+pub(crate) mod effect_style;
 pub(crate) mod inline_style;
 pub(crate) mod layout_style;
 pub(crate) mod paint_style;

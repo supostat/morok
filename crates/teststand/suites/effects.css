@@ -1,0 +1,218 @@
+/* Effects: transforms, group opacity, filters, blend modes and a backdrop filter. */
+
+.stage {
+  padding: var(--space-4);
+  background-color: var(--color-bg);
+}
+
+/* Transforms: a tile moved, scaled, turned and turned about a corner; layout stays put. */
+.tiles {
+  display: flex;
+  gap: var(--space-8);
+  padding: var(--space-6);
+}
+
+.tile {
+  width: 48px;
+  height: 48px;
+  background-color: var(--color-accent);
+  border: 2px solid var(--color-accent-active);
+  border-radius: var(--radius-sm);
+}
+
+.tile.moved {
+  transform: translate(12px, 8px);
+}
+
+.tile.grown {
+  transform: scale(1.25);
+}
+
+.tile.squashed {
+  transform: scaleX(1.5) scaleY(0.5);
+}
+
+.tile.turned {
+  transform: rotate(45deg);
+}
+
+.tile.hinged {
+  transform: rotate(30deg);
+  transform-origin: left top;
+}
+
+.tile.carried {
+  transform: translateX(16px) rotate(-20deg) scale(0.75);
+}
+
+/* Opacity: a group fades as one, its child does not show the group through itself. */
+.sheets {
+  display: flex;
+  gap: var(--space-8);
+  padding: var(--space-4);
+}
+
+.sheet {
+  position: relative;
+  width: 96px;
+  height: 64px;
+  background-color: var(--color-accent);
+  border-radius: var(--radius-md);
+}
+
+.sheet.faded {
+  opacity: 0.5;
+}
+
+.sheet.ghost {
+  opacity: 0.2;
+}
+
+.badge {
+  position: absolute;
+  left: 24px;
+  top: 16px;
+  width: 64px;
+  height: 64px;
+  background-color: var(--color-danger);
+  border-radius: var(--radius-md);
+}
+
+/* Filters over a gradient card: color filters and a blur. */
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  padding: var(--space-4);
+}
+
+.card {
+  width: 88px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  background-image: linear-gradient(to right, var(--color-accent), var(--color-danger));
+}
+
+.card.gray {
+  filter: grayscale(1);
+}
+
+.card.half-gray {
+  filter: grayscale(50%);
+}
+
+.card.bright {
+  filter: brightness(1.4);
+}
+
+.card.dim {
+  filter: brightness(0.6);
+}
+
+.card.contrasty {
+  filter: contrast(1.6);
+}
+
+.card.flat {
+  filter: contrast(0.5);
+}
+
+.card.vivid {
+  filter: saturate(2);
+}
+
+.card.pale {
+  filter: saturate(0.3);
+}
+
+.card.thin {
+  filter: opacity(40%);
+}
+
+.card.soft {
+  filter: blur(1.5px);
+}
+
+.card.graded {
+  filter: grayscale(1) brightness(1.2);
+}
+
+/* Blend modes: a disc over a two-tone backdrop. */
+.backdrops {
+  display: flex;
+  gap: var(--space-6);
+  padding: var(--space-4);
+}
+
+.field {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  background-image: linear-gradient(to bottom, var(--color-accent), var(--color-warning));
+  border-radius: var(--radius-sm);
+}
+
+.disc {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-danger);
+}
+
+.disc.multiply {
+  mix-blend-mode: multiply;
+}
+
+.disc.screen {
+  mix-blend-mode: screen;
+}
+
+.disc.overlay {
+  mix-blend-mode: overlay;
+}
+
+.disc.darken {
+  mix-blend-mode: darken;
+}
+
+.disc.lighten {
+  mix-blend-mode: lighten;
+}
+
+/* Backdrop: a glass over a seam between two colors, solid near the edges of the glass. */
+.scene {
+  position: relative;
+  width: 320px;
+  height: 160px;
+}
+
+.half {
+  position: absolute;
+  top: 0;
+  width: 160px;
+  height: 160px;
+}
+
+.half.left {
+  left: 0;
+  background-color: var(--color-accent);
+}
+
+.half.right {
+  left: 160px;
+  background-color: var(--color-warning);
+}
+
+.glass {
+  position: absolute;
+  left: 96px;
+  top: 32px;
+  width: 128px;
+  height: 96px;
+  border: 1px solid var(--color-text-on-accent);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(2px) brightness(1.2);
+}

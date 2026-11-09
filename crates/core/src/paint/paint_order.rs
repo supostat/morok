@@ -14,6 +14,9 @@ use crate::style::positioning::Positioning;
 /// phases instead: every box of the container's flow first, then the content that paints
 /// atomically, then every outline, so the outline of a block lies over the background of the
 /// block after it. Positioned elements paint last, in tree order, over everything in the flow.
+///
+/// An element with a transform or a compositing effect is a stacking context: it paints among
+/// the positioned elements as a group, and its own positioned descendants paint inside the group.
 #[derive(Debug)]
 pub(crate) struct PaintOrder<'a> {
     pub(crate) elements: &'a mut ElementArena,
@@ -32,18 +35,36 @@ impl PaintOrder<'_> {
             unpaint_subtree(self.elements, self.damage, root);
             return;
         }
-        self.atomic(root);
-        self.positioned_descendants(root);
+        self.stacking_context(root);
     }
 
     fn generates_box(&self, id: ElementId) -> bool {
         self.elements[id].style.layout.generates_box()
     }
 
-    /// Whether the element paints with the flow of its container rather than as a positioned element.
+    fn creates_stacking_context(&self, id: ElementId) -> bool {
+        self.elements[id].style.effects.creates_stacking_context()
+    }
+
+    /// Whether the element paints with the flow of its container rather than as a positioned
+    /// element or a stacking context.
     fn paints_in_flow(&self, id: ElementId) -> bool {
         let style = &self.elements[id].style.layout;
-        style.generates_box() && !style.positioning.is_positioned()
+        style.generates_box() && !style.positioning.is_positioned() && !self.creates_stacking_context(id)
+    }
+
+    /// The element with its content and, after them, its positioned descendants; grouped when
+    /// the element has effects, so that they move and composite as one.
+    fn stacking_context(&mut self, id: ElementId) {
+        let is_grouped = self.creates_stacking_context(id);
+        if is_grouped {
+            self.steps.push(PaintStep::PushGroup(id));
+        }
+        self.atomic(id);
+        self.positioned_descendants(id);
+        if is_grouped {
+            self.steps.push(PaintStep::PopGroup);
+        }
     }
 
     fn child(&self, id: ElementId, position: usize) -> ElementId {
@@ -127,12 +148,21 @@ impl PaintOrder<'_> {
     }
 
     /// Visits every element below `id` in tree order: a positioned one paints here, under the
-    /// clips of the ancestors that clip it; a hidden one leaves the order with its descendants.
+    /// clips of the ancestors that clip it; a stacking context paints here with its own
+    /// positioned descendants inside it; a hidden one leaves the order with its descendants.
     fn positioned_descendants(&mut self, id: ElementId) {
         for position in 0..self.child_count(id) {
             let child = self.child(id, position);
             if !self.generates_box(child) {
                 unpaint_subtree(self.elements, self.damage, child);
+                continue;
+            }
+            if self.creates_stacking_context(child) {
+                let clips = self.push_ancestor_clips(child);
+                self.stacking_context(child);
+                for _ in 0..clips {
+                    self.steps.push(PaintStep::PopClip);
+                }
                 continue;
             }
             if self.elements[child].style.layout.positioning.is_positioned() {

@@ -2,7 +2,7 @@ use cssparser::Parser;
 use morok_style::Declaration;
 
 use crate::compiled_tokens::CompiledTokens;
-use crate::property_syntax::{background, border, flex, grid, layout, text};
+use crate::property_syntax::{background, border, effect, flex, grid, layout, text};
 use crate::value_error::ValueResult;
 
 /// Reads the value of a property into the declarations of its longhands.
@@ -24,6 +24,7 @@ pub(crate) fn named(name: &str) -> Option<&'static Property> {
         border::PROPERTIES,
         background::PROPERTIES,
         text::PROPERTIES,
+        effect::PROPERTIES,
     ]
     .into_iter()
     .flatten()

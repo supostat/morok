@@ -112,12 +112,14 @@ fn changes_paint_order(previous: &ComputedStyle, style: &ComputedStyle) -> bool 
     previous.layout.display != style.layout.display
         || previous.layout.positioning != style.layout.positioning
         || previous.layout.clips_overflow() != style.layout.clips_overflow()
+        || previous.effects.creates_stacking_context() != style.effects.creates_stacking_context()
 }
 
 /// Whether the element draws something else in the same box. A box that moves or resizes is
 /// found after layout.
 fn paints_differently(previous: &ComputedStyle, style: &ComputedStyle) -> bool {
     previous.paint != style.paint
+        || previous.effects != style.effects
         || previous.layout.used_border_width() != style.layout.used_border_width()
         || previous.layout.clips_overflow() != style.layout.clips_overflow()
         || previous.layout.generates_box() != style.layout.generates_box()

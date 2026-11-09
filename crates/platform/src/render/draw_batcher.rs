@@ -1,5 +1,6 @@
 use crate::render::atlas_kind::AtlasKind;
 use crate::render::draw_batch::{BatchSource, DrawBatch};
+use crate::render::frame_command::FrameCommand;
 use crate::render::pixel_rect::PixelRect;
 use crate::render::tile_occupancy::TileOccupancy;
 
@@ -32,7 +33,13 @@ impl DrawBatcher {
     }
 
     /// The rect instance at `position` of its buffer, covering `pixels` under `scissor`.
-    pub(crate) fn rect(&mut self, position: usize, pixels: PixelRect, scissor: PixelRect, draws: &mut Vec<DrawBatch>) {
+    pub(crate) fn rect(
+        &mut self,
+        position: usize,
+        pixels: PixelRect,
+        scissor: PixelRect,
+        draws: &mut Vec<FrameCommand>,
+    ) {
         if self.scissor_differs(scissor) || self.covers_pending_glyphs(pixels) {
             self.flush(draws);
         }
@@ -52,7 +59,7 @@ impl DrawBatcher {
         scissor: PixelRect,
         atlas: AtlasKind,
         page: usize,
-        draws: &mut Vec<DrawBatch>,
+        draws: &mut Vec<FrameCommand>,
     ) {
         let source = BatchSource::Glyphs { atlas, page };
         let page_differs = self.glyphs.is_some_and(|batch| batch.source != source);
@@ -73,7 +80,7 @@ impl DrawBatcher {
     }
 
     /// Closes the open runs: the frame has no more instances.
-    pub(crate) fn finish(&mut self, draws: &mut Vec<DrawBatch>) {
+    pub(crate) fn finish(&mut self, draws: &mut Vec<FrameCommand>) {
         self.flush(draws);
     }
 
@@ -86,9 +93,9 @@ impl DrawBatcher {
         self.clear_pixels != Some(pixels) && self.glyph_pixels.touches(pixels)
     }
 
-    fn flush(&mut self, draws: &mut Vec<DrawBatch>) {
-        draws.extend(self.rects.take());
-        draws.extend(self.glyphs.take());
+    fn flush(&mut self, draws: &mut Vec<FrameCommand>) {
+        draws.extend(self.rects.take().map(FrameCommand::Draw));
+        draws.extend(self.glyphs.take().map(FrameCommand::Draw));
         self.glyph_pixels.clear();
     }
 }
@@ -109,6 +116,7 @@ mod tests {
     use super::DrawBatcher;
     use crate::render::atlas_kind::AtlasKind;
     use crate::render::draw_batch::{BatchSource, DrawBatch};
+    use crate::render::frame_command::FrameCommand;
     use crate::render::pixel_rect::PixelRect;
 
     const TARGET: PixelRect = PixelRect {
@@ -126,17 +134,17 @@ mod tests {
         PixelRect { x, y, width, height }
     }
 
-    fn batch(source: BatchSource, scissor: PixelRect, first_instance: usize, instance_count: usize) -> DrawBatch {
-        DrawBatch {
+    fn batch(source: BatchSource, scissor: PixelRect, first_instance: usize, instance_count: usize) -> FrameCommand {
+        FrameCommand::Draw(DrawBatch {
             source,
             scissor,
             first_instance,
             instance_count,
-        }
+        })
     }
 
     /// Boxes of 32 by 20 pixels, 4 apart, every one labelled by a glyph in its middle.
-    fn labelled_boxes(count: usize) -> Vec<DrawBatch> {
+    fn labelled_boxes(count: usize) -> Vec<FrameCommand> {
         let mut batcher = DrawBatcher::default();
         batcher.begin_frame(TARGET);
         let mut draws = Vec::new();

@@ -4,8 +4,8 @@ use std::path::PathBuf;
 use std::process::Command;
 
 const SHADER_DIRECTORY: &str = "shaders";
-/// The shaders with entry points; `shapes.metal` is included by both.
-const SHADERS: [&str; 2] = ["rect", "glyph"];
+/// The shaders with entry points; `shapes.metal` is included by each of them.
+const SHADERS: [&str; 3] = ["rect", "glyph", "effects"];
 const XCRUN: &str = "/usr/bin/xcrun";
 
 fn main() {

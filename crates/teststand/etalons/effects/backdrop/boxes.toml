@@ -1,0 +1,83 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 352.0
+height = 192.0
+
+[[light]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 352.0
+height = 192.0
+
+[[light]]
+node = "#2 .scene"
+x = 16.0
+y = 16.0
+width = 320.0
+height = 160.0
+
+[[light]]
+node = "#3 .half.left"
+x = 16.0
+y = 16.0
+width = 160.0
+height = 160.0
+
+[[light]]
+node = "#4 .half.right"
+x = 176.0
+y = 16.0
+width = 160.0
+height = 160.0
+
+[[light]]
+node = "#5 .glass"
+x = 112.0
+y = 48.0
+width = 128.0
+height = 96.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 352.0
+height = 192.0
+
+[[dark]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 352.0
+height = 192.0
+
+[[dark]]
+node = "#2 .scene"
+x = 16.0
+y = 16.0
+width = 320.0
+height = 160.0
+
+[[dark]]
+node = "#3 .half.left"
+x = 16.0
+y = 16.0
+width = 160.0
+height = 160.0
+
+[[dark]]
+node = "#4 .half.right"
+x = 176.0
+y = 16.0
+width = 160.0
+height = 160.0
+
+[[dark]]
+node = "#5 .glass"
+x = 112.0
+y = 48.0
+width = 128.0
+height = 96.0

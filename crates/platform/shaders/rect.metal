@@ -14,7 +14,8 @@ struct RectInstance {
     uint gradient_stops_count;
     uint clips_start;
     uint clips_count;
-    uint padding[3];
+    uint transform;
+    uint padding[2];
 };
 
 struct GradientStop {
@@ -44,15 +45,17 @@ vertex RectVaryings rect_vertex(
     uint vertex_id [[vertex_id]],
     uint instance_id [[instance_id]],
     const device RectInstance* instances [[buffer(0)]],
-    constant FrameUniforms& frame [[buffer(1)]]
+    constant FrameUniforms& frame [[buffer(1)]],
+    const device TransformEntry* transforms [[buffer(5)]]
 ) {
-    const float4 bounds = instances[instance_id].bounds;
+    const RectInstance instance = instances[instance_id];
+    const TransformEntry transform = transforms[instance.transform];
     const float2 corner = float2(vertex_id & 1, vertex_id >> 1);
-    const float2 surface_point = bounds.xy + corner * bounds.zw;
-    const float2 normalized = surface_point / frame.viewport_size * 2.0 - 1.0;
+    const float2 local_point = instance.bounds.xy + corner * instance.bounds.zw;
+    const float2 surface_point = transform_point(transform.forward_linear, transform.forward_offset, local_point);
 
     RectVaryings out;
-    out.position = float4(normalized.x, -normalized.y, 0.0, 1.0);
+    out.position = clip_position(surface_point, frame);
     out.instance = instance_id;
     return out;
 }
@@ -189,11 +192,16 @@ fragment float4 rect_fragment(
     const device RectInstance* instances [[buffer(0)]],
     constant FrameUniforms& frame [[buffer(1)]],
     const device GradientStop* gradient_stops [[buffer(2)]],
-    const device RoundedRect* clips [[buffer(3)]]
+    const device ClipShape* clips [[buffer(3)]],
+    const device TransformEntry* transforms [[buffer(5)]]
 ) {
     const RectInstance instance = instances[in.instance];
-    const float scale = frame.scale;
-    const float2 surface_point = in.position.xy / scale;
+    const TransformEntry transform = transforms[instance.transform];
+    const float2 on_surface = surface_point_of(in.position.xy, frame);
+    // The shapes of the instance are in the coordinates its transform maps to the surface; the
+    // edge of a shape is as wide there as a device pixel is.
+    const float scale = frame.scale * transform.scale_factor;
+    const float2 surface_point = transform_point(transform.inverse_linear, transform.inverse_offset, on_surface);
 
     float4 color;
     switch (instance.kind) {
@@ -247,7 +255,7 @@ fragment float4 rect_fragment(
     }
 
     for (uint index = 0; index < instance.clips_count; index++) {
-        color *= rounded_rect_coverage(surface_point, clips[instance.clips_start + index], scale);
+        color *= clip_coverage(on_surface, clips[instance.clips_start + index], transforms, frame.scale);
     }
     return color;
 }

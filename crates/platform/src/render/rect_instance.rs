@@ -32,5 +32,7 @@ pub(crate) struct RectInstance {
     /// The rounded clips the instance is masked by, in the clip buffer of the frame.
     pub(crate) clips_start: u32,
     pub(crate) clips_count: u32,
-    pub(crate) padding: [u32; 3],
+    /// The transform of the instance, in the transform buffer of the frame.
+    pub(crate) transform: u32,
+    pub(crate) padding: [u32; 2],
 }

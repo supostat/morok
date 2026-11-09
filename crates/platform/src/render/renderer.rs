@@ -20,6 +20,10 @@ const RECT_VERTEX_FUNCTION: &str = "rect_vertex";
 const RECT_FRAGMENT_FUNCTION: &str = "rect_fragment";
 const GLYPH_VERTEX_FUNCTION: &str = "glyph_vertex";
 const GLYPH_FRAGMENT_FUNCTION: &str = "glyph_fragment";
+const COMPOSITE_VERTEX_FUNCTION: &str = "composite_vertex";
+const COMPOSITE_FRAGMENT_FUNCTION: &str = "composite_fragment";
+const BLUR_VERTEX_FUNCTION: &str = "blur_vertex";
+const BLUR_FRAGMENT_FUNCTION: &str = "blur_fragment";
 
 /// Pipelines compiled at the same moment by separate Metal 4 compilers never come back from the
 /// driver, so the renderers of a process compile theirs one after another.
@@ -30,14 +34,19 @@ static PIPELINE_COMPILATION: Mutex<()> = Mutex::new(());
 pub(crate) const PIXEL_FORMAT: MTLPixelFormat = MTLPixelFormat::BGRA8Unorm;
 
 /// The GPU resources every surface of an application shares: the Metal 4 device, its command
-/// queue, the pipelines that draw boxes and glyphs, and the glyph atlases. A clone is a handle
-/// to the same resources.
+/// queue, the pipelines that draw boxes, glyphs and the pictures of groups, and the glyph
+/// atlases. A clone is a handle to the same resources.
 #[derive(Clone, Debug)]
 pub struct Renderer {
     device: Retained<ProtocolObject<dyn MTLDevice>>,
     queue: Retained<ProtocolObject<dyn MTL4CommandQueue>>,
     rect_pipeline: Retained<ProtocolObject<dyn MTLRenderPipelineState>>,
     glyph_pipeline: Retained<ProtocolObject<dyn MTLRenderPipelineState>>,
+    /// Lays the picture of a group over a target; it reads the target and writes the result,
+    /// so it blends nothing itself.
+    composite_pipeline: Retained<ProtocolObject<dyn MTLRenderPipelineState>>,
+    /// One pass of a Gaussian blur into a cleared target.
+    blur_pipeline: Retained<ProtocolObject<dyn MTLRenderPipelineState>>,
     glyph_atlases: Arc<Mutex<GlyphAtlases>>,
 }
 
@@ -59,14 +68,40 @@ impl Renderer {
         let library = device
             .newLibraryWithData_error(&DispatchData::from_static_bytes(SHADERS))
             .map_err(|error| metal_error("shader library", &error))?;
-        let (rect_pipeline, glyph_pipeline) = {
+        let (rect_pipeline, glyph_pipeline, composite_pipeline, blur_pipeline) = {
             let _one_at_a_time = PIPELINE_COMPILATION.lock().unwrap_or_else(PoisonError::into_inner);
             let compiler = device
                 .newCompilerWithDescriptor_error(&MTL4CompilerDescriptor::new())
                 .map_err(|error| metal_error("shader compiler", &error))?;
             (
-                pipeline(&compiler, &library, RECT_VERTEX_FUNCTION, RECT_FRAGMENT_FUNCTION)?,
-                pipeline(&compiler, &library, GLYPH_VERTEX_FUNCTION, GLYPH_FRAGMENT_FUNCTION)?,
+                pipeline(
+                    &compiler,
+                    &library,
+                    RECT_VERTEX_FUNCTION,
+                    RECT_FRAGMENT_FUNCTION,
+                    Blending::Over,
+                )?,
+                pipeline(
+                    &compiler,
+                    &library,
+                    GLYPH_VERTEX_FUNCTION,
+                    GLYPH_FRAGMENT_FUNCTION,
+                    Blending::Over,
+                )?,
+                pipeline(
+                    &compiler,
+                    &library,
+                    COMPOSITE_VERTEX_FUNCTION,
+                    COMPOSITE_FRAGMENT_FUNCTION,
+                    Blending::Replace,
+                )?,
+                pipeline(
+                    &compiler,
+                    &library,
+                    BLUR_VERTEX_FUNCTION,
+                    BLUR_FRAGMENT_FUNCTION,
+                    Blending::Replace,
+                )?,
             )
         };
         Ok(Self {
@@ -75,6 +110,8 @@ impl Renderer {
             queue,
             rect_pipeline,
             glyph_pipeline,
+            composite_pipeline,
+            blur_pipeline,
         })
     }
 
@@ -102,15 +139,32 @@ impl Renderer {
     pub(crate) fn rect_pipeline(&self) -> &ProtocolObject<dyn MTLRenderPipelineState> {
         &self.rect_pipeline
     }
+
+    pub(crate) fn composite_pipeline(&self) -> &ProtocolObject<dyn MTLRenderPipelineState> {
+        &self.composite_pipeline
+    }
+
+    pub(crate) fn blur_pipeline(&self) -> &ProtocolObject<dyn MTLRenderPipelineState> {
+        &self.blur_pipeline
+    }
 }
 
-/// A pipeline of the two named functions that blends premultiplied colors over what is
-/// already drawn.
+/// How the fragments of a pipeline meet what the target already holds.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Blending {
+    /// Premultiplied colors laid over the target.
+    Over,
+    /// The fragment is the result: the shader read the target itself, or the target is cleared.
+    Replace,
+}
+
+/// A pipeline of the two named functions.
 fn pipeline(
     compiler: &ProtocolObject<dyn MTL4Compiler>,
     library: &ProtocolObject<dyn MTLLibrary>,
     vertex_function: &str,
     fragment_function: &str,
+    blending: Blending,
 ) -> Result<Retained<ProtocolObject<dyn MTLRenderPipelineState>>, RendererError> {
     let function = |name: &str| {
         let descriptor = MTL4LibraryFunctionDescriptor::new();
@@ -126,11 +180,16 @@ fn pipeline(
     // SAFETY: a pipeline has a color attachment at index 0.
     let attachment = unsafe { descriptor.colorAttachments().objectAtIndexedSubscript(0) };
     attachment.setPixelFormat(PIXEL_FORMAT);
-    attachment.setBlendingState(MTL4BlendState::Enabled);
-    attachment.setSourceRGBBlendFactor(MTLBlendFactor::One);
-    attachment.setSourceAlphaBlendFactor(MTLBlendFactor::One);
-    attachment.setDestinationRGBBlendFactor(MTLBlendFactor::OneMinusSourceAlpha);
-    attachment.setDestinationAlphaBlendFactor(MTLBlendFactor::OneMinusSourceAlpha);
+    match blending {
+        Blending::Over => {
+            attachment.setBlendingState(MTL4BlendState::Enabled);
+            attachment.setSourceRGBBlendFactor(MTLBlendFactor::One);
+            attachment.setSourceAlphaBlendFactor(MTLBlendFactor::One);
+            attachment.setDestinationRGBBlendFactor(MTLBlendFactor::OneMinusSourceAlpha);
+            attachment.setDestinationAlphaBlendFactor(MTLBlendFactor::OneMinusSourceAlpha);
+        }
+        Blending::Replace => attachment.setBlendingState(MTL4BlendState::Disabled),
+    }
     let descriptor: &MTL4PipelineDescriptor = &descriptor;
     compiler
         .newRenderPipelineStateWithDescriptor_compilerTaskOptions_error(descriptor, None)

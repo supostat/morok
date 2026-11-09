@@ -9,13 +9,15 @@ use crate::element_id::ElementId;
 use crate::frame_scheduler::FrameScheduler;
 use crate::geometry::rect::Rect;
 use crate::geometry::size::Size;
+use crate::geometry::transform::Transform;
 use crate::layout::geometry_pass::GeometryPass;
 use crate::layout::layout_pass::LayoutPass;
 use crate::paint::box_painter::BoxPainter;
 use crate::paint::damage::Damage;
 use crate::paint::display_list::DisplayList;
+use crate::paint::group_transform::local_transform;
 use crate::paint::paint_order::PaintOrder;
-use crate::paint::paint_pass::PaintPass;
+use crate::paint::paint_pass::{OpenGroup, PaintPass};
 use crate::paint::paint_step::PaintStep;
 use crate::paint::unpaint::unpaint_subtree;
 use crate::role::Role;
@@ -44,6 +46,8 @@ pub struct ElementTree {
     matched_rules: Vec<u32>,
     pending: Vec<ElementId>,
     paint_steps: Vec<PaintStep>,
+    /// Scratch space for the groups open while the display list is written.
+    open_groups: Vec<OpenGroup>,
     paint_order_is_stale: bool,
     /// Whether an element waits for the display list stage.
     has_unpainted_changes: bool,
@@ -76,6 +80,7 @@ impl ElementTree {
             matched_rules: Vec::new(),
             pending: Vec::new(),
             paint_steps: Vec::new(),
+            open_groups: Vec::new(),
             paint_order_is_stale: true,
             has_unpainted_changes: true,
             display_list: DisplayList::default(),
@@ -311,6 +316,29 @@ impl ElementTree {
         self.elements[element].border_box
     }
 
+    /// The rectangle around the border box as the surface shows it: moved by the transforms
+    /// of the element and of its ancestors, as a browser's bounding client rect is.
+    ///
+    /// # Panics
+    ///
+    /// When a change waits for the style stage.
+    pub fn surface_box(&self, element: ElementId) -> Rect {
+        assert!(
+            !self.elements[self.root]
+                .dirty
+                .intersects(Dirty::STYLE.union(Dirty::STYLE_BELOW)),
+            "styles are resolved before boxes are read"
+        );
+        let mut on_surface = Transform::IDENTITY;
+        let mut current = Some(element);
+        while let Some(id) = current {
+            let transformed = &self.elements[id];
+            on_surface = on_surface.then(&local_transform(transformed, &self.style_sheet, &self.theme));
+            current = transformed.parent;
+        }
+        on_surface.bounds_of(&self.elements[element].border_box)
+    }
+
     /// The line boxes of a text element as the last layout stage placed them, top to bottom.
     /// Another element has none.
     pub fn line_boxes(&self, element: ElementId) -> &[LineBox] {
@@ -426,11 +454,13 @@ impl ElementTree {
                 style_sheet: &self.style_sheet,
                 theme: &self.theme,
             },
+            style_sheet: &self.style_sheet,
             theme: &self.theme,
             steps: &self.paint_steps,
             previous: &self.previous_display_list,
             display_list: &mut self.display_list,
             damage: &mut self.damage,
+            open_groups: &mut self.open_groups,
         }
         .run();
         self.has_unpainted_changes = false;

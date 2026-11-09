@@ -5,6 +5,7 @@ use crate::geometry::rect::Rect;
 use crate::geometry::sides::Sides;
 use crate::paint::box_frame::BoxFrame;
 use crate::paint::gradient_fill::GradientFill;
+use crate::paint::group_effects::GroupEffects;
 use crate::paint::item_range::ItemRange;
 use crate::text::font_id::FontId;
 
@@ -59,4 +60,9 @@ pub enum DisplayItem {
         frame: BoxFrame,
     },
     PopClip,
+    /// Transforms and composites the items up to the matching [`DisplayItem::PopGroup`] as one.
+    PushGroup {
+        effects: GroupEffects,
+    },
+    PopGroup,
 }

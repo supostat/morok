@@ -1,0 +1,125 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 416.0
+height = 152.0
+
+[[light]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 416.0
+height = 128.0
+
+[[light]]
+node = "#2 .sheets"
+x = 16.0
+y = 16.0
+width = 384.0
+height = 96.0
+
+[[light]]
+node = "#3 .sheet"
+x = 32.0
+y = 32.0
+width = 96.0
+height = 64.0
+
+[[light]]
+node = "#4 .badge"
+x = 56.0
+y = 48.0
+width = 64.0
+height = 64.0
+
+[[light]]
+node = "#5 .sheet.faded"
+x = 160.0
+y = 32.0
+width = 96.0
+height = 64.0
+
+[[light]]
+node = "#6 .badge"
+x = 184.0
+y = 48.0
+width = 64.0
+height = 64.0
+
+[[light]]
+node = "#7 .sheet.ghost"
+x = 288.0
+y = 32.0
+width = 96.0
+height = 64.0
+
+[[light]]
+node = "#8 .badge"
+x = 312.0
+y = 48.0
+width = 64.0
+height = 64.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 416.0
+height = 152.0
+
+[[dark]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 416.0
+height = 128.0
+
+[[dark]]
+node = "#2 .sheets"
+x = 16.0
+y = 16.0
+width = 384.0
+height = 96.0
+
+[[dark]]
+node = "#3 .sheet"
+x = 32.0
+y = 32.0
+width = 96.0
+height = 64.0
+
+[[dark]]
+node = "#4 .badge"
+x = 56.0
+y = 48.0
+width = 64.0
+height = 64.0
+
+[[dark]]
+node = "#5 .sheet.faded"
+x = 160.0
+y = 32.0
+width = 96.0
+height = 64.0
+
+[[dark]]
+node = "#6 .badge"
+x = 184.0
+y = 48.0
+width = 64.0
+height = 64.0
+
+[[dark]]
+node = "#7 .sheet.ghost"
+x = 288.0
+y = 32.0
+width = 96.0
+height = 64.0
+
+[[dark]]
+node = "#8 .badge"
+x = 312.0
+y = 48.0
+width = 64.0
+height = 64.0

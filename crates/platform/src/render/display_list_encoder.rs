@@ -1,12 +1,16 @@
 use bytemuck::Zeroable;
 use morok_core::{
-    BoxFrame, DisplayItem, DisplayList, FontId, GradientFill, GradientShape, ItemRange, Point, Rect, Sides,
+    BoxFrame, DisplayItem, DisplayList, Filter, FontId, GradientFill, GradientShape, GroupEffects, ItemRange, Point,
+    Rect, Sides, Transform,
 };
-use morok_style::{Color, ShadowLayer};
+use morok_style::{BlendMode, Color, ShadowLayer};
 
 use crate::render::active_clip::ActiveClip;
 use crate::render::atlas_kind::AtlasKind;
+use crate::render::clip_shape::ClipShape;
 use crate::render::draw_batcher::DrawBatcher;
+use crate::render::filter_entry::FilterEntry;
+use crate::render::frame_command::FrameCommand;
 use crate::render::frame_resources::FrameResources;
 use crate::render::frame_uniforms::FrameUniforms;
 use crate::render::glyph_atlases::GlyphAtlases;
@@ -14,12 +18,14 @@ use crate::render::glyph_instance::GlyphInstance;
 use crate::render::glyph_key::GlyphKey;
 use crate::render::glyph_rasterizer::SUBPIXEL_PHASES;
 use crate::render::gradient_stop_entry::GradientStopEntry;
+use crate::render::group_pass::{BackdropPass, GroupPass};
 use crate::render::pixel_rect::PixelRect;
 use crate::render::premultiplied_color::premultiplied;
 use crate::render::rect_instance::RectInstance;
 use crate::render::rect_kind::RectKind;
 use crate::render::rounded_rect::RoundedRect;
 use crate::render::target_geometry::TargetGeometry;
+use crate::render::transform_entry::TransformEntry;
 
 /// The standard deviation of the Gaussian of a CSS blur radius.
 const DEVIATION_PER_BLUR_RADIUS: f32 = 0.5;
@@ -27,15 +33,30 @@ const DEVIATION_PER_BLUR_RADIUS: f32 = 0.5;
 const BLUR_REACH_PER_DEVIATION: f32 = 3.0;
 /// An anti-aliased edge still covers a part of the pixels whose centers lie this far outside it.
 const EDGE_REACH_IN_PIXELS: f32 = 0.5;
+/// The transform every instance outside a transformed group uses.
+const IDENTITY_TRANSFORM: u32 = 0;
 
-/// Turns a display list into the instances, gradient stops, clips and draw calls of a frame,
-/// written straight into the buffers the GPU reads. Glyphs are taken from the atlases, and
-/// rasterized into them when a frame first draws them.
+/// Turns a display list into the instances, gradient stops, clips, transforms and commands of
+/// a frame, written straight into the buffers the GPU reads. Glyphs are taken from the
+/// atlases, and rasterized into them when a frame first draws them.
 #[derive(Debug, Default)]
 pub(crate) struct DisplayListEncoder {
     /// The clips enclosing the item being encoded, innermost last.
     active_clips: Vec<ActiveClip>,
+    /// The groups enclosing the item being encoded, innermost last.
+    open_groups: Vec<OpenGroup>,
     batcher: DrawBatcher,
+}
+
+/// A group whose pop has not been encoded yet.
+#[derive(Clone, Copy, Debug)]
+struct OpenGroup {
+    /// The transform of the group on the surface.
+    transform: Transform,
+    /// The same transform in the transform buffer of the frame.
+    transform_entry: u32,
+    /// The pass of the group, when it draws its picture apart.
+    pass: Option<usize>,
 }
 
 impl DisplayListEncoder {
@@ -46,10 +67,13 @@ impl DisplayListEncoder {
         resources: &mut FrameResources,
         glyph_atlases: &mut GlyphAtlases,
     ) {
-        resources.begin_frame(FrameUniforms {
+        resources.begin_frame();
+        resources.uniforms.push(FrameUniforms {
             viewport_size: [geometry.viewport.width, geometry.viewport.height],
             scale: geometry.scale,
             padding: 0.0,
+            origin: [0.0, 0.0],
+            target_size: [geometry.pixel_width as f32, geometry.pixel_height as f32],
         });
         self.active_clips.clear();
         self.active_clips.push(ActiveClip {
@@ -57,11 +81,14 @@ impl DisplayListEncoder {
             rounded_start: 0,
             rounded_count: 0,
         });
+        self.open_groups.clear();
         self.batcher.begin_frame(geometry.pixels());
         let mut frame = FrameEncoding {
             display_list,
             scale: geometry.scale,
+            target: geometry.pixels(),
             active_clips: &mut self.active_clips,
+            open_groups: &mut self.open_groups,
             batcher: &mut self.batcher,
             resources,
             glyph_atlases,
@@ -75,7 +102,7 @@ impl DisplayListEncoder {
                 frame.encode_item(item);
             }
         }
-        self.batcher.finish(&mut resources.draws);
+        self.batcher.finish(&mut resources.commands);
     }
 }
 
@@ -83,7 +110,10 @@ impl DisplayListEncoder {
 struct FrameEncoding<'a> {
     display_list: &'a DisplayList,
     scale: f32,
+    /// The pixels of the whole target.
+    target: PixelRect,
     active_clips: &'a mut Vec<ActiveClip>,
+    open_groups: &'a mut Vec<OpenGroup>,
     batcher: &'a mut DrawBatcher,
     resources: &'a mut FrameResources,
     glyph_atlases: &'a mut GlyphAtlases,
@@ -164,13 +194,131 @@ impl FrameEncoding<'_> {
             DisplayItem::PopClip => {
                 self.active_clips.pop();
             }
+            DisplayItem::PushGroup { effects } => self.push_group(&effects),
+            DisplayItem::PopGroup => self.pop_group(),
         }
+    }
+
+    /// The transform the items being encoded are placed by.
+    fn transform(&self) -> Transform {
+        self.open_groups
+            .last()
+            .map_or(Transform::IDENTITY, |group| group.transform)
+    }
+
+    fn transform_entry(&self) -> u32 {
+        self.open_groups
+            .last()
+            .map_or(IDENTITY_TRANSFORM, |group| group.transform_entry)
+    }
+
+    /// Opens a group: its transform places everything inside, and a group with an effect
+    /// draws everything inside into a picture of its own.
+    fn push_group(&mut self, effects: &GroupEffects) {
+        let transform = effects.transform;
+        let transform_entry = if transform.is_identity() {
+            IDENTITY_TRANSFORM
+        } else {
+            let position = self.resources.transforms.len() as u32;
+            self.resources.transforms.push(TransformEntry::of(&transform));
+            position
+        };
+        let pass = effects.needs_offscreen_pass().then(|| {
+            self.batcher.finish(&mut self.resources.commands);
+            let (filters_start, filters_count, blur) = self.filter_entries(effects.filter);
+            let backdrop = (effects.backdrop_filter.start != effects.backdrop_filter.end).then(|| {
+                let (filters_start, filters_count, blur) = self.filter_entries(effects.backdrop_filter);
+                let reach = blur.map_or(0.0, |deviation| deviation * BLUR_REACH_PER_DEVIATION);
+                let border_box = transform.bounds_of(&effects.frame.border_box);
+                let pixels = PixelRect::covering(&border_box, self.scale)
+                    .outset(reach.ceil() as usize)
+                    .intersection(&self.target);
+                BackdropPass {
+                    pixels,
+                    filters_start,
+                    filters_count,
+                    blur,
+                    clip: ClipShape {
+                        shape: RoundedRect::border_box(&effects.frame),
+                        transform: transform_entry,
+                        padding: [0; 3],
+                    },
+                }
+            });
+            let position = self.resources.groups.len();
+            self.resources.groups.push(GroupPass {
+                pixels: PixelRect::default(),
+                opacity: effects.opacity,
+                blend_mode: blend_mode_of(effects.mix_blend_mode),
+                filters_start,
+                filters_count,
+                blur,
+                backdrop,
+            });
+            self.resources.commands.push(FrameCommand::BeginGroup(position));
+            position
+        });
+        self.open_groups.push(OpenGroup {
+            transform,
+            transform_entry,
+            pass,
+        });
+    }
+
+    /// Closes the innermost group. The picture of a group with an effect covers what was
+    /// drawn into it and the reach of its blur; it is laid over the target the group began on.
+    fn pop_group(&mut self) {
+        let group = self.open_groups.pop().expect("a group is open when it is popped");
+        let Some(pass) = group.pass else {
+            return;
+        };
+        self.batcher.finish(&mut self.resources.commands);
+        let group_pass = &mut self.resources.groups[pass];
+        let reach = group_pass
+            .blur
+            .map_or(0.0, |deviation| deviation * BLUR_REACH_PER_DEVIATION);
+        group_pass.pixels = group_pass
+            .pixels
+            .outset(reach.ceil() as usize)
+            .intersection(&self.target);
+        let pixels = group_pass.pixels;
+        self.resources.commands.push(FrameCommand::EndGroup(pass));
+        self.cover(pixels);
+    }
+
+    /// The color filters of a list, written to the filter buffer, and the deviation of its
+    /// blur in device pixels; blurs in a row add up as Gaussians do.
+    fn filter_entries(&mut self, filters: ItemRange) -> (u32, u32, Option<f32>) {
+        let start = self.resources.filters.len() as u32;
+        let mut variance = 0.0;
+        for filter in self.display_list.filters(filters) {
+            if let Filter::Blur(deviation) = filter {
+                let deviation = deviation * self.scale;
+                variance += deviation * deviation;
+            } else {
+                self.resources.filters.push(FilterEntry::of(*filter));
+            }
+        }
+        let count = self.resources.filters.len() as u32 - start;
+        (start, count, (variance > 0.0).then(|| variance.sqrt()))
+    }
+
+    /// Notes that the innermost group with a pass draws over `pixels`.
+    fn cover(&mut self, pixels: PixelRect) {
+        let Some(pass) = self.open_groups.iter().rev().find_map(|group| group.pass) else {
+            return;
+        };
+        let group = &mut self.resources.groups[pass];
+        group.pixels = group.pixels.union(&pixels);
     }
 
     /// The frame with every edge of its border box on the nearest edge between device pixels.
     /// Browsers paint boxes this way: a box laid out between pixels keeps sharp sides instead
-    /// of blurring them over two pixels.
+    /// of blurring them over two pixels. A transformed box has no pixel grid to snap to.
     fn snapped(&self, frame: &BoxFrame) -> BoxFrame {
+        if self.transform_entry() != IDENTITY_TRANSFORM {
+            return *frame;
+        }
         let snap = |edge: f32| (edge * self.scale).round() / self.scale;
         let left = snap(frame.border_box.x);
         let top = snap(frame.border_box.y);
@@ -314,23 +462,29 @@ impl FrameEncoding<'_> {
         });
     }
 
-    /// A rectangular clip only narrows the scissor. A rounded one also joins the masks of the
-    /// items inside it; the masks of an item are one run of the clip buffer, so the run of the
-    /// enclosing clips is repeated in front of the new shape.
+    /// A rectangular clip on the pixel grid only narrows the scissor. A rounded or transformed
+    /// one also joins the masks of the items inside it; the masks of an item are one run of the
+    /// clip buffer, so the run of the enclosing clips is repeated in front of the new shape.
     fn push_clip(&mut self, frame: &BoxFrame) {
         let enclosing = self.active_clip();
         let shape = RoundedRect::padding_box(frame);
-        let clip = if shape.is_rounded() {
+        let transform = self.transform_entry();
+        let clip = if shape.is_rounded() || transform != IDENTITY_TRANSFORM {
             let rounded_start = self.resources.clips.len();
             for position in 0..enclosing.rounded_count {
                 let enclosing_shape = self.resources.clips.get(enclosing.rounded_start + position);
                 self.resources.clips.push(enclosing_shape);
             }
-            self.resources.clips.push(shape);
+            self.resources.clips.push(ClipShape {
+                shape,
+                transform,
+                padding: [0; 3],
+            });
+            let on_surface = self.transform().bounds_of(&shape.rect());
             ActiveClip {
                 scissor: enclosing
                     .scissor
-                    .intersection(&PixelRect::covering(&shape.rect(), self.scale)),
+                    .intersection(&PixelRect::covering(&on_surface, self.scale)),
                 rounded_start,
                 rounded_count: enclosing.rounded_count + 1,
             }
@@ -355,10 +509,12 @@ impl FrameEncoding<'_> {
         !self.visible_pixels(bounds).is_empty()
     }
 
-    /// The pixels of the quad the clip in force lets through.
+    /// The pixels of the surface the quad covers once transformed, as far as the clip in force
+    /// lets them through.
     fn visible_pixels(&self, bounds: [f32; 4]) -> PixelRect {
         let [x, y, width, height] = bounds;
-        PixelRect::covering(&Rect::new(x, y, width, height), self.scale).intersection(&self.active_clip().scissor)
+        let on_surface = self.transform().bounds_of(&Rect::new(x, y, width, height));
+        PixelRect::covering(&on_surface, self.scale).intersection(&self.active_clip().scissor)
     }
 
     /// Appends the instance under the clip in force, unless the clip hides all of it.
@@ -370,10 +526,12 @@ impl FrameEncoding<'_> {
         let clip = self.active_clip();
         instance.clips_start = clip.rounded_start as u32;
         instance.clips_count = clip.rounded_count as u32;
+        instance.transform = self.transform_entry();
         let position = self.resources.instances.len();
         self.resources.instances.push(instance);
         self.batcher
-            .rect(position, pixels, clip.scissor, &mut self.resources.draws);
+            .rect(position, pixels, clip.scissor, &mut self.resources.commands);
+        self.cover(pixels);
     }
 
     /// Draws the glyphs of a run texel for pixel. The baseline lies on a row of device pixels;
@@ -418,17 +576,19 @@ impl FrameEncoding<'_> {
                 clips_start: clip.rounded_start as u32,
                 clips_count: clip.rounded_count as u32,
                 is_color: u32::from(placed.atlas == AtlasKind::Color),
-                padding: [0; 3],
+                transform: self.transform_entry(),
+                padding: [0; 2],
             });
             self.batcher.glyph(
                 position,
                 clip.scissor,
                 placed.atlas,
                 placed.entry.page,
-                &mut self.resources.draws,
+                &mut self.resources.commands,
             );
         }
         self.batcher.glyphs_cover(run_pixels);
+        self.cover(run_pixels);
     }
 
     /// The line of a text decoration lies on whole device pixels and is at least one of them
@@ -450,6 +610,18 @@ impl FrameEncoding<'_> {
             kind: RectKind::Fill as u32,
             ..RectInstance::zeroed()
         });
+    }
+}
+
+/// The number of a blend mode as the `BLEND_` constants of the shader give it.
+fn blend_mode_of(mode: BlendMode) -> u32 {
+    match mode {
+        BlendMode::Normal => 0,
+        BlendMode::Multiply => 1,
+        BlendMode::Screen => 2,
+        BlendMode::Overlay => 3,
+        BlendMode::Darken => 4,
+        BlendMode::Lighten => 5,
     }
 }
 

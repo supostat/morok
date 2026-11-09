@@ -1,6 +1,10 @@
 use std::borrow::Cow;
 
 use crate::corner::Corner;
+use crate::effect::backdrop_filter_function::BackdropFilterFunction;
+use crate::effect::blend_mode::BlendMode;
+use crate::effect::filter_function::FilterFunction;
+use crate::effect::transform_function::TransformFunction;
 use crate::font_families::FontFamilies;
 use crate::layout::content_alignment::ContentAlignment;
 use crate::layout::display::Display;
@@ -94,4 +98,15 @@ pub enum Declaration {
     TextOverflow(TextOverflow),
     WhiteSpace(WhiteSpace),
     FontVariantNumeric(FontVariantNumeric),
+    /// From `0.0`, invisible, to `1.0`, opaque; the element and its content fade as a group.
+    Opacity(f32),
+    /// `none` is an empty list.
+    Transform(Cow<'static, [TransformFunction]>),
+    /// The point of the border box the transform functions turn and scale about.
+    TransformOrigin(LengthPercentage, LengthPercentage),
+    /// `none` is an empty list.
+    Filter(Cow<'static, [FilterFunction]>),
+    /// `none` is an empty list.
+    BackdropFilter(Cow<'static, [BackdropFilterFunction]>),
+    MixBlendMode(BlendMode),
 }

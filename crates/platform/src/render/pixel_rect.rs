@@ -48,6 +48,22 @@ impl PixelRect {
         }
     }
 
+    /// The rectangle grown by `distance` pixels on every side, not past the top left of the target.
+    #[must_use]
+    pub(crate) fn outset(&self, distance: usize) -> Self {
+        if self.is_empty() {
+            return *self;
+        }
+        let left = self.x.saturating_sub(distance);
+        let top = self.y.saturating_sub(distance);
+        Self {
+            x: left,
+            y: top,
+            width: self.x + self.width + distance - left,
+            height: self.y + self.height + distance - top,
+        }
+    }
+
     /// The smallest rectangle holding both; an empty one adds nothing.
     #[must_use]
     pub(crate) fn union(&self, other: &Self) -> Self {
