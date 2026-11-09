@@ -597,6 +597,55 @@ fn later_items_are_drawn_over_earlier_ones() {
     assert_eq!(image.pixel(140, 70), BLUE);
 }
 
+/// A line of text at (20, 10), and a box that either covers the text or stands beside it.
+const TEXT_AND_BOX: &str = ".text { position: absolute; left: 20px; top: 10px; width: 160px; height: 40px; \
+     color: var(--color-ink); font-family: var(--font-ui); font-size: var(--text-lg); line-height: var(--text-leading); }\
+     .cover { position: absolute; left: 0; top: 0; width: 200px; height: 60px; background-color: var(--color-red); }\
+     .beside { position: absolute; left: 20px; top: 70px; width: 160px; height: 40px; \
+     background-color: var(--color-blue); }";
+
+fn render_text_then(class: &str) -> FrameImage {
+    let mut scene = Scene::new(TEXT_AND_BOX, SURFACE);
+    let text = scene.add(scene.root(), &["text"]);
+    scene.add_text(text, "MMMMMMMM");
+    scene.add(scene.root(), &[class]);
+    scene.render(renderer(), 1.0)
+}
+
+fn has_ink(image: &FrameImage, left: usize, top: usize, width: usize, height: usize) -> bool {
+    (top..top + height).any(|y| (left..left + width).any(|x| image.pixel(x, y) != CLEAR && image.pixel(x, y) != RED))
+}
+
+#[test]
+fn a_box_painted_after_a_text_covers_the_text() {
+    let image = render_text_then("cover");
+
+    assert_eq!(image.pixel(100, 30), RED);
+    assert!(
+        !has_ink(&image, 0, 0, 200, 60),
+        "the text shows through the box over it"
+    );
+}
+
+#[test]
+fn a_box_painted_after_a_text_beside_it_leaves_the_text_as_it_is() {
+    let alone = {
+        let mut scene = Scene::new(TEXT_AND_BOX, SURFACE);
+        let text = scene.add(scene.root(), &["text"]);
+        scene.add_text(text, "MMMMMMMM");
+        scene.render(renderer(), 1.0)
+    };
+    let with_box = render_text_then("beside");
+
+    assert!(has_ink(&alone, 20, 10, 160, 40), "the text draws glyphs");
+    for y in 0..60 {
+        for x in 0..200 {
+            assert_eq!(alone.pixel(x, y), with_box.pixel(x, y), "the pixel ({x}, {y}) changed");
+        }
+    }
+    assert_eq!(with_box.pixel(100, 90), BLUE);
+}
+
 #[test]
 fn a_frame_starts_from_a_cleared_surface() {
     let mut scene = Scene::new(

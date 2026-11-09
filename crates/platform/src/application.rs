@@ -1,7 +1,10 @@
+use std::time::Duration;
+
 use morok_style::ColorScheme;
 use objc2::MainThreadMarker;
 use objc2::rc::Retained;
 use objc2_app_kit::{NSApplication, NSApplicationActivationPolicy};
+use objc2_foundation::{NSDate, NSRunLoop};
 
 use crate::appearance::{Appearance, color_scheme_of};
 use crate::render::renderer::Renderer;
@@ -48,6 +51,12 @@ impl Application {
     /// Runs the event loop until the application quits.
     pub fn run(&self) {
         self.native.run();
+    }
+
+    /// Runs the event loop for `duration` and returns: what falls due in the meantime, display
+    /// link callbacks among it, is delivered.
+    pub fn run_for(&self, duration: Duration) {
+        NSRunLoop::mainRunLoop().runUntilDate(&NSDate::dateWithTimeIntervalSinceNow(duration.as_secs_f64()));
     }
 
     pub(crate) fn main_thread(&self) -> MainThreadMarker {

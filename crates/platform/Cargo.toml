@@ -56,7 +56,7 @@ objc2-core-text = { workspace = true, features = [
   "CTTypesetter",
   "objc2-core-graphics",
 ] }
-objc2-foundation = { workspace = true, features = ["NSArray", "NSError", "NSGeometry", "NSRunLoop", "NSString"] }
+objc2-foundation = { workspace = true, features = ["NSArray", "NSDate", "NSError", "NSGeometry", "NSRunLoop", "NSString"] }
 objc2-metal = { workspace = true, features = [
   "MTL4ArgumentTable",
   "MTL4CommandAllocator",

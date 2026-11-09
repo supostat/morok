@@ -48,6 +48,27 @@ impl PixelRect {
         }
     }
 
+    /// The smallest rectangle holding both; an empty one adds nothing.
+    #[must_use]
+    pub(crate) fn union(&self, other: &Self) -> Self {
+        if self.is_empty() {
+            return *other;
+        }
+        if other.is_empty() {
+            return *self;
+        }
+        let left = self.x.min(other.x);
+        let top = self.y.min(other.y);
+        let right = (self.x + self.width).max(other.x + other.width);
+        let bottom = (self.y + self.height).max(other.y + other.height);
+        Self {
+            x: left,
+            y: top,
+            width: right - left,
+            height: bottom - top,
+        }
+    }
+
     /// Edges left of or above the target are pulled onto it: a float below zero casts to zero.
     fn between(left: f32, top: f32, right: f32, bottom: f32) -> Self {
         let [left, top, right, bottom] = [left, top, right, bottom].map(|edge| edge as usize);
@@ -96,6 +117,15 @@ mod tests {
         let intersection = pixels(0, 0, 10, 10).intersection(&pixels(20, 0, 10, 10));
 
         assert!(intersection.is_empty());
+    }
+
+    #[test]
+    fn the_union_holds_both_rectangles_and_ignores_an_empty_one() {
+        let union = pixels(0, 0, 10, 10).union(&pixels(20, 5, 10, 10));
+
+        assert_eq!(union, pixels(0, 0, 30, 15));
+        assert_eq!(union.union(&PixelRect::default()), union);
+        assert_eq!(PixelRect::default().union(&union), union);
     }
 
     #[test]

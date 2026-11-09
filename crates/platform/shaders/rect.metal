@@ -29,6 +29,7 @@ constant uint KIND_RADIAL_GRADIENT = 2;
 constant uint KIND_BORDER = 3;
 constant uint KIND_SHADOW = 4;
 constant uint KIND_INSET_SHADOW = 5;
+constant uint KIND_BOX = 6;
 
 // A blur narrower than this is drawn as a hard edge: the Gaussian would divide by its width.
 constant float MINIMUM_BLUR_DEVIATION = 0.01;
@@ -217,6 +218,16 @@ fragment float4 rect_fragment(
                 1.0 - rounded_rect_coverage(surface_point, instance.inner, scale)
             );
             color = border_side_color(surface_point, instance, scale) * ring;
+            break;
+        }
+        case KIND_BOX: {
+            // The border is composited over the fill as a second pass would composite it: the
+            // same pixels come out as from a fill followed by a border.
+            const float outer = rounded_rect_coverage(surface_point, instance.outer, scale);
+            const float ring = min(outer, 1.0 - rounded_rect_coverage(surface_point, instance.inner, scale));
+            const float4 fill = instance.parameters * outer;
+            const float4 border = border_side_color(surface_point, instance, scale) * ring;
+            color = border + fill * (1.0 - border.a);
             break;
         }
         case KIND_SHADOW: {

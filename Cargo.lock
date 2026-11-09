@@ -1067,6 +1067,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "morok-bench"
+version = "0.1.0"
+dependencies = [
+ "morok-core",
+ "morok-css",
+ "morok-platform",
+ "morok-style",
+ "objc2",
+ "serde",
+ "toml",
+]
+
+[[package]]
 name = "morok-core"
 version = "0.1.0"
 dependencies = [

@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::ffi::c_void;
 use std::ptr::NonNull;
 
@@ -11,6 +10,7 @@ use objc2_metal::{
 
 use crate::atlas_usage::AtlasUsage;
 use crate::render::glyph_extent::GlyphExtent;
+use crate::render::glyph_hasher::GlyphMap;
 use crate::render::glyph_key::GlyphKey;
 use crate::render::shared_texture::SharedTexture;
 use crate::render::shelf_packer::ShelfPacker;
@@ -44,7 +44,7 @@ pub(crate) struct Atlas {
     page_side: u32,
     page_budget: usize,
     pages: Vec<AtlasPage>,
-    entries: HashMap<GlyphKey, AtlasEntry>,
+    entries: GlyphMap<AtlasEntry>,
     frame: u64,
     rasterized_glyphs: u64,
     evicted_pages: u64,
@@ -65,7 +65,7 @@ impl Atlas {
             page_side,
             page_budget,
             pages: Vec::new(),
-            entries: HashMap::new(),
+            entries: GlyphMap::default(),
             frame: 0,
             rasterized_glyphs: 0,
             evicted_pages: 0,

@@ -62,11 +62,21 @@ impl OffscreenTarget {
         }
     }
 
-    /// Draws the display list on a transparent surface and returns the frame.
-    pub fn render(&mut self, display_list: &DisplayList) -> FrameImage {
+    /// Draws the display list on a transparent surface and returns without waiting for the GPU.
+    pub fn draw(&mut self, display_list: &DisplayList) {
         self.frame_renderer
             .render(display_list, &self.geometry, &self.texture, None);
+    }
+
+    /// Blocks until the GPU has drawn every display list handed to it.
+    pub fn wait_until_drawn(&self) {
         self.frame_renderer.wait_until_rendered();
+    }
+
+    /// Draws the display list on a transparent surface and returns the frame.
+    pub fn render(&mut self, display_list: &DisplayList) -> FrameImage {
+        self.draw(display_list);
+        self.wait_until_drawn();
         let TargetGeometry {
             pixel_width: width,
             pixel_height: height,

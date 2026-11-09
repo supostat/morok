@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use objc2::rc::Retained;
 use objc2::runtime::ProtocolObject;
 use objc2_core_text::CTFontSymbolicTraits;
@@ -8,6 +6,7 @@ use objc2_metal::{MTLDevice, MTLPixelFormat};
 use crate::atlas_statistics::AtlasStatistics;
 use crate::render::atlas::{Atlas, AtlasEntry};
 use crate::render::atlas_kind::AtlasKind;
+use crate::render::glyph_hasher::GlyphSet;
 use crate::render::glyph_key::GlyphKey;
 use crate::render::glyph_rasterizer::rasterize;
 use crate::renderer_options::RendererOptions;
@@ -32,7 +31,7 @@ pub(crate) struct GlyphAtlases {
     mask: Atlas,
     color: Atlas,
     /// The glyphs known to have no pixels.
-    blank_glyphs: HashSet<GlyphKey>,
+    blank_glyphs: GlyphSet,
     /// Scratch space for the pixels of the glyph being rasterized.
     pixels: Vec<u8>,
 }
@@ -51,7 +50,7 @@ impl GlyphAtlases {
         Self {
             mask: atlas(MASK_FORMAT, MASK_BYTES_PER_TEXEL),
             color: atlas(COLOR_FORMAT, COLOR_BYTES_PER_TEXEL),
-            blank_glyphs: HashSet::new(),
+            blank_glyphs: GlyphSet::default(),
             pixels: Vec::new(),
         }
     }

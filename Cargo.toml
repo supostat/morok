@@ -6,6 +6,7 @@ members = [
     "crates/core",
     "crates/platform",
     "crates/teststand",
+    "crates/bench",
     "crates/xtask",
 ]
 

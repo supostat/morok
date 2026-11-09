@@ -12,6 +12,8 @@ pub(crate) struct GpuBuffer<Entry> {
     device: Retained<ProtocolObject<dyn MTLDevice>>,
     residency_set: Retained<ProtocolObject<dyn MTLResidencySet>>,
     buffer: Retained<ProtocolObject<dyn MTLBuffer>>,
+    /// The memory of the buffer; asking the buffer for it costs a message per entry otherwise.
+    entries: *mut Entry,
     capacity: usize,
     length: usize,
     entry: PhantomData<Entry>,
@@ -33,6 +35,7 @@ impl<Entry: Pod> GpuBuffer<Entry> {
         Self {
             device: device.clone(),
             residency_set: residency_set.clone(),
+            entries: entries_of(&buffer),
             buffer,
             capacity,
             length: 0,
@@ -54,7 +57,7 @@ impl<Entry: Pod> GpuBuffer<Entry> {
         }
         // SAFETY: the buffer holds `capacity` entries and `length` is below it; its memory is
         // page-aligned CPU memory that only this struct writes.
-        unsafe { self.entries().add(self.length).write(entry) };
+        unsafe { self.entries.add(self.length).write(entry) };
         self.length += 1;
     }
 
@@ -68,7 +71,7 @@ impl<Entry: Pod> GpuBuffer<Entry> {
             self.length
         );
         // SAFETY: every entry below `length` was written by `push`.
-        unsafe { self.entries().add(index).read() }
+        unsafe { self.entries.add(index).read() }
     }
 
     /// The address the shaders read the first entry at.
@@ -76,27 +79,19 @@ impl<Entry: Pod> GpuBuffer<Entry> {
         self.buffer.gpuAddress()
     }
 
-    fn entries(&self) -> *mut Entry {
-        self.buffer.contents().as_ptr().cast::<Entry>()
-    }
-
     fn grow(&mut self) {
         let capacity = self.capacity * 2;
         let buffer = allocate::<Entry>(&self.device, capacity);
+        let entries = entries_of::<Entry>(&buffer);
         // SAFETY: both buffers hold at least `length` entries and are separate allocations.
-        unsafe {
-            buffer
-                .contents()
-                .as_ptr()
-                .cast::<Entry>()
-                .copy_from_nonoverlapping(self.entries(), self.length);
-        }
+        unsafe { entries.copy_from_nonoverlapping(self.entries, self.length) };
         self.residency_set
             .removeAllocation(ProtocolObject::<dyn MTLAllocation>::from_ref(&*self.buffer));
         self.residency_set
             .addAllocation(ProtocolObject::<dyn MTLAllocation>::from_ref(&*buffer));
         self.residency_set.commit();
         self.buffer = buffer;
+        self.entries = entries;
         self.capacity = capacity;
     }
 }
@@ -107,6 +102,11 @@ impl<Entry> Drop for GpuBuffer<Entry> {
             .removeAllocation(ProtocolObject::<dyn MTLAllocation>::from_ref(&*self.buffer));
         self.residency_set.commit();
     }
+}
+
+/// The memory of a shared buffer; it stays where it is for as long as the buffer lives.
+fn entries_of<Entry>(buffer: &ProtocolObject<dyn MTLBuffer>) -> *mut Entry {
+    buffer.contents().as_ptr().cast::<Entry>()
 }
 
 fn allocate<Entry>(device: &ProtocolObject<dyn MTLDevice>, capacity: usize) -> Retained<ProtocolObject<dyn MTLBuffer>> {

@@ -12,6 +12,7 @@ use crate::render::rounded_rect::RoundedRect;
 /// | linear gradient | the filled shape | the tile | — | direction x, y; line length |
 /// | radial gradient | the filled shape | the tile | — | center x, y; radius x, y |
 /// | border | the outer edge | the inner edge | top, right, bottom, left | — |
+/// | box | the outer edge | the inner edge | the border: top, right, bottom, left | the fill |
 /// | shadow | the blurred shape | the box that hides it | the shadow | blur deviation |
 /// | inset shadow | the blurred opening | the box that shows it | the shadow | blur deviation |
 #[repr(C)]

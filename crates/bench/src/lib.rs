@@ -1,0 +1,47 @@
+mod bench_error;
+mod budgets;
+mod check;
+mod counting_allocator;
+mod frame_budget;
+mod frame_gate;
+mod frame_measurements;
+mod frame_pipeline;
+mod frame_sample;
+pub mod frame_scenario;
+mod idle_budget;
+mod idle_gate;
+mod idle_observation;
+mod idle_run;
+pub mod idle_scenario;
+mod milliseconds;
+mod reference_scene;
+pub mod scenarios;
+mod scene;
+mod scene_content;
+mod scene_tree;
+mod stage;
+mod stage_budgets;
+mod verdict;
+
+pub use bench_error::BenchError;
+pub use budgets::Budgets;
+pub use check::Check;
+pub use counting_allocator::CountingAllocator;
+pub use frame_budget::FrameBudget;
+pub use frame_measurements::FrameMeasurements;
+pub use frame_pipeline::FramePipeline;
+pub use frame_sample::FrameSample;
+pub use idle_budget::IdleBudget;
+pub use idle_observation::IdleObservation;
+pub use milliseconds::Milliseconds;
+pub use reference_scene::ReferenceScene;
+pub use scene::Scene;
+pub use scene_content::SceneContent;
+pub use scene_tree::SceneTree;
+pub use stage::Stage;
+pub use stage_budgets::StageBudgets;
+pub use verdict::Verdict;
+
+/// Every binary of the harness counts its allocations: the frame gates read the count.
+#[global_allocator]
+static ALLOCATOR: CountingAllocator = CountingAllocator;

@@ -1,0 +1,33 @@
+/* The reference scene: a field of small labelled boxes, as dense as a data-heavy screen. */
+
+.scene {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  line-height: var(--text-leading-tight);
+}
+
+.box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 20px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-xs);
+}
+
+.box:hover {
+  background-color: var(--color-accent-soft);
+  border-color: var(--color-accent);
+}
+
+.label {
+  color: var(--color-text-2);
+}

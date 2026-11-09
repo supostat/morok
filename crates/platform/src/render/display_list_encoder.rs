@@ -6,7 +6,7 @@ use morok_style::{Color, ShadowLayer};
 
 use crate::render::active_clip::ActiveClip;
 use crate::render::atlas_kind::AtlasKind;
-use crate::render::draw_batch::{BatchSource, DrawBatch};
+use crate::render::draw_batcher::DrawBatcher;
 use crate::render::frame_resources::FrameResources;
 use crate::render::frame_uniforms::FrameUniforms;
 use crate::render::glyph_atlases::GlyphAtlases;
@@ -35,6 +35,7 @@ const EDGE_REACH_IN_PIXELS: f32 = 0.5;
 pub(crate) struct DisplayListEncoder {
     /// The clips enclosing the item being encoded, innermost last.
     active_clips: Vec<ActiveClip>,
+    batcher: DrawBatcher,
 }
 
 impl DisplayListEncoder {
@@ -56,16 +57,25 @@ impl DisplayListEncoder {
             rounded_start: 0,
             rounded_count: 0,
         });
+        self.batcher.begin_frame(geometry.pixels());
         let mut frame = FrameEncoding {
             display_list,
             scale: geometry.scale,
             active_clips: &mut self.active_clips,
+            batcher: &mut self.batcher,
             resources,
             glyph_atlases,
         };
-        for item in display_list.items() {
-            frame.encode_item(item);
+        let mut items = display_list.items().iter();
+        while let Some(item) = items.next() {
+            if let Some(boxed) = BoxedItems::of(item, items.as_slice().first()) {
+                frame.encode_box(&boxed);
+                items.next();
+            } else {
+                frame.encode_item(item);
+            }
         }
+        self.batcher.finish(&mut resources.draws);
     }
 }
 
@@ -74,11 +84,62 @@ struct FrameEncoding<'a> {
     display_list: &'a DisplayList,
     scale: f32,
     active_clips: &'a mut Vec<ActiveClip>,
+    batcher: &'a mut DrawBatcher,
     resources: &'a mut FrameResources,
     glyph_atlases: &'a mut GlyphAtlases,
 }
 
+/// A background and the border drawn right after it around the same box.
+struct BoxedItems {
+    frame: BoxFrame,
+    fill: Color,
+    border_colors: Sides<Color>,
+}
+
+impl BoxedItems {
+    /// The background and the border of one box when the two items are those, in that order:
+    /// they are drawn as one instance.
+    fn of(item: &DisplayItem, next: Option<&DisplayItem>) -> Option<Self> {
+        let DisplayItem::Background { frame, color } = *item else {
+            return None;
+        };
+        let Some(DisplayItem::Border {
+            frame: border_frame,
+            colors,
+        }) = next
+        else {
+            return None;
+        };
+        (*border_frame == frame).then_some(Self {
+            frame,
+            fill: color,
+            border_colors: *colors,
+        })
+    }
+}
+
 impl FrameEncoding<'_> {
+    fn encode_box(&mut self, boxed: &BoxedItems) {
+        let frame = self.snapped(&boxed.frame);
+        let outer = RoundedRect::border_box(&frame);
+        let [red, green, blue, alpha] = premultiplied(boxed.fill);
+        self.emit(RectInstance {
+            bounds: self.bounds_of(&outer.rect()),
+            outer,
+            inner: RoundedRect::padding_box(&frame),
+            colors: [
+                boxed.border_colors.top,
+                boxed.border_colors.right,
+                boxed.border_colors.bottom,
+                boxed.border_colors.left,
+            ]
+            .map(premultiplied),
+            parameters: [red, green, blue, alpha],
+            kind: RectKind::Box as u32,
+            ..RectInstance::zeroed()
+        });
+    }
+
     fn encode_item(&mut self, item: &DisplayItem) {
         match *item {
             DisplayItem::Shadow { frame, layer } if layer.inset => self.inset_shadow(&self.snapped(&frame), &layer),
@@ -291,14 +352,19 @@ impl FrameEncoding<'_> {
     }
 
     fn is_visible(&self, bounds: [f32; 4]) -> bool {
+        !self.visible_pixels(bounds).is_empty()
+    }
+
+    /// The pixels of the quad the clip in force lets through.
+    fn visible_pixels(&self, bounds: [f32; 4]) -> PixelRect {
         let [x, y, width, height] = bounds;
-        let pixels = PixelRect::covering(&Rect::new(x, y, width, height), self.scale);
-        !pixels.intersection(&self.active_clip().scissor).is_empty()
+        PixelRect::covering(&Rect::new(x, y, width, height), self.scale).intersection(&self.active_clip().scissor)
     }
 
     /// Appends the instance under the clip in force, unless the clip hides all of it.
     fn emit(&mut self, mut instance: RectInstance) {
-        if !self.is_visible(instance.bounds) {
+        let pixels = self.visible_pixels(instance.bounds);
+        if pixels.is_empty() {
             return;
         }
         let clip = self.active_clip();
@@ -306,22 +372,8 @@ impl FrameEncoding<'_> {
         instance.clips_count = clip.rounded_count as u32;
         let position = self.resources.instances.len();
         self.resources.instances.push(instance);
-        self.extend_batches(BatchSource::Rects, position);
-    }
-
-    /// Adds the instance just written at `position` of its buffer to the last batch when it
-    /// continues it, and starts a batch otherwise.
-    fn extend_batches(&mut self, source: BatchSource, position: usize) {
-        let scissor = self.active_clip().scissor;
-        match self.resources.draws.last_mut() {
-            Some(batch) if batch.source == source && batch.scissor == scissor => batch.instance_count += 1,
-            _ => self.resources.draws.push(DrawBatch {
-                source,
-                scissor,
-                first_instance: position,
-                instance_count: 1,
-            }),
-        }
+        self.batcher
+            .rect(position, pixels, clip.scissor, &mut self.resources.draws);
     }
 
     /// Draws the glyphs of a run texel for pixel. The baseline lies on a row of device pixels;
@@ -332,6 +384,7 @@ impl FrameEncoding<'_> {
         let color = premultiplied(color);
         let scale = self.scale;
         let baseline = (origin.y * scale).round();
+        let mut run_pixels = PixelRect::default();
         for glyph in self.display_list.glyphs(glyphs) {
             let (pen_pixel, subpixel_phase) = pen_position((origin.x + glyph.x) * scale);
             let placed = self.glyph_atlases.glyph(GlyphKey {
@@ -352,9 +405,11 @@ impl FrameEncoding<'_> {
                 extent.width as f32 / scale,
                 extent.height as f32 / scale,
             ];
-            if !self.is_visible(bounds) {
+            let pixels = self.visible_pixels(bounds);
+            if pixels.is_empty() {
                 continue;
             }
+            run_pixels = run_pixels.union(&pixels);
             let position = self.resources.glyph_instances.len();
             self.resources.glyph_instances.push(GlyphInstance {
                 bounds,
@@ -365,14 +420,15 @@ impl FrameEncoding<'_> {
                 is_color: u32::from(placed.atlas == AtlasKind::Color),
                 padding: [0; 3],
             });
-            self.extend_batches(
-                BatchSource::Glyphs {
-                    atlas: placed.atlas,
-                    page: placed.entry.page,
-                },
+            self.batcher.glyph(
                 position,
+                clip.scissor,
+                placed.atlas,
+                placed.entry.page,
+                &mut self.resources.draws,
             );
         }
+        self.batcher.glyphs_cover(run_pixels);
     }
 
     /// The line of a text decoration lies on whole device pixels and is at least one of them

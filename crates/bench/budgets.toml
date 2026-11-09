@@ -1,0 +1,27 @@
+# The budgets of the frame pipeline. They are fixed: a scene that cannot meet them is a defect
+# of the kit, never a reason to loosen them.
+
+# The stages of a frame in the order they run; the 95th percentile of every stage over the
+# measured frames stays at or under its budget, in milliseconds.
+[stages]
+# The changes of the frame are applied to the tree and the styles they touched are resolved.
+events = 1.0
+layout = 1.0
+display_list = 1.0
+# The display list is written into the buffers of the GPU and its draws are encoded.
+encoding = 1.0
+
+[frame]
+# The 95th percentile of the CPU time of a whole frame, in milliseconds.
+total = 4.0
+# Heap allocations a steady frame may make.
+allocations = 0
+# Frames run before the measurement begins: caches fill and buffers reach their steady size.
+warm_up_frames = 50
+measured_frames = 300
+
+[idle]
+# How long a window with content is left without events, in seconds.
+seconds = 10.0
+# Frames that may be presented in that time.
+presented_frames = 0
