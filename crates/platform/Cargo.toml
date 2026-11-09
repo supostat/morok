@@ -1,0 +1,82 @@
+[package]
+name = "morok-platform"
+description = "macOS platform layer of the morok UI kit: windows, the Metal 4 renderer and the frame loop"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+bytemuck.workspace = true
+dispatch2 = { workspace = true, features = ["block2", "objc2"] }
+morok-core.workspace = true
+morok-style.workspace = true
+objc2.workspace = true
+objc2-app-kit = { workspace = true, features = [
+  "NSAppearance",
+  "NSApplication",
+  "NSGraphics",
+  "NSResponder",
+  "NSRunningApplication",
+  "NSView",
+  "NSWindow",
+  "objc2-core-foundation",
+  "objc2-quartz-core",
+] }
+objc2-core-foundation = { workspace = true, features = ["CFCGTypes"] }
+objc2-core-graphics = { workspace = true, features = ["CGColorSpace"] }
+objc2-foundation = { workspace = true, features = ["NSArray", "NSError", "NSGeometry", "NSRunLoop", "NSString"] }
+objc2-metal = { workspace = true, features = [
+  "MTL4ArgumentTable",
+  "MTL4CommandAllocator",
+  "MTL4CommandBuffer",
+  "MTL4CommandEncoder",
+  "MTL4CommandQueue",
+  "MTL4Compiler",
+  "MTL4FunctionDescriptor",
+  "MTL4LibraryFunctionDescriptor",
+  "MTL4PipelineState",
+  "MTL4RenderCommandEncoder",
+  "MTL4RenderPass",
+  "MTL4RenderPipeline",
+  "MTLAllocation",
+  "MTLBuffer",
+  "MTLDevice",
+  "MTLDrawable",
+  "MTLEvent",
+  "MTLGPUAddress",
+  "MTLLibrary",
+  "MTLPixelFormat",
+  "MTLRenderCommandEncoder",
+  "MTLRenderPass",
+  "MTLRenderPipeline",
+  "MTLResidencySet",
+  "MTLResource",
+  "MTLTexture",
+  "MTLTypes",
+  "dispatch2",
+] }
+objc2-quartz-core = { workspace = true, features = [
+  "CADisplayLink",
+  "CALayer",
+  "CAMetalLayer",
+  "objc2-core-foundation",
+  "objc2-core-graphics",
+  "objc2-metal",
+] }
+
+[dev-dependencies]
+morok-css.workspace = true
+objc2-foundation = { workspace = true, features = ["NSDate", "NSRunLoop"] }
+
+[[test]]
+name = "display_link_idle"
+harness = false
+
+[[test]]
+name = "window_surface"
+harness = false

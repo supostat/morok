@@ -6,6 +6,7 @@ use crate::dirty::Dirty;
 use crate::element::Element;
 use crate::element_arena::ElementArena;
 use crate::element_id::ElementId;
+use crate::frame_scheduler::FrameScheduler;
 use crate::geometry::rect::Rect;
 use crate::geometry::size::Size;
 use crate::layout::geometry_pass::GeometryPass;
@@ -29,6 +30,7 @@ use crate::style::style_resolver::StyleResolver;
 /// Changing the tree only marks what the change touches. The work is done by the three stages
 /// of a frame, called in this order: [`resolve_styles`](Self::resolve_styles),
 /// [`compute_layout`](Self::compute_layout), [`build_display_list`](Self::build_display_list).
+/// A tree with a [`FrameScheduler`] asks it for a frame whenever a change waits for one.
 #[derive(Debug)]
 pub struct ElementTree {
     elements: ElementArena,
@@ -46,6 +48,9 @@ pub struct ElementTree {
     damage: Damage,
     /// The damage of changes made since the last display list; it joins the damage of the next one.
     pending_damage: Damage,
+    frame_scheduler: Option<Box<dyn FrameScheduler>>,
+    /// Whether a change waits for a frame that has not begun.
+    frame_is_pending: bool,
 }
 
 impl ElementTree {
@@ -70,7 +75,18 @@ impl ElementTree {
             previous_display_list: DisplayList::default(),
             damage: Damage::default(),
             pending_damage: Damage::default(),
+            frame_scheduler: None,
+            frame_is_pending: true,
         }
+    }
+
+    /// Names the host that runs the frames of the tree. A tree that already waits for a frame
+    /// asks for it at once.
+    pub fn set_frame_scheduler(&mut self, frame_scheduler: Box<dyn FrameScheduler>) {
+        if self.frame_is_pending {
+            frame_scheduler.request_frame();
+        }
+        self.frame_scheduler = Some(frame_scheduler);
     }
 
     pub fn root(&self) -> ElementId {
@@ -124,6 +140,7 @@ impl ElementTree {
             self.elements.invalidate_layout(parent);
             self.paint_order_is_stale = true;
             self.has_unpainted_changes = true;
+            self.request_frame();
         }
     }
 
@@ -143,6 +160,7 @@ impl ElementTree {
             self.elements.invalidate_layout(parent);
             self.paint_order_is_stale = true;
             self.has_unpainted_changes = true;
+            self.request_frame();
         }
     }
 
@@ -251,6 +269,7 @@ impl ElementTree {
         if held.is_attached {
             self.elements.invalidate_layout(element);
             self.has_unpainted_changes = true;
+            self.request_frame();
         }
     }
 
@@ -270,6 +289,7 @@ impl ElementTree {
             self.pending.extend(&element.children);
         }
         self.elements.invalidate_layout(self.root);
+        self.request_frame();
     }
 
     /// The style of the element as the last style stage resolved it.
@@ -294,6 +314,7 @@ impl ElementTree {
     /// The style stage: resolves the style of every element a change marked, and of the
     /// elements that inherit from them. Returns the number of elements resolved.
     pub fn resolve_styles(&mut self) -> usize {
+        self.frame_is_pending = false;
         let outcome = StylePass {
             elements: &mut self.elements,
             resolver: StyleResolver {
@@ -425,6 +446,19 @@ impl ElementTree {
     fn mark_style(&mut self, element: ElementId) {
         if self.elements[element].is_attached {
             self.elements.mark(element, Dirty::STYLE, Dirty::STYLE_BELOW);
+            self.request_frame();
+        }
+    }
+
+    /// Asks the host for a frame unless a frame that has not begun already waits. A change made
+    /// once the first stage ran is too late for the running frame and asks for the next one.
+    fn request_frame(&mut self) {
+        if self.frame_is_pending {
+            return;
+        }
+        self.frame_is_pending = true;
+        if let Some(frame_scheduler) = &self.frame_scheduler {
+            frame_scheduler.request_frame();
         }
     }
 
@@ -434,6 +468,7 @@ impl ElementTree {
         if !self.elements[element].is_attached {
             return;
         }
+        self.request_frame();
         self.elements.mark(element, Dirty::STYLE, Dirty::STYLE_BELOW);
         let resolver = StyleResolver {
             style_sheet: &self.style_sheet,

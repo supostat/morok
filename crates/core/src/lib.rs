@@ -5,6 +5,7 @@ mod element;
 mod element_arena;
 mod element_id;
 mod element_tree;
+mod frame_scheduler;
 mod geometry;
 mod layout;
 mod paint;
@@ -13,6 +14,7 @@ mod style;
 
 pub use element_id::ElementId;
 pub use element_tree::ElementTree;
+pub use frame_scheduler::FrameScheduler;
 pub use geometry::corners::Corners;
 pub use geometry::point::Point;
 pub use geometry::rect::Rect;
