@@ -38,3 +38,12 @@ cast_sign_loss = "allow"
 dbg_macro = "deny"
 todo = "deny"
 unimplemented = "deny"
+
+# Keeps target/ small. Backtraces still name file and line in workspace crates;
+# a debugger cannot inspect variables, and frames inside dependencies have no line numbers.
+[profile.dev]
+debug = "line-tables-only"
+incremental = false
+
+[profile.dev.package."*"]
+debug = false
