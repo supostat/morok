@@ -9,6 +9,7 @@ use crate::role::Role;
 use crate::style::computed_style::ComputedStyle;
 use crate::style::inline_style::InlineStyle;
 use crate::style::selector_target::SelectorTarget;
+use crate::text::text_layout::TextLayout;
 
 /// One node of an element tree with everything the frame stages keep about it.
 #[derive(Debug)]
@@ -33,6 +34,8 @@ pub(crate) struct Element {
     /// The border box on the surface.
     pub(crate) border_box: Rect,
     pub(crate) painted: PaintedElement,
+    /// The lines of the text; empty unless the element is a text.
+    pub(crate) text_layout: TextLayout,
 }
 
 impl Element {
@@ -46,7 +49,7 @@ impl Element {
             states: States::NONE,
             inline_style: InlineStyle::default(),
             text: String::new(),
-            dirty: Dirty::STYLE.union(Dirty::PAINT),
+            dirty: Dirty::STYLE.union(Dirty::PAINT).union(Dirty::TEXT),
             style: ComputedStyle::INITIAL,
             layout_cache: Cache::new(),
             layout: Layout::new(),
@@ -54,6 +57,7 @@ impl Element {
             grid_info: DetailedLayoutInfo::None,
             border_box: Rect::ZERO,
             painted: PaintedElement::default(),
+            text_layout: TextLayout::default(),
         }
     }
 

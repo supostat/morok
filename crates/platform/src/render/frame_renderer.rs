@@ -10,7 +10,9 @@ use objc2_metal::{
     MTLViewport,
 };
 
+use crate::render::atlas_kind::AtlasKind;
 use crate::render::display_list_encoder::DisplayListEncoder;
+use crate::render::draw_batch::BatchSource;
 use crate::render::frame_resources::FrameResources;
 use crate::render::pixel_rect::PixelRect;
 use crate::render::renderer::Renderer;
@@ -43,6 +45,9 @@ pub(crate) struct FrameRenderer {
     /// command buffer names the sets it uses itself: the list of sets of the queue is shared
     /// by every surface and is not safe to change from two threads.
     residency_set: Retained<ProtocolObject<dyn MTLResidencySet>>,
+    /// How many pages of each atlas the residency set already holds.
+    resident_mask_pages: usize,
+    resident_color_pages: usize,
     /// Takes the number of every frame the GPU finished.
     finished_frames: Retained<ProtocolObject<dyn MTLSharedEvent>>,
     submitted_frames: u64,
@@ -75,6 +80,8 @@ impl FrameRenderer {
             command_buffer: device.newCommandBuffer().expect("Metal creates a command buffer"),
             render_pass,
             residency_set,
+            resident_mask_pages: 0,
+            resident_color_pages: 0,
             finished_frames: device.newSharedEvent().expect("Metal creates a shared event"),
             submitted_frames: 0,
         }
@@ -100,8 +107,23 @@ impl FrameRenderer {
         self.next_frame_resources = (position + 1) % self.frames.len();
         self.wait_for_frame(self.frames[position].last_frame);
         let resources = &mut self.frames[position];
-        self.encoder.encode(display_list, geometry, resources);
+        let mut glyph_atlases = self.renderer.glyph_atlases();
+        glyph_atlases.begin_frame();
+        self.encoder
+            .encode(display_list, geometry, resources, &mut glyph_atlases);
         resources.bind_buffers();
+        for (kind, resident_pages) in [
+            (AtlasKind::Mask, &mut self.resident_mask_pages),
+            (AtlasKind::Color, &mut self.resident_color_pages),
+        ] {
+            let atlas = glyph_atlases.atlas(kind);
+            for page in *resident_pages..atlas.page_count() {
+                self.residency_set
+                    .addAllocation(ProtocolObject::<dyn MTLAllocation>::from_ref(atlas.texture(page)));
+            }
+            *resident_pages = atlas.page_count();
+        }
+        self.residency_set.commit();
 
         // SAFETY: a render pass has a color attachment at index 0.
         let attachment = unsafe { self.render_pass.colorAttachments().objectAtIndexedSubscript(0) };
@@ -116,11 +138,8 @@ impl FrameRenderer {
             .command_buffer
             .renderCommandEncoderWithDescriptor(&self.render_pass)
             .expect("Metal begins a render pass");
-        pass.setRenderPipelineState(self.renderer.rect_pipeline());
-        pass.setArgumentTable_atStages(
-            &resources.argument_table,
-            MTLRenderStages::Vertex | MTLRenderStages::Fragment,
-        );
+        let stages = MTLRenderStages::Vertex | MTLRenderStages::Fragment;
+        pass.setArgumentTable_atStages(&resources.argument_table, stages);
         pass.setViewport(MTLViewport {
             originX: 0.0,
             originY: 0.0,
@@ -131,8 +150,16 @@ impl FrameRenderer {
         });
         for batch in &resources.draws {
             pass.setScissorRect(scissor_rect(batch.scissor));
-            // SAFETY: the instances of the batch were written to the instance buffer the
-            // argument table points at.
+            match batch.source {
+                BatchSource::Rects => pass.setRenderPipelineState(self.renderer.rect_pipeline()),
+                BatchSource::Glyphs { atlas, page } => {
+                    resources.bind_atlas_page(glyph_atlases.atlas(atlas).texture(page));
+                    pass.setArgumentTable_atStages(&resources.argument_table, stages);
+                    pass.setRenderPipelineState(self.renderer.glyph_pipeline());
+                }
+            }
+            // SAFETY: the instances of the batch were written to the buffer of their kind that
+            // the argument table points at.
             unsafe {
                 pass.drawPrimitives_vertexStart_vertexCount_instanceCount_baseInstance(
                     MTLPrimitiveType::TriangleStrip,

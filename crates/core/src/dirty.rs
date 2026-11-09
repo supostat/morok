@@ -13,6 +13,8 @@ impl Dirty {
     pub(crate) const GEOMETRY_BELOW: Self = Self(1 << 3);
     /// The display items of the element must be rebuilt.
     pub(crate) const PAINT: Self = Self(1 << 4);
+    /// The lines of the text of the element must be laid out.
+    pub(crate) const TEXT: Self = Self(1 << 5);
 
     pub(crate) const fn union(self, other: Self) -> Self {
         Self(self.0 | other.0)

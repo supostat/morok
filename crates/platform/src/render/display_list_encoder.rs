@@ -1,11 +1,18 @@
 use bytemuck::Zeroable;
-use morok_core::{BoxFrame, DisplayItem, DisplayList, GradientFill, GradientShape, Rect, Sides};
+use morok_core::{
+    BoxFrame, DisplayItem, DisplayList, FontId, GradientFill, GradientShape, ItemRange, Point, Rect, Sides,
+};
 use morok_style::{Color, ShadowLayer};
 
 use crate::render::active_clip::ActiveClip;
-use crate::render::draw_batch::DrawBatch;
+use crate::render::atlas_kind::AtlasKind;
+use crate::render::draw_batch::{BatchSource, DrawBatch};
 use crate::render::frame_resources::FrameResources;
 use crate::render::frame_uniforms::FrameUniforms;
+use crate::render::glyph_atlases::GlyphAtlases;
+use crate::render::glyph_instance::GlyphInstance;
+use crate::render::glyph_key::GlyphKey;
+use crate::render::glyph_rasterizer::SUBPIXEL_PHASES;
 use crate::render::gradient_stop_entry::GradientStopEntry;
 use crate::render::pixel_rect::PixelRect;
 use crate::render::premultiplied_color::premultiplied;
@@ -22,7 +29,8 @@ const BLUR_REACH_PER_DEVIATION: f32 = 3.0;
 const EDGE_REACH_IN_PIXELS: f32 = 0.5;
 
 /// Turns a display list into the instances, gradient stops, clips and draw calls of a frame,
-/// written straight into the buffers the GPU reads.
+/// written straight into the buffers the GPU reads. Glyphs are taken from the atlases, and
+/// rasterized into them when a frame first draws them.
 #[derive(Debug, Default)]
 pub(crate) struct DisplayListEncoder {
     /// The clips enclosing the item being encoded, innermost last.
@@ -35,6 +43,7 @@ impl DisplayListEncoder {
         display_list: &DisplayList,
         geometry: &TargetGeometry,
         resources: &mut FrameResources,
+        glyph_atlases: &mut GlyphAtlases,
     ) {
         resources.begin_frame(FrameUniforms {
             viewport_size: [geometry.viewport.width, geometry.viewport.height],
@@ -52,6 +61,7 @@ impl DisplayListEncoder {
             scale: geometry.scale,
             active_clips: &mut self.active_clips,
             resources,
+            glyph_atlases,
         };
         for item in display_list.items() {
             frame.encode_item(item);
@@ -65,6 +75,7 @@ struct FrameEncoding<'a> {
     scale: f32,
     active_clips: &'a mut Vec<ActiveClip>,
     resources: &'a mut FrameResources,
+    glyph_atlases: &'a mut GlyphAtlases,
 }
 
 impl FrameEncoding<'_> {
@@ -81,6 +92,13 @@ impl FrameEncoding<'_> {
                 offset,
                 color,
             } => self.outline(&self.snapped(&frame), width, offset, color),
+            DisplayItem::GlyphRun {
+                origin,
+                font,
+                glyphs,
+                color,
+            } => self.glyph_run(origin, font, glyphs, color),
+            DisplayItem::TextDecoration { rect, color } => self.text_decoration(&rect, color),
             DisplayItem::PushClip { frame } => self.push_clip(&self.snapped(&frame)),
             DisplayItem::PopClip => {
                 self.active_clips.pop();
@@ -288,13 +306,124 @@ impl FrameEncoding<'_> {
         instance.clips_count = clip.rounded_count as u32;
         let position = self.resources.instances.len();
         self.resources.instances.push(instance);
+        self.extend_batches(BatchSource::Rects, position);
+    }
+
+    /// Adds the instance just written at `position` of its buffer to the last batch when it
+    /// continues it, and starts a batch otherwise.
+    fn extend_batches(&mut self, source: BatchSource, position: usize) {
+        let scissor = self.active_clip().scissor;
         match self.resources.draws.last_mut() {
-            Some(batch) if batch.scissor == clip.scissor => batch.instance_count += 1,
+            Some(batch) if batch.source == source && batch.scissor == scissor => batch.instance_count += 1,
             _ => self.resources.draws.push(DrawBatch {
-                scissor: clip.scissor,
+                source,
+                scissor,
                 first_instance: position,
                 instance_count: 1,
             }),
         }
+    }
+
+    /// Draws the glyphs of a run texel for pixel. The baseline lies on a row of device pixels;
+    /// along it the pen keeps its place to a quarter of a pixel, and the glyph is taken from
+    /// the atlas as rasterized for that quarter. Browsers place text this way.
+    fn glyph_run(&mut self, origin: Point, font: FontId, glyphs: ItemRange, color: Color) {
+        let clip = self.active_clip();
+        let color = premultiplied(color);
+        let scale = self.scale;
+        let baseline = (origin.y * scale).round();
+        for glyph in self.display_list.glyphs(glyphs) {
+            let (pen_pixel, subpixel_phase) = pen_position((origin.x + glyph.x) * scale);
+            let placed = self.glyph_atlases.glyph(GlyphKey {
+                font,
+                glyph: glyph.glyph,
+                scale: scale.to_bits(),
+                subpixel_phase,
+            });
+            let Some(placed) = placed else {
+                continue;
+            };
+            let extent = placed.entry.extent;
+            let left = pen_pixel + extent.left as f32;
+            let top = baseline + (glyph.y * scale).round() - extent.top as f32;
+            let bounds = [
+                left / scale,
+                top / scale,
+                extent.width as f32 / scale,
+                extent.height as f32 / scale,
+            ];
+            if !self.is_visible(bounds) {
+                continue;
+            }
+            let position = self.resources.glyph_instances.len();
+            self.resources.glyph_instances.push(GlyphInstance {
+                bounds,
+                color,
+                atlas_origin: [placed.entry.x as f32, placed.entry.y as f32],
+                clips_start: clip.rounded_start as u32,
+                clips_count: clip.rounded_count as u32,
+                is_color: u32::from(placed.atlas == AtlasKind::Color),
+                padding: [0; 3],
+            });
+            self.extend_batches(
+                BatchSource::Glyphs {
+                    atlas: placed.atlas,
+                    page: placed.entry.page,
+                },
+                position,
+            );
+        }
+    }
+
+    /// The line of a text decoration lies on whole device pixels and is at least one of them
+    /// thick: a hairline between pixels would turn gray.
+    fn text_decoration(&mut self, rect: &Rect, color: Color) {
+        let scale = self.scale;
+        let snap = |edge: f32| (edge * scale).round() / scale;
+        let left = snap(rect.x);
+        let top = snap(rect.y);
+        let thickness = (rect.height * scale).round().max(1.0) / scale;
+        let line = Rect::new(left, top, snap(rect.right()) - left, thickness);
+        self.emit(RectInstance {
+            bounds: self.bounds_of(&line),
+            outer: RoundedRect {
+                rect: [line.x, line.y, line.width, line.height],
+                ..RoundedRect::zeroed()
+            },
+            colors: [premultiplied(color); 4],
+            kind: RectKind::Fill as u32,
+            ..RectInstance::zeroed()
+        });
+    }
+}
+
+/// The device pixel a pen at `pen_x` stands in, and which quarter of it.
+fn pen_position(pen_x: f32) -> (f32, u8) {
+    let phases = f32::from(SUBPIXEL_PHASES);
+    let quarters = (pen_x * phases).round();
+    let pixel = (quarters / phases).floor();
+    (pixel, (quarters - pixel * phases) as u8)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::pen_position;
+
+    #[test]
+    fn a_pen_keeps_its_place_to_a_quarter_of_a_pixel() {
+        assert_eq!(pen_position(10.0), (10.0, 0));
+        assert_eq!(pen_position(10.3), (10.0, 1));
+        assert_eq!(pen_position(10.5), (10.0, 2));
+        assert_eq!(pen_position(10.7), (10.0, 3));
+    }
+
+    #[test]
+    fn a_pen_almost_on_the_next_pixel_stands_on_it() {
+        assert_eq!(pen_position(10.9), (11.0, 0));
+    }
+
+    #[test]
+    fn a_pen_left_of_the_surface_counts_its_quarters_rightwards_too() {
+        assert_eq!(pen_position(-0.25), (-1.0, 3));
     }
 }

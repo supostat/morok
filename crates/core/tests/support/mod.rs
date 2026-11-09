@@ -1,8 +1,11 @@
 #![allow(dead_code)]
 
-use morok_core::{ElementId, ElementTree, Rect, Role, Size, TextMeasureRequest, TextMeasurer, WidthConstraint};
+use morok_core::{
+    ElementId, ElementTree, FontId, FontMetrics, FontRequest, ItemRange, Rect, Role, ShapedGlyph, ShapedLine,
+    ShapedRun, ShapedText, Size, TextExtent, TextRequest, TextShaper, WidthConstraint,
+};
 use morok_css::{CompiledTokens, SourceFile, TokenId, compile_stylesheets, compile_tokens};
-use morok_style::{Class, Color, StyleSheet, Theme};
+use morok_style::{Class, Color, FontStyle, FontVariantNumeric, FontWeight, StyleSheet, Theme};
 
 pub(crate) const BASE_TOKENS_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../design/system/tokens.css");
 pub(crate) const VIEWPORT: Size = Size {
@@ -10,53 +13,144 @@ pub(crate) const VIEWPORT: Size = Size {
     height: 600.0,
 };
 
+/// The advance of a character of the monospace test font, per CSS pixel of font size.
+pub(crate) const ADVANCE_PER_FONT_SIZE: f32 = 0.625;
+pub(crate) const ASCENT_PER_FONT_SIZE: f32 = 0.9375;
+pub(crate) const DESCENT_PER_FONT_SIZE: f32 = 0.3125;
+pub(crate) const UNDERLINE_TOP_PER_FONT_SIZE: f32 = 0.125;
+pub(crate) const LINE_THROUGH_TOP_PER_FONT_SIZE: f32 = -0.375;
+pub(crate) const DECORATION_THICKNESS_PER_FONT_SIZE: f32 = 0.0625;
+/// At the initial font size of 16 pixels a character is 10 pixels wide and a line 20 high.
 pub(crate) const CHARACTER_WIDTH: f32 = 10.0;
 pub(crate) const LINE_HEIGHT: f32 = 20.0;
+pub(crate) const ELLIPSIS: char = '\u{2026}';
 
-/// Measures text as a monospace font would — every character as wide as the next, a line break
-/// between words — and remembers every text it was asked about.
-#[derive(Debug, Default)]
-pub(crate) struct MonospaceMeasurer {
-    pub(crate) measured_texts: Vec<String>,
+/// What a shaper was asked about a font.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct RequestedFont {
+    pub(crate) families: Vec<String>,
+    pub(crate) size: f32,
+    pub(crate) weight: FontWeight,
+    pub(crate) style: FontStyle,
+    pub(crate) numeric: FontVariantNumeric,
 }
 
-impl MonospaceMeasurer {
-    fn characters_per_line(text: &str, width: WidthConstraint) -> usize {
-        let longest_word = text.split(' ').map(str::len).max().unwrap_or(0);
-        match width {
-            WidthConstraint::MinContent => longest_word,
-            WidthConstraint::MaxContent => text.len(),
-            WidthConstraint::Definite(width) => ((width / CHARACTER_WIDTH) as usize).clamp(longest_word, text.len()),
-        }
+/// Sets text as a monospace font would: every character as wide as the next, a line break
+/// between words where a line is full and at every line break of the text. The glyph of a
+/// character is its code. It remembers what it was asked.
+#[derive(Debug, Default)]
+pub(crate) struct MonospaceShaper {
+    pub(crate) measured_texts: Vec<String>,
+    pub(crate) shaped_texts: Vec<String>,
+    pub(crate) last_font: Option<RequestedFont>,
+}
+
+impl MonospaceShaper {
+    fn advance(request: &TextRequest<'_>) -> f32 {
+        request.font.size * ADVANCE_PER_FONT_SIZE + request.letter_spacing
     }
 
-    fn line_count(text: &str, characters_per_line: usize) -> usize {
-        let mut lines = 1;
-        let mut line_length = 0;
-        for word in text.split(' ') {
-            let extended = if line_length == 0 {
-                word.len()
-            } else {
-                line_length + 1 + word.len()
-            };
-            if extended > characters_per_line && line_length > 0 {
-                lines += 1;
-                line_length = word.len();
-            } else {
-                line_length = extended;
+    /// The lines of the text as ranges of characters, white space at the end of a wrapped
+    /// line left out.
+    fn lines(request: &TextRequest<'_>) -> Vec<String> {
+        let advance = Self::advance(request);
+        let mut lines = Vec::new();
+        for paragraph in request.text.split('\n') {
+            if request.text.is_empty() {
+                break;
             }
+            let fits = |characters: usize| match request.width {
+                WidthConstraint::MaxContent => true,
+                WidthConstraint::MinContent => false,
+                WidthConstraint::Definite(width) => characters as f32 * advance <= width,
+            };
+            let mut words = paragraph.split(' ');
+            let mut line = words.next().unwrap_or_default().to_owned();
+            for word in words {
+                let extended = format!("{line} {word}");
+                if !line.trim_end().is_empty() && !fits(extended.trim_end().chars().count()) {
+                    lines.push(line.trim_end().to_owned());
+                    word.clone_into(&mut line);
+                } else {
+                    line = extended;
+                }
+            }
+            lines.push(line);
         }
         lines
     }
+
+    fn remember_font(&mut self, font: &FontRequest<'_>) {
+        self.last_font = Some(RequestedFont {
+            families: font.families.iter().map(ToString::to_string).collect(),
+            size: font.size,
+            weight: font.weight,
+            style: font.style,
+            numeric: font.numeric,
+        });
+    }
 }
 
-impl TextMeasurer for MonospaceMeasurer {
-    fn measure(&mut self, request: &TextMeasureRequest<'_>) -> Size {
+impl TextShaper for MonospaceShaper {
+    fn font_metrics(&mut self, font: &FontRequest<'_>) -> FontMetrics {
+        FontMetrics {
+            ascent: font.size * ASCENT_PER_FONT_SIZE,
+            descent: font.size * DESCENT_PER_FONT_SIZE,
+            line_gap: 0.0,
+            underline_top: font.size * UNDERLINE_TOP_PER_FONT_SIZE,
+            line_through_top: font.size * LINE_THROUGH_TOP_PER_FONT_SIZE,
+            decoration_thickness: font.size * DECORATION_THICKNESS_PER_FONT_SIZE,
+        }
+    }
+
+    fn measure(&mut self, request: &TextRequest<'_>) -> TextExtent {
         self.measured_texts.push(request.text.to_owned());
-        let characters_per_line = Self::characters_per_line(request.text, request.width);
-        Size {
-            width: characters_per_line as f32 * CHARACTER_WIDTH,
-            height: Self::line_count(request.text, characters_per_line) as f32 * LINE_HEIGHT,
+        self.remember_font(&request.font);
+        let lines = Self::lines(request);
+        let widest = lines.iter().map(|line| line.chars().count()).max().unwrap_or(0);
+        TextExtent {
+            width: widest as f32 * Self::advance(request),
+            line_count: lines.len(),
+        }
+    }
+
+    fn shape(&mut self, request: &TextRequest<'_>, ellipsis_width: Option<f32>, shaped: &mut ShapedText) {
+        self.shaped_texts.push(request.text.to_owned());
+        self.remember_font(&request.font);
+        let advance = Self::advance(request);
+        shaped.clear();
+        for line in Self::lines(request) {
+            let mut characters: Vec<char> = line.chars().collect();
+            let overflows = |count: usize| ellipsis_width.is_some_and(|width| count as f32 * advance > width);
+            if overflows(characters.len()) {
+                while !characters.is_empty() && overflows(characters.len() + 1) {
+                    characters.pop();
+                }
+                characters.push(ELLIPSIS);
+            }
+            let glyphs_start = shaped.glyphs.len() as u32;
+            shaped
+                .glyphs
+                .extend(characters.iter().enumerate().map(|(position, character)| ShapedGlyph {
+                    glyph: *character as u16,
+                    x: position as f32 * advance,
+                    y: 0.0,
+                }));
+            let runs_start = shaped.runs.len() as u32;
+            shaped.runs.push(ShapedRun {
+                font: FontId(0),
+                glyphs: ItemRange {
+                    start: glyphs_start,
+                    end: shaped.glyphs.len() as u32,
+                },
+            });
+            shaped.lines.push(ShapedLine {
+                width: characters.len() as f32 * advance,
+                runs: ItemRange {
+                    start: runs_start,
+                    end: shaped.runs.len() as u32,
+                },
+            });
         }
     }
 }
@@ -72,7 +166,7 @@ pub(crate) struct Frame {
 /// An element tree styled by a stylesheet the real compiler compiled against the base tokens.
 pub(crate) struct Scene {
     pub(crate) tree: ElementTree,
-    pub(crate) text_measurer: MonospaceMeasurer,
+    pub(crate) text_shaper: MonospaceShaper,
     pub(crate) viewport: Size,
     tokens: CompiledTokens,
     style_sheet: StyleSheet,
@@ -92,7 +186,7 @@ impl Scene {
             .unwrap_or_else(|diagnostics| panic!("the stylesheet compiles:\n{diagnostics}"));
         Self {
             tree: ElementTree::new(style_sheet.clone(), tokens.light.clone()),
-            text_measurer: MonospaceMeasurer::default(),
+            text_shaper: MonospaceShaper::default(),
             viewport: VIEWPORT,
             tokens,
             style_sheet,
@@ -133,7 +227,7 @@ impl Scene {
     /// Runs the three stages of a frame.
     pub(crate) fn frame(&mut self) -> Frame {
         let resolved = self.tree.resolve_styles();
-        let laid_out = self.tree.compute_layout(self.viewport, &mut self.text_measurer);
+        let laid_out = self.tree.compute_layout(self.viewport, &mut self.text_shaper);
         let rebuilt = self.tree.build_display_list();
         Frame {
             resolved,

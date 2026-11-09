@@ -378,12 +378,12 @@ fn a_text_is_as_large_as_the_measurer_says() {
     );
     assert!(
         scene
-            .text_measurer
+            .text_shaper
             .measured_texts
             .iter()
             .all(|text| text == "hello world")
     );
-    assert!(!scene.text_measurer.measured_texts.is_empty());
+    assert!(!scene.text_shaper.measured_texts.is_empty());
 }
 
 #[test]
@@ -394,7 +394,7 @@ fn a_new_text_is_measured_again_and_moves_what_follows_it() {
     let after = scene.add_text(line, "after");
     scene.frame();
     assert_eq!(scene.border_box(after), rect(50.0, 0.0, 50.0, 20.0));
-    scene.text_measurer.measured_texts.clear();
+    scene.text_shaper.measured_texts.clear();
 
     scene.tree.set_text(label, "a longer label");
     scene.frame();
@@ -403,12 +403,12 @@ fn a_new_text_is_measured_again_and_moves_what_follows_it() {
     assert_eq!(scene.border_box(after), rect(140.0, 0.0, 50.0, 20.0));
     assert!(
         scene
-            .text_measurer
+            .text_shaper
             .measured_texts
             .iter()
             .all(|text| text == "a longer label"),
         "{:?}",
-        scene.text_measurer.measured_texts
+        scene.text_shaper.measured_texts
     );
 }
 
@@ -430,7 +430,7 @@ fn only_the_subtree_that_changed_is_laid_out_again() {
     let first_frame = scene.frame();
     assert_eq!(first_frame.laid_out, 8);
     assert_eq!(scene.border_box(right_texts[1]), rect(200.0, 20.0, 200.0, 20.0));
-    scene.text_measurer.measured_texts.clear();
+    scene.text_shaper.measured_texts.clear();
 
     scene.add_classes(left, &["wide"]);
     let widened = scene.frame();
@@ -442,12 +442,12 @@ fn only_the_subtree_that_changed_is_laid_out_again() {
     assert_eq!(scene.border_box(right_texts[1]), rect(300.0, 20.0, 200.0, 20.0));
     assert!(
         scene
-            .text_measurer
+            .text_shaper
             .measured_texts
             .iter()
             .all(|text| text.starts_with("left")),
         "{:?}",
-        scene.text_measurer.measured_texts
+        scene.text_shaper.measured_texts
     );
     assert_eq!(
         widened.laid_out, 5,
@@ -461,14 +461,14 @@ fn a_frame_without_changes_lays_nothing_out() {
     let element = scene.add(scene.root(), Role::Element, &["box"]);
     scene.add_text(element, "steady");
     scene.frame();
-    scene.text_measurer.measured_texts.clear();
+    scene.text_shaper.measured_texts.clear();
 
     let steady = scene.frame();
 
     assert_eq!(steady.resolved, 0);
     assert_eq!(steady.laid_out, 0);
     assert_eq!(steady.rebuilt, 0);
-    assert!(scene.text_measurer.measured_texts.is_empty());
+    assert!(scene.text_shaper.measured_texts.is_empty());
 }
 
 #[test]
@@ -553,5 +553,5 @@ fn laying_out_a_tree_whose_styles_are_not_resolved_panics() {
     let mut scene = Scene::new(".row { height: 30px; }");
     scene.add(scene.root(), Role::Element, &["row"]);
 
-    scene.tree.compute_layout(scene.viewport, &mut scene.text_measurer);
+    scene.tree.compute_layout(scene.viewport, &mut scene.text_shaper);
 }

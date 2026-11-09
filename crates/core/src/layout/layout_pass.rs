@@ -13,10 +13,12 @@ use crate::geometry::size::Size;
 use crate::layout::child_nodes::ChildNodes;
 use crate::layout::element_styles::ElementStyles;
 use crate::layout::taffy_style::TaffyStyle;
-use crate::layout::text_measure_request::TextMeasureRequest;
-use crate::layout::text_measurer::TextMeasurer;
-use crate::layout::width_constraint::WidthConstraint;
 use crate::role::Role;
+use crate::text::line_metrics::LineMetrics;
+use crate::text::text_request::TextRequest;
+use crate::text::text_shaper::TextShaper;
+use crate::text::white_space_processing::processed;
+use crate::text::width_constraint::WidthConstraint;
 
 /// The layout stage of a frame: the element arena laid out by the algorithms of Taffy.
 ///
@@ -26,7 +28,9 @@ pub(crate) struct LayoutPass<'a> {
     pub(crate) elements: &'a mut ElementArena,
     pub(crate) style_sheet: &'a StyleSheet,
     pub(crate) theme: &'a Theme,
-    pub(crate) text_measurer: &'a mut dyn TextMeasurer,
+    pub(crate) text_shaper: &'a mut dyn TextShaper,
+    /// Scratch space for texts whose white space collapses.
+    pub(crate) processed_text: &'a mut String,
     pub(crate) laid_out_elements: usize,
 }
 
@@ -87,8 +91,9 @@ impl LayoutPass<'_> {
         })
     }
 
-    /// The layout of an element without children: text is as large as the measurer says, every
-    /// other element has no content of its own.
+    /// The layout of an element without children: a text is as wide as its widest line and as
+    /// high as its lines at the line height of CSS, every other element has no content of its
+    /// own. A text that does not wrap is measured on one line whatever width it is offered.
     fn compute_leaf_layout(&mut self, id: ElementId, inputs: LayoutInput) -> LayoutOutput {
         let styles = ElementStyles {
             elements: self.elements,
@@ -96,7 +101,9 @@ impl LayoutPass<'_> {
             theme: self.theme,
         };
         let element = &styles.elements[id];
-        let text_measurer = &mut *self.text_measurer;
+        let text_shaper = &mut *self.text_shaper;
+        let processed_text = &mut *self.processed_text;
+        let theme = self.theme;
         compute_leaf_layout(
             inputs,
             &styles.taffy_style(id),
@@ -105,18 +112,29 @@ impl LayoutPass<'_> {
                 if element.role != Role::Text {
                     return taffy::Size::ZERO;
                 }
-                let width = match (known_dimensions.width, available_space.width) {
+                let style = &element.style.text;
+                let offered_width = match (known_dimensions.width, available_space.width) {
                     (Some(width), _) | (None, AvailableSpace::Definite(width)) => WidthConstraint::Definite(width),
                     (None, AvailableSpace::MinContent) => WidthConstraint::MinContent,
                     (None, AvailableSpace::MaxContent) => WidthConstraint::MaxContent,
                 };
-                let measured = text_measurer.measure(&TextMeasureRequest {
-                    text: &element.text,
-                    width,
+                let font = style.font_request(theme);
+                let extent = text_shaper.measure(&TextRequest {
+                    text: processed(&element.text, style.white_space, processed_text),
+                    font,
+                    letter_spacing: style.letter_spacing,
+                    width: if style.white_space.wraps() {
+                        offered_width
+                    } else {
+                        WidthConstraint::MaxContent
+                    },
                 });
+                let line = LineMetrics::of(style, &text_shaper.font_metrics(&font));
                 taffy::Size {
-                    width: known_dimensions.width.unwrap_or(measured.width),
-                    height: known_dimensions.height.unwrap_or(measured.height),
+                    width: known_dimensions.width.unwrap_or(extent.width),
+                    height: known_dimensions
+                        .height
+                        .unwrap_or(extent.line_count as f32 * line.line_height),
                 }
             },
         )

@@ -12,3 +12,4 @@ pub(crate) mod style_outcome;
 pub(crate) mod style_pass;
 pub(crate) mod style_resolver;
 pub(crate) mod styled_parent;
+pub(crate) mod text_style;

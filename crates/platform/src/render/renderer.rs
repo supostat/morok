@@ -1,4 +1,4 @@
-use std::sync::{Mutex, PoisonError};
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 use dispatch2::DispatchData;
 use objc2::rc::Retained;
@@ -10,11 +10,16 @@ use objc2_metal::{
     MTLCreateSystemDefaultDevice, MTLDevice, MTLGPUFamily, MTLLibrary, MTLPixelFormat, MTLRenderPipelineState,
 };
 
+use crate::atlas_statistics::AtlasStatistics;
+use crate::render::glyph_atlases::GlyphAtlases;
 use crate::renderer_error::RendererError;
+use crate::renderer_options::RendererOptions;
 
 const SHADERS: &[u8] = include_bytes!(env!("MOROK_SHADERS_METALLIB"));
 const RECT_VERTEX_FUNCTION: &str = "rect_vertex";
 const RECT_FRAGMENT_FUNCTION: &str = "rect_fragment";
+const GLYPH_VERTEX_FUNCTION: &str = "glyph_vertex";
+const GLYPH_FRAGMENT_FUNCTION: &str = "glyph_fragment";
 
 /// Pipelines compiled at the same moment by separate Metal 4 compilers never come back from the
 /// driver, so the renderers of a process compile theirs one after another.
@@ -25,17 +30,24 @@ static PIPELINE_COMPILATION: Mutex<()> = Mutex::new(());
 pub(crate) const PIXEL_FORMAT: MTLPixelFormat = MTLPixelFormat::BGRA8Unorm;
 
 /// The GPU resources every surface of an application shares: the Metal 4 device, its command
-/// queue and the pipeline that draws boxes. A clone is a handle to the same resources.
+/// queue, the pipelines that draw boxes and glyphs, and the glyph atlases. A clone is a handle
+/// to the same resources.
 #[derive(Clone, Debug)]
 pub struct Renderer {
     device: Retained<ProtocolObject<dyn MTLDevice>>,
     queue: Retained<ProtocolObject<dyn MTL4CommandQueue>>,
     rect_pipeline: Retained<ProtocolObject<dyn MTLRenderPipelineState>>,
+    glyph_pipeline: Retained<ProtocolObject<dyn MTLRenderPipelineState>>,
+    glyph_atlases: Arc<Mutex<GlyphAtlases>>,
 }
 
 impl Renderer {
     /// The renderer of the default GPU of the system.
     pub fn new() -> Result<Self, RendererError> {
+        Self::with_options(&RendererOptions::default())
+    }
+
+    pub fn with_options(options: &RendererOptions) -> Result<Self, RendererError> {
         let device = MTLCreateSystemDefaultDevice().ok_or(RendererError::NoDevice)?;
         if !device.supportsFamily(MTLGPUFamily::Metal4) {
             return Err(RendererError::Metal4Unsupported);
@@ -47,18 +59,36 @@ impl Renderer {
         let library = device
             .newLibraryWithData_error(&DispatchData::from_static_bytes(SHADERS))
             .map_err(|error| metal_error("shader library", &error))?;
-        let rect_pipeline = {
+        let (rect_pipeline, glyph_pipeline) = {
             let _one_at_a_time = PIPELINE_COMPILATION.lock().unwrap_or_else(PoisonError::into_inner);
             let compiler = device
                 .newCompilerWithDescriptor_error(&MTL4CompilerDescriptor::new())
                 .map_err(|error| metal_error("shader compiler", &error))?;
-            rect_pipeline(&compiler, &library)?
+            (
+                pipeline(&compiler, &library, RECT_VERTEX_FUNCTION, RECT_FRAGMENT_FUNCTION)?,
+                pipeline(&compiler, &library, GLYPH_VERTEX_FUNCTION, GLYPH_FRAGMENT_FUNCTION)?,
+            )
         };
         Ok(Self {
+            glyph_atlases: Arc::new(Mutex::new(GlyphAtlases::new(&device, options))),
             device,
             queue,
             rect_pipeline,
+            glyph_pipeline,
         })
+    }
+
+    /// How full the glyph atlases are and what they have done so far.
+    pub fn atlas_statistics(&self) -> AtlasStatistics {
+        self.glyph_atlases().statistics()
+    }
+
+    pub(crate) fn glyph_atlases(&self) -> MutexGuard<'_, GlyphAtlases> {
+        self.glyph_atlases.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    pub(crate) fn glyph_pipeline(&self) -> &ProtocolObject<dyn MTLRenderPipelineState> {
+        &self.glyph_pipeline
     }
 
     pub(crate) fn device(&self) -> &Retained<ProtocolObject<dyn MTLDevice>> {
@@ -74,10 +104,13 @@ impl Renderer {
     }
 }
 
-/// The pipeline blends premultiplied colors over what is already drawn.
-fn rect_pipeline(
+/// A pipeline of the two named functions that blends premultiplied colors over what is
+/// already drawn.
+fn pipeline(
     compiler: &ProtocolObject<dyn MTL4Compiler>,
     library: &ProtocolObject<dyn MTLLibrary>,
+    vertex_function: &str,
+    fragment_function: &str,
 ) -> Result<Retained<ProtocolObject<dyn MTLRenderPipelineState>>, RendererError> {
     let function = |name: &str| {
         let descriptor = MTL4LibraryFunctionDescriptor::new();
@@ -85,8 +118,8 @@ fn rect_pipeline(
         descriptor.setLibrary(Some(library));
         descriptor
     };
-    let vertex_function = function(RECT_VERTEX_FUNCTION);
-    let fragment_function = function(RECT_FRAGMENT_FUNCTION);
+    let vertex_function = function(vertex_function);
+    let fragment_function = function(fragment_function);
     let descriptor = MTL4RenderPipelineDescriptor::new();
     descriptor.setVertexFunctionDescriptor(Some(as_function_descriptor(&vertex_function)));
     descriptor.setFragmentFunctionDescriptor(Some(as_function_descriptor(&fragment_function)));
@@ -101,7 +134,7 @@ fn rect_pipeline(
     let descriptor: &MTL4PipelineDescriptor = &descriptor;
     compiler
         .newRenderPipelineStateWithDescriptor_compilerTaskOptions_error(descriptor, None)
-        .map_err(|error| metal_error("rectangle pipeline", &error))
+        .map_err(|error| metal_error("render pipeline", &error))
 }
 
 fn as_function_descriptor(function: &MTL4LibraryFunctionDescriptor) -> &MTL4FunctionDescriptor {

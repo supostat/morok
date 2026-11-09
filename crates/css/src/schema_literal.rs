@@ -3,11 +3,12 @@ use std::fmt;
 
 use morok_style::{
     BackgroundImage, BoxShadow, Class, ClassStyle, Color, ColorStop, ColorValue, CompoundSelector, ContentAlignment,
-    Corner, Declaration, Display, Easing, FlexDirection, FlexWrap, FontFamilies, FontWeight, Gradient,
-    GradientDirection, GridAutoFlow, GridLine, ItemAlignment, Leading, Length, LengthPercentage, LengthPercentageAuto,
-    LineStyle, LinearGradient, Milliseconds, Overflow, Pixels, Position, RadialExtent, RadialGradient, RadialShape,
-    RepeatCount, Selector, SelfAlignment, Shadow, ShadowLayer, Side, States, StepPosition, StyleRule, StyleSheet,
-    Theme, Token, TokenTerm, TrackBreadth, TrackListItem, TrackSize,
+    Corner, Declaration, Display, Easing, FlexDirection, FlexWrap, FontFamilies, FontStyle, FontVariantNumeric,
+    FontWeight, FontWeightValue, Gradient, GradientDirection, GridAutoFlow, GridLine, ItemAlignment, Leading, Length,
+    LengthPercentage, LengthPercentageAuto, LineHeight, LineStyle, LinearGradient, Milliseconds, Overflow, Pixels,
+    Position, RadialExtent, RadialGradient, RadialShape, RepeatCount, Selector, SelfAlignment, Shadow, ShadowLayer,
+    Side, States, StepPosition, StyleRule, StyleSheet, TextAlign, TextDecoration, TextOverflow, Theme, Token,
+    TokenTerm, TrackBreadth, TrackListItem, TrackSize, WhiteSpace,
 };
 use proc_macro2::{Ident, Literal, TokenStream};
 use quote::{format_ident, quote};
@@ -67,6 +68,8 @@ unit_enum_literals!(
     Display,
     FlexDirection,
     FlexWrap,
+    FontStyle,
+    FontVariantNumeric,
     GridAutoFlow,
     ItemAlignment,
     LineStyle,
@@ -76,6 +79,10 @@ unit_enum_literals!(
     RadialShape,
     Side,
     StepPosition,
+    TextAlign,
+    TextDecoration,
+    TextOverflow,
+    WhiteSpace,
 );
 
 impl SchemaLiteral for f32 {
@@ -430,6 +437,24 @@ impl SchemaLiteral for ColorValue {
     }
 }
 
+impl SchemaLiteral for FontWeightValue {
+    fn literal(&self, schema: &TokenStream) -> TokenStream {
+        match self {
+            Self::Token(token) => variant("FontWeightValue", self, &one(token), schema),
+            Self::Keyword(weight) => variant("FontWeightValue", self, &one(weight), schema),
+        }
+    }
+}
+
+impl SchemaLiteral for LineHeight {
+    fn literal(&self, schema: &TokenStream) -> TokenStream {
+        match self {
+            Self::Normal => variant("LineHeight", self, &[], schema),
+            Self::Token(token) => variant("LineHeight", self, &one(token), schema),
+        }
+    }
+}
+
 impl SchemaLiteral for BoxShadow {
     fn literal(&self, schema: &TokenStream) -> TokenStream {
         match self {
@@ -537,8 +562,20 @@ impl SchemaLiteral for Declaration {
             Self::BorderColor(side, color) => two(side, color),
             Self::BorderRadius(corner, radius) => two(corner, radius),
             Self::BoxShadow(shadow) => one(shadow),
-            Self::OutlineWidth(length) | Self::OutlineOffset(length) => one(length),
+            Self::OutlineWidth(length)
+            | Self::OutlineOffset(length)
+            | Self::FontSize(length)
+            | Self::LetterSpacing(length) => one(length),
             Self::OutlineStyle(style) => one(style),
+            Self::FontFamily(families) => one(families),
+            Self::FontWeight(weight) => one(weight),
+            Self::FontStyle(style) => one(style),
+            Self::LineHeight(line_height) => one(line_height),
+            Self::TextAlign(alignment) => one(alignment),
+            Self::TextDecoration(decoration) => one(decoration),
+            Self::TextOverflow(overflow) => one(overflow),
+            Self::WhiteSpace(white_space) => one(white_space),
+            Self::FontVariantNumeric(variant) => one(variant),
         };
         variant("Declaration", self, &arguments, schema)
     }

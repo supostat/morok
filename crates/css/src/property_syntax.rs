@@ -7,6 +7,7 @@ pub(crate) mod gradient;
 pub(crate) mod grid;
 pub(crate) mod layout;
 pub(crate) mod length;
+pub(crate) mod text;
 pub(crate) mod track;
 
 use cssparser::{ParseError, ParseErrorKind, Parser, Token};

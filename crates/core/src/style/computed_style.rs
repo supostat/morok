@@ -1,5 +1,6 @@
 use crate::style::layout_style::LayoutStyle;
 use crate::style::paint_style::{INITIAL_COLOR, PaintStyle};
+use crate::style::text_style::TextStyle;
 
 /// The style of one element after the cascade, inheritance and the active theme: every token is
 /// resolved to its value.
@@ -7,11 +8,13 @@ use crate::style::paint_style::{INITIAL_COLOR, PaintStyle};
 pub struct ComputedStyle {
     pub layout: LayoutStyle,
     pub paint: PaintStyle,
+    pub text: TextStyle,
 }
 
 impl ComputedStyle {
     pub(crate) const INITIAL: Self = Self {
         layout: LayoutStyle::INITIAL,
         paint: PaintStyle::initial(INITIAL_COLOR),
+        text: TextStyle::INITIAL,
     };
 }

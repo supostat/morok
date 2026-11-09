@@ -3,7 +3,7 @@
 pub enum Role {
     /// A box that lays out its children.
     Element,
-    /// A run of text, measured through the [`TextMeasurer`](crate::TextMeasurer).
+    /// A run of text, measured and shaped through the [`TextShaper`](crate::TextShaper).
     Text,
     Image,
     Icon,

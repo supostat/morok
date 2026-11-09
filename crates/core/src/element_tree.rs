@@ -11,7 +11,6 @@ use crate::geometry::rect::Rect;
 use crate::geometry::size::Size;
 use crate::layout::geometry_pass::GeometryPass;
 use crate::layout::layout_pass::LayoutPass;
-use crate::layout::text_measurer::TextMeasurer;
 use crate::paint::box_painter::BoxPainter;
 use crate::paint::damage::Damage;
 use crate::paint::display_list::DisplayList;
@@ -24,6 +23,9 @@ use crate::style::computed_style::ComputedStyle;
 use crate::style::selector_change::SelectorChange;
 use crate::style::style_pass::StylePass;
 use crate::style::style_resolver::StyleResolver;
+use crate::text::line_box::LineBox;
+use crate::text::text_layout_pass::TextLayoutPass;
+use crate::text::text_shaper::TextShaper;
 
 /// The retained tree of one surface: its elements, their styles, their boxes and its display list.
 ///
@@ -48,6 +50,8 @@ pub struct ElementTree {
     damage: Damage,
     /// The damage of changes made since the last display list; it joins the damage of the next one.
     pending_damage: Damage,
+    /// Scratch space for texts whose white space collapses.
+    processed_text: String,
     frame_scheduler: Option<Box<dyn FrameScheduler>>,
     /// Whether a change waits for a frame that has not begun.
     frame_is_pending: bool,
@@ -75,6 +79,7 @@ impl ElementTree {
             previous_display_list: DisplayList::default(),
             damage: Damage::default(),
             pending_damage: Damage::default(),
+            processed_text: String::new(),
             frame_scheduler: None,
             frame_is_pending: true,
         }
@@ -266,7 +271,9 @@ impl ElementTree {
         held.text.clear();
         held.text.push_str(text);
         held.dirty.insert(Dirty::PAINT);
-        if held.is_attached {
+        let is_attached = held.is_attached;
+        self.elements.invalidate_text(element);
+        if is_attached {
             self.elements.invalidate_layout(element);
             self.has_unpainted_changes = true;
             self.request_frame();
@@ -287,6 +294,7 @@ impl ElementTree {
                 .insert(Dirty::STYLE.union(Dirty::STYLE_BELOW).union(Dirty::PAINT));
             element.layout_cache.clear();
             self.pending.extend(&element.children);
+            self.elements.invalidate_text(id);
         }
         self.elements.invalidate_layout(self.root);
         self.request_frame();
@@ -300,6 +308,12 @@ impl ElementTree {
     /// The border box of the element on the surface, as the last layout stage placed it.
     pub fn border_box(&self, element: ElementId) -> Rect {
         self.elements[element].border_box
+    }
+
+    /// The line boxes of a text element as the last layout stage placed them, top to bottom.
+    /// Another element has none.
+    pub fn line_boxes(&self, element: ElementId) -> &[LineBox] {
+        &self.elements[element].text_layout.lines
     }
 
     pub fn display_list(&self) -> &DisplayList {
@@ -336,7 +350,7 @@ impl ElementTree {
     /// # Panics
     ///
     /// When a change waits for the style stage.
-    pub fn compute_layout(&mut self, viewport: Size, text_measurer: &mut dyn TextMeasurer) -> usize {
+    pub fn compute_layout(&mut self, viewport: Size, text_shaper: &mut dyn TextShaper) -> usize {
         assert!(
             !self.elements[self.root]
                 .dirty
@@ -347,7 +361,8 @@ impl ElementTree {
             elements: &mut self.elements,
             style_sheet: &self.style_sheet,
             theme: &self.theme,
-            text_measurer,
+            text_shaper: &mut *text_shaper,
+            processed_text: &mut self.processed_text,
             laid_out_elements: 0,
         }
         .run(self.root, viewport);
@@ -357,6 +372,13 @@ impl ElementTree {
             repaints: false,
         }
         .run(self.root);
+        self.has_unpainted_changes |= TextLayoutPass {
+            elements: &mut self.elements,
+            theme: &self.theme,
+            text_shaper,
+            processed_text: &mut self.processed_text,
+        }
+        .run();
         laid_out_elements
     }
 

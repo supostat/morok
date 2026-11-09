@@ -3,6 +3,7 @@ use morok_style::Theme;
 use crate::dirty::Dirty;
 use crate::element_arena::ElementArena;
 use crate::element_id::ElementId;
+use crate::geometry::rect::Rect;
 use crate::paint::box_painter::BoxPainter;
 use crate::paint::damage::Damage;
 use crate::paint::display_item::DisplayItem;
@@ -91,7 +92,16 @@ impl PaintPass<'_> {
         }
         let start = self.display_list.items.len();
         self.painter.paint_box(element, self.display_list);
-        let bounds = visual_bounds(&element.style, &element.border_box, self.theme);
+        let mut bounds = visual_bounds(&element.style, &element.border_box, self.theme);
+        if let Some(lines) = element.text_layout.bounds() {
+            let lines_on_surface = Rect::new(
+                element.border_box.x + lines.x,
+                element.border_box.y + lines.y,
+                lines.width,
+                lines.height,
+            );
+            bounds = bounds.union(&lines_on_surface);
+        }
         self.damage.add(bounds);
         let box_items = self.items_since(start);
         let painted = &mut self.elements[id].painted;
@@ -101,7 +111,7 @@ impl PaintPass<'_> {
     }
 
     /// Takes items over from the previous list and returns where they are now. The stops of a
-    /// gradient move with it.
+    /// gradient and the glyphs of a run move with them.
     fn keep(&mut self, kept: ItemRange) -> ItemRange {
         let start = self.display_list.items.len();
         if kept.start == kept.end {
@@ -123,6 +133,24 @@ impl PaintPass<'_> {
                                 end: self.display_list.gradient_stops.len() as u32,
                             },
                         },
+                    }
+                }
+                DisplayItem::GlyphRun {
+                    origin,
+                    font,
+                    glyphs,
+                    color,
+                } => {
+                    let glyphs_start = self.display_list.glyphs.len();
+                    self.display_list.glyphs.extend_from_slice(self.previous.glyphs(glyphs));
+                    DisplayItem::GlyphRun {
+                        origin,
+                        font,
+                        glyphs: ItemRange {
+                            start: glyphs_start as u32,
+                            end: self.display_list.glyphs.len() as u32,
+                        },
+                        color,
                     }
                 }
                 other => other,

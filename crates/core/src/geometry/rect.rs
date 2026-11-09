@@ -1,5 +1,6 @@
 use crate::geometry::point::Point;
 use crate::geometry::sides::Sides;
+use crate::geometry::size::Size;
 
 /// An axis-aligned rectangle in CSS pixels, in the coordinates of its surface.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -20,6 +21,13 @@ impl Rect {
     /// The top left corner.
     pub fn origin(&self) -> Point {
         Point { x: self.x, y: self.y }
+    }
+
+    pub fn size(&self) -> Size {
+        Size {
+            width: self.width,
+            height: self.height,
+        }
     }
 
     pub fn right(&self) -> f32 {

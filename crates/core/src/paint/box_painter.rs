@@ -1,10 +1,14 @@
-use morok_style::{BackgroundImage, Declaration, ShadowLayer, StyleSheet, Theme};
+use morok_style::{BackgroundImage, Declaration, ShadowLayer, StyleSheet, TextDecoration, Theme};
 
 use crate::element::Element;
+use crate::geometry::point::Point;
+use crate::geometry::rect::Rect;
 use crate::paint::box_frame::{BoxFrame, fitted_radii};
 use crate::paint::display_item::DisplayItem;
 use crate::paint::display_list::DisplayList;
 use crate::paint::gradient_resolver::GradientResolver;
+use crate::paint::item_range::ItemRange;
+use crate::role::Role;
 use crate::style::declaration_source::DeclarationSource;
 
 /// Writes the display items of the box of one element.
@@ -24,7 +28,8 @@ impl BoxPainter<'_> {
     }
 
     /// Appends what CSS paints of a box, bottom layer first: the shadows around it, the
-    /// background color, the background image, the inset shadows and the border.
+    /// background color, the background image, the inset shadows and the border; then, for a
+    /// text, its lines.
     pub(crate) fn paint_box(self, element: &Element, display_list: &mut DisplayList) {
         let frame = Self::frame(element);
         let paint = &element.style.paint;
@@ -52,6 +57,54 @@ impl BoxPainter<'_> {
                 frame,
                 colors: paint.border_color,
             });
+        }
+        if element.role == Role::Text && paint.color.alpha > 0.0 {
+            Self::paint_text(element, display_list);
+        }
+    }
+
+    /// Appends the lines of a text: under each line its underline, then its glyphs run by
+    /// run, then the line through it. CSS draws an underline below the glyphs and a line
+    /// through them above.
+    fn paint_text(element: &Element, display_list: &mut DisplayList) {
+        let text_layout = &element.text_layout;
+        let color = element.style.paint.color;
+        let decoration = element.style.text.text_decoration;
+        let metrics = &text_layout.font_metrics;
+        let origin = element.border_box.origin();
+        for (line_box, shaped_line) in text_layout.lines.iter().zip(&text_layout.shaped.lines) {
+            let baseline = origin.y + line_box.baseline;
+            let decoration_line = |top: f32| DisplayItem::TextDecoration {
+                rect: Rect::new(
+                    origin.x + line_box.rect.x,
+                    baseline + top,
+                    line_box.rect.width,
+                    metrics.decoration_thickness,
+                ),
+                color,
+            };
+            if decoration == TextDecoration::Underline {
+                display_list.items.push(decoration_line(metrics.underline_top));
+            }
+            for run in text_layout.shaped.runs_of(shaped_line) {
+                let start = display_list.glyphs.len();
+                display_list.glyphs.extend_from_slice(text_layout.shaped.glyphs_of(run));
+                display_list.items.push(DisplayItem::GlyphRun {
+                    origin: Point {
+                        x: origin.x + line_box.rect.x,
+                        y: baseline,
+                    },
+                    font: run.font,
+                    glyphs: ItemRange {
+                        start: start as u32,
+                        end: display_list.glyphs.len() as u32,
+                    },
+                    color,
+                });
+            }
+            if decoration == TextDecoration::LineThrough {
+                display_list.items.push(decoration_line(metrics.line_through_top));
+            }
         }
     }
 

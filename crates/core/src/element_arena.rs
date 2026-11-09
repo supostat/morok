@@ -17,6 +17,8 @@ pub(crate) struct ElementArena {
     free_slots: Vec<u32>,
     /// Whether a cached layout was dropped since the layout stage last ran.
     layout_is_stale: bool,
+    /// Whether an element waits for the lines of its text to be laid out.
+    text_is_stale: bool,
 }
 
 impl ElementArena {
@@ -68,6 +70,26 @@ impl ElementArena {
             element.dirty.insert(below);
             ancestor = element.parent;
         }
+    }
+
+    pub(crate) fn slot_count(&self) -> u32 {
+        self.slots.len() as u32
+    }
+
+    pub(crate) fn text_is_stale(&self) -> bool {
+        self.text_is_stale
+    }
+
+    /// Records that every text marked for it has its lines laid out.
+    pub(crate) fn text_is_laid_out(&mut self) {
+        self.text_is_stale = false;
+    }
+
+    /// Marks the lines of the text of the element as laid out for a text, a style or a width
+    /// it no longer has.
+    pub(crate) fn invalidate_text(&mut self, id: ElementId) {
+        self[id].dirty.insert(Dirty::TEXT);
+        self.text_is_stale = true;
     }
 
     pub(crate) fn layout_is_stale(&self) -> bool {

@@ -1,4 +1,7 @@
-use morok_style::{BackgroundImage, BoxShadow, Color, ColorValue, Declaration, StyleRule, StyleSheet, Theme};
+use morok_style::{
+    BackgroundImage, BoxShadow, Color, ColorValue, Declaration, FontWeightValue, LineHeight, StyleRule, StyleSheet,
+    Theme,
+};
 
 use crate::style::computed_style::ComputedStyle;
 use crate::style::declaration_source::DeclarationSource;
@@ -10,6 +13,7 @@ use crate::style::resolved_length::ResolvedLength;
 use crate::style::resolved_length_or_auto::ResolvedLengthOrAuto;
 use crate::style::selector_target::SelectorTarget;
 use crate::style::styled_parent::StyledParent;
+use crate::style::text_style::TextStyle;
 
 /// Computes the style of an element from the rules that match it, its inline declarations, its
 /// parent and the active theme.
@@ -34,6 +38,7 @@ impl<'a> StyleResolver<'a> {
         let mut style = ComputedStyle {
             layout: LayoutStyle::INITIAL,
             paint: PaintStyle::initial(color),
+            text: parent.map_or(TextStyle::INITIAL, |parent| parent.text.inherited()),
         };
         for &rule in matched_rules.iter() {
             for (position, declaration) in self.rule(rule).declarations.iter().enumerate() {
@@ -129,7 +134,7 @@ impl<'a> StyleResolver<'a> {
     fn apply(self, style: &mut ComputedStyle, declaration: &Declaration, source: DeclarationSource) {
         let theme = self.theme;
         let current_color = style.paint.color;
-        let ComputedStyle { layout, paint } = style;
+        let ComputedStyle { layout, paint, text } = style;
         match declaration {
             Declaration::Display(display) => layout.display = *display,
             Declaration::Position(position) => layout.positioning = Positioning::from(*position),
@@ -192,6 +197,27 @@ impl<'a> StyleResolver<'a> {
             Declaration::OutlineColor(color) => paint.outline_color = self.color(*color, current_color),
             Declaration::OutlineOffset(offset) => paint.outline_offset = ResolvedLength::pixels_of(offset, theme),
             Declaration::Color(_) => {}
+            Declaration::FontFamily(families) => text.font_family = Some(*families),
+            Declaration::FontSize(size) => text.font_size = ResolvedLength::pixels_of(size, theme).max(0.0),
+            Declaration::FontWeight(weight) => {
+                text.font_weight = match weight {
+                    FontWeightValue::Token(token) => *theme.resolve(*token),
+                    FontWeightValue::Keyword(weight) => *weight,
+                };
+            }
+            Declaration::FontStyle(font_style) => text.font_style = *font_style,
+            Declaration::LineHeight(line_height) => {
+                text.line_height = match line_height {
+                    LineHeight::Normal => None,
+                    LineHeight::Token(token) => Some(theme.resolve(*token).0),
+                };
+            }
+            Declaration::LetterSpacing(spacing) => text.letter_spacing = ResolvedLength::pixels_of(spacing, theme),
+            Declaration::TextAlign(alignment) => text.text_align = *alignment,
+            Declaration::TextDecoration(decoration) => text.text_decoration = *decoration,
+            Declaration::TextOverflow(overflow) => text.text_overflow = *overflow,
+            Declaration::WhiteSpace(white_space) => text.white_space = *white_space,
+            Declaration::FontVariantNumeric(numeric) => text.font_variant_numeric = *numeric,
         }
     }
 }

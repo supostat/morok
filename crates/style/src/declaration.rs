@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
 use crate::corner::Corner;
+use crate::font_families::FontFamilies;
 use crate::layout::content_alignment::ContentAlignment;
 use crate::layout::display::Display;
 use crate::layout::flex_direction::FlexDirection;
@@ -21,6 +22,15 @@ use crate::paint::box_shadow::BoxShadow;
 use crate::paint::color_value::ColorValue;
 use crate::paint::line_style::LineStyle;
 use crate::side::Side;
+use crate::text::font_style::FontStyle;
+use crate::text::font_variant_numeric::FontVariantNumeric;
+use crate::text::font_weight_value::FontWeightValue;
+use crate::text::line_height::LineHeight;
+use crate::text::text_align::TextAlign;
+use crate::text::text_decoration::TextDecoration;
+use crate::text::text_overflow::TextOverflow;
+use crate::text::white_space::WhiteSpace;
+use crate::token::Token;
 
 /// One longhand property with its value; a shorthand compiles into the declarations of its longhands.
 #[derive(Clone, Debug, PartialEq)]
@@ -72,4 +82,16 @@ pub enum Declaration {
     OutlineColor(ColorValue),
     OutlineOffset(Length),
     Color(ColorValue),
+    FontFamily(Token<FontFamilies>),
+    FontSize(Length),
+    FontWeight(FontWeightValue),
+    FontStyle(FontStyle),
+    LineHeight(LineHeight),
+    /// The space added after every character; `normal` is no space.
+    LetterSpacing(Length),
+    TextAlign(TextAlign),
+    TextDecoration(TextDecoration),
+    TextOverflow(TextOverflow),
+    WhiteSpace(WhiteSpace),
+    FontVariantNumeric(FontVariantNumeric),
 }

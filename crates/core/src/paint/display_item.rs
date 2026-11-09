@@ -1,8 +1,12 @@
 use morok_style::{Color, ShadowLayer};
 
+use crate::geometry::point::Point;
+use crate::geometry::rect::Rect;
 use crate::geometry::sides::Sides;
 use crate::paint::box_frame::BoxFrame;
 use crate::paint::gradient_fill::GradientFill;
+use crate::paint::item_range::ItemRange;
+use crate::text::font_id::FontId;
 
 /// One primitive of a display list. Items are in paint order: a later item is drawn over an
 /// earlier one. An item states what CSS asks to be drawn; how it is rasterized is the renderer's.
@@ -33,6 +37,21 @@ pub enum DisplayItem {
         frame: BoxFrame,
         width: f32,
         offset: f32,
+        color: Color,
+    },
+    /// Glyphs of one font on one line of text.
+    GlyphRun {
+        /// Where the line starts on its baseline, on the surface.
+        origin: Point,
+        font: FontId,
+        /// The glyphs of the run, see [`DisplayList::glyphs`](crate::DisplayList::glyphs);
+        /// their positions are relative to `origin`.
+        glyphs: ItemRange,
+        color: Color,
+    },
+    /// The line of a text decoration: an underline or a line through the text.
+    TextDecoration {
+        rect: Rect,
         color: Color,
     },
     /// Clips the items up to the matching [`DisplayItem::PopClip`] to the padding box of the frame.

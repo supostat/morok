@@ -3,9 +3,9 @@
 use std::process::ExitCode;
 use std::time::Duration;
 
-use morok_core::{ElementId, ElementTree, FrameScheduler, Rect, Role, Size, TextMeasureRequest, TextMeasurer};
+use morok_core::{ElementId, ElementTree, FrameScheduler, Rect, Role, Size};
 use morok_css::{CompiledTokens, SourceFile, compile_stylesheets, compile_tokens};
-use morok_platform::{FrameImage, OffscreenTarget, Renderer, SurfaceContent};
+use morok_platform::{CoreTextShaper, FrameImage, OffscreenTarget, Renderer, SurfaceContent};
 use morok_style::{ColorScheme, StyleSheet, Theme};
 use objc2_foundation::{NSDate, NSRunLoop};
 
@@ -15,25 +15,15 @@ const TOKENS: &str = "\
     --color-blue: #0000FF; --color-veil: rgba(0, 0, 255, 0.5); \
     --radius-corner: 20px; --radius-small: 10px; --radius-large: 40px; \
     --shadow-soft: 0 0 20px #000000; --shadow-hard: 10px 6px 0 4px rgba(0, 0, 0, 0.5); \
-    --shadow-well: inset 0 0 20px #000000; --shadow-rim: inset 0 0 0 5px #FF0000;";
-
-/// The scenes hold no text: nothing is measured.
-#[derive(Debug)]
-struct NoText;
-
-impl TextMeasurer for NoText {
-    fn measure(&mut self, request: &TextMeasureRequest<'_>) -> Size {
-        panic!(
-            "a scene of boxes measures no text, yet was asked about {:?}",
-            request.text
-        );
-    }
-}
+    --shadow-well: inset 0 0 20px #000000; --shadow-rim: inset 0 0 0 5px #FF0000; \
+    --font-ui: system-ui; --font-mono: ui-monospace; \
+    --text-md: 16px; --text-lg: 32px; --text-leading: 1.5; --text-weight-bold: 700;";
 
 /// An element tree styled by a stylesheet the real compiler compiled, on a surface of its own.
 pub(crate) struct Scene {
     pub(crate) tree: ElementTree,
     pub(crate) viewport: Size,
+    pub(crate) text_shaper: CoreTextShaper,
     tokens: CompiledTokens,
     style_sheet: StyleSheet,
 }
@@ -50,6 +40,7 @@ impl Scene {
         Self {
             tree: ElementTree::new(style_sheet.clone(), tokens.light.clone()),
             viewport,
+            text_shaper: CoreTextShaper::new(),
             tokens,
             style_sheet,
         }
@@ -63,6 +54,14 @@ impl Scene {
     pub(crate) fn add(&mut self, parent: ElementId, class_names: &[&str]) -> ElementId {
         let element = self.tree.create(Role::Element);
         self.add_classes(element, class_names);
+        self.tree.append_child(parent, element);
+        element
+    }
+
+    /// Adds a text as the last child of `parent`.
+    pub(crate) fn add_text(&mut self, parent: ElementId, text: &str) -> ElementId {
+        let element = self.tree.create(Role::Text);
+        self.tree.set_text(element, text);
         self.tree.append_child(parent, element);
         element
     }
@@ -87,7 +86,7 @@ impl Scene {
     /// Runs the three stages of a frame.
     pub(crate) fn frame(&mut self) {
         self.tree.resolve_styles();
-        self.tree.compute_layout(self.viewport, &mut NoText);
+        self.tree.compute_layout(self.viewport, &mut self.text_shaper);
         self.tree.build_display_list();
     }
 

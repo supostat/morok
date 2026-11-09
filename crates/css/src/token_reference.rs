@@ -1,5 +1,5 @@
 use cssparser::{Parser, Token};
-use morok_style::{Color, Pixels, Shadow, Token as StyleToken};
+use morok_style::{Color, FontFamilies, FontWeight, Leading, Pixels, Shadow, Token as StyleToken};
 
 use crate::compiled_tokens::CompiledTokens;
 use crate::problem::Problem;
@@ -92,6 +92,27 @@ impl TokenReference {
         match self.id {
             TokenId::Shadow(token) => Ok(token),
             _ => Err(self.is_not("a shadow")),
+        }
+    }
+
+    pub(crate) fn font_families(&self) -> ValueResult<StyleToken<FontFamilies>> {
+        match self.id {
+            TokenId::FontFamilies(token) => Ok(token),
+            _ => Err(self.is_not("a list of font families")),
+        }
+    }
+
+    pub(crate) fn font_weight(&self) -> ValueResult<StyleToken<FontWeight>> {
+        match self.id {
+            TokenId::FontWeight(token) => Ok(token),
+            _ => Err(self.is_not("a font weight")),
+        }
+    }
+
+    pub(crate) fn leading(&self) -> ValueResult<StyleToken<Leading>> {
+        match self.id {
+            TokenId::Leading(token) => Ok(token),
+            _ => Err(self.is_not("a line height")),
         }
     }
 

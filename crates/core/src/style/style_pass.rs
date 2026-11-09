@@ -3,6 +3,7 @@ use std::mem;
 use crate::dirty::Dirty;
 use crate::element_arena::ElementArena;
 use crate::element_id::ElementId;
+use crate::role::Role;
 use crate::style::computed_style::ComputedStyle;
 use crate::style::style_outcome::StyleOutcome;
 use crate::style::style_resolver::StyleResolver;
@@ -51,6 +52,7 @@ impl StylePass<'_> {
             StyledParent {
                 target: parent.selector_target(),
                 color: parent.style.paint.color,
+                text: parent.style.text,
             }
         });
         let style = self.resolver.resolve(
@@ -71,8 +73,22 @@ impl StylePass<'_> {
             self.elements[id].dirty.insert(Dirty::PAINT);
             outcome.repaints = true;
         }
-        if previous.paint.color != style.paint.color {
+        if previous.text != style.text && self.elements[id].role == Role::Text {
+            self.elements.invalidate_layout(id);
+            self.elements.invalidate_text(id);
+        }
+        if previous.paint.color != style.paint.color || previous.text.inherited() != style.text.inherited() {
             self.mark_children(id);
+        }
+        if cuts_text_differently(&previous, &style) {
+            self.invalidate_text_of_children(id);
+        }
+    }
+
+    fn invalidate_text_of_children(&mut self, id: ElementId) {
+        for position in 0..self.elements[id].children.len() {
+            let child = self.elements[id].children[position];
+            self.elements.invalidate_text(child);
         }
     }
 
@@ -84,6 +100,12 @@ impl StylePass<'_> {
         }
         self.elements[id].dirty.insert(Dirty::STYLE_BELOW);
     }
+}
+
+/// Whether the text children of the element are cut with an ellipsis under one style and not
+/// under the other.
+fn cuts_text_differently(previous: &ComputedStyle, style: &ComputedStyle) -> bool {
+    previous.text.text_overflow != style.text.text_overflow || previous.layout.overflow_x != style.layout.overflow_x
 }
 
 fn changes_paint_order(previous: &ComputedStyle, style: &ComputedStyle) -> bool {
