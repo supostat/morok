@@ -553,5 +553,7 @@ fn laying_out_a_tree_whose_styles_are_not_resolved_panics() {
     let mut scene = Scene::new(".row { height: 30px; }");
     scene.add(scene.root(), Role::Element, &["row"]);
 
-    scene.tree.compute_layout(scene.viewport, &mut scene.text_shaper);
+    scene
+        .tree
+        .compute_layout(scene.viewport, scene.scale, &mut scene.text_shaper);
 }

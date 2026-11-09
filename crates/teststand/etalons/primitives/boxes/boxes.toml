@@ -1,0 +1,195 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 392.0
+height = 224.0
+
+[[light]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 392.0
+height = 208.0
+
+[[light]]
+node = "#2 .swatches"
+x = 16.0
+y = 16.0
+width = 360.0
+height = 176.0
+
+[[light]]
+node = "#3 .swatch"
+x = 16.0
+y = 16.0
+width = 72.0
+height = 48.0
+
+[[light]]
+node = "#4 .swatch.accent"
+x = 104.0
+y = 16.0
+width = 72.0
+height = 48.0
+
+[[light]]
+node = "#5 .swatch.pill"
+x = 192.0
+y = 16.0
+width = 72.0
+height = 48.0
+
+[[light]]
+node = "#6 .swatch.tab"
+x = 280.0
+y = 16.0
+width = 72.0
+height = 48.0
+
+[[light]]
+node = "#7 .swatch.thick"
+x = 16.0
+y = 80.0
+width = 72.0
+height = 48.0
+
+[[light]]
+node = "#8 .swatch.sunken"
+x = 104.0
+y = 80.0
+width = 72.0
+height = 48.0
+
+[[light]]
+node = "#9 .swatch.marked"
+x = 192.0
+y = 80.0
+width = 72.0
+height = 48.0
+
+[[light]]
+node = "#10 .swatch.ring"
+x = 280.0
+y = 80.0
+width = 72.0
+height = 48.0
+
+[[light]]
+node = "#11 .swatch"
+x = 16.0
+y = 144.0
+width = 72.0
+height = 48.0
+
+[[light]]
+node = "#12 .swatch.accent"
+x = 104.0
+y = 144.0
+width = 72.0
+height = 48.0
+
+[[light]]
+node = "#13 .swatch.pill"
+x = 192.0
+y = 144.0
+width = 72.0
+height = 48.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 392.0
+height = 224.0
+
+[[dark]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 392.0
+height = 208.0
+
+[[dark]]
+node = "#2 .swatches"
+x = 16.0
+y = 16.0
+width = 360.0
+height = 176.0
+
+[[dark]]
+node = "#3 .swatch"
+x = 16.0
+y = 16.0
+width = 72.0
+height = 48.0
+
+[[dark]]
+node = "#4 .swatch.accent"
+x = 104.0
+y = 16.0
+width = 72.0
+height = 48.0
+
+[[dark]]
+node = "#5 .swatch.pill"
+x = 192.0
+y = 16.0
+width = 72.0
+height = 48.0
+
+[[dark]]
+node = "#6 .swatch.tab"
+x = 280.0
+y = 16.0
+width = 72.0
+height = 48.0
+
+[[dark]]
+node = "#7 .swatch.thick"
+x = 16.0
+y = 80.0
+width = 72.0
+height = 48.0
+
+[[dark]]
+node = "#8 .swatch.sunken"
+x = 104.0
+y = 80.0
+width = 72.0
+height = 48.0
+
+[[dark]]
+node = "#9 .swatch.marked"
+x = 192.0
+y = 80.0
+width = 72.0
+height = 48.0
+
+[[dark]]
+node = "#10 .swatch.ring"
+x = 280.0
+y = 80.0
+width = 72.0
+height = 48.0
+
+[[dark]]
+node = "#11 .swatch"
+x = 16.0
+y = 144.0
+width = 72.0
+height = 48.0
+
+[[dark]]
+node = "#12 .swatch.accent"
+x = 104.0
+y = 144.0
+width = 72.0
+height = 48.0
+
+[[dark]]
+node = "#13 .swatch.pill"
+x = 192.0
+y = 144.0
+width = 72.0
+height = 48.0

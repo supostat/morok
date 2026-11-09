@@ -3,9 +3,10 @@ use std::ptr;
 use morok_core::FontRequest;
 use morok_style::{FontStyle, FontVariantNumeric, FontWeight};
 use objc2_app_kit::NSFont;
-use objc2_core_foundation::{CFDictionary, CFNumber, CFRetained, CFString, CFType, Type};
+use objc2_core_foundation::{CFArray, CFDictionary, CFNumber, CFRetained, CFString, CFType, Type};
 use objc2_core_text::{
     CTFont, CTFontDescriptor, CTFontSymbolicTraits, kCTFontFamilyNameAttribute, kCTFontTraitsAttribute,
+    kCTFontVariationAxisIdentifierKey, kCTFontVariationAxisMaximumValueKey, kCTFontVariationAxisMinimumValueKey,
     kCTFontWeightTrait,
 };
 
@@ -28,6 +29,9 @@ const WEIGHT_SCALE: [(u16, f64); 9] = [
     (900, 0.62),
 ];
 
+/// The tag `wght`, by which a variable font names its weight axis.
+const WEIGHT_AXIS: i64 = 0x7767_6874;
+
 /// The `number spacing` feature of a font and its `monospaced numbers` setting, by their
 /// identifiers in the font feature registry.
 const NUMBER_SPACING_FEATURE: i32 = 6;
@@ -43,6 +47,7 @@ pub(crate) fn resolve(request: &FontRequest<'_>) -> CFRetained<CTFont> {
         .iter()
         .find_map(|family| family_font(family, size, weight))
         .unwrap_or_else(|| system_font(&NSFont::systemFontOfSize_weight(size, weight)));
+    font = at_weight_of_css(font, request.weight);
     if request.style == FontStyle::Italic {
         font = italic(&font).unwrap_or(font);
     }
@@ -98,6 +103,49 @@ fn installed_font(family: &str, size: f64, weight: f64) -> Option<CFRetained<CTF
     found_family.to_string().eq_ignore_ascii_case(family).then_some(font)
 }
 
+/// The font with its weight axis at the weight CSS asks for, when it is a variable font with
+/// such an axis. Browsers set a variable font at the exact weight; the named weights of a
+/// family need not lie on the hundreds of CSS, and those of the system font do not: its
+/// medium is 510 and its semibold 590.
+fn at_weight_of_css(font: CFRetained<CTFont>, weight: FontWeight) -> CFRetained<CTFont> {
+    // SAFETY: the font is valid.
+    let Some(axes) = (unsafe { font.variation_axes() }) else {
+        return font;
+    };
+    // SAFETY: Core Text describes each axis of a font by a dictionary of numbers under string keys.
+    let axes = unsafe { CFRetained::cast_unchecked::<CFArray<CFDictionary<CFString, CFNumber>>>(axes) };
+    // SAFETY: the keys are constants of Core Text.
+    let (identifier_key, minimum_key, maximum_key) = unsafe {
+        (
+            kCTFontVariationAxisIdentifierKey,
+            kCTFontVariationAxisMinimumValueKey,
+            kCTFontVariationAxisMaximumValueKey,
+        )
+    };
+    let weight_axis = axes.iter().find(|axis| {
+        axis.get(identifier_key)
+            .is_some_and(|identifier| identifier.as_i64() == Some(WEIGHT_AXIS))
+    });
+    let Some(weight_axis) = weight_axis else {
+        return font;
+    };
+    let bound = |key: &CFString| {
+        weight_axis
+            .get(key)
+            .and_then(|value| value.as_f64())
+            .expect("a variation axis has a minimum and a maximum")
+    };
+    let value = f64::from(weight.0).clamp(bound(minimum_key), bound(maximum_key));
+    // SAFETY: the font is valid and the number identifies one of its axes; a size of zero and
+    // a null matrix keep those of the font.
+    unsafe {
+        let descriptor = font
+            .font_descriptor()
+            .copy_with_variation(&CFNumber::new_i64(WEIGHT_AXIS), value);
+        font.copy_with_attributes(0.0, ptr::null(), Some(&descriptor))
+    }
+}
+
 /// The italic face of the family of the font, when the family has one.
 fn italic(font: &CTFont) -> Option<CFRetained<CTFont>> {
     // SAFETY: the font is valid; a null matrix keeps its own.
@@ -140,9 +188,40 @@ fn core_text_weight(weight: FontWeight) -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use morok_style::FontWeight;
+    use std::borrow::Cow;
 
-    use super::core_text_weight;
+    use morok_core::FontRequest;
+    use morok_style::{FontStyle, FontVariantNumeric, FontWeight};
+    use objc2_core_foundation::{CFDictionary, CFNumber, CFRetained};
+
+    use super::{WEIGHT_AXIS, core_text_weight, resolve};
+
+    /// Where the weight axis of the system font stands when CSS asks for the weight.
+    fn weight_axis_of_the_system_font(weight: u16) -> Option<f64> {
+        let families = [Cow::Borrowed("system-ui")];
+        let font = resolve(&FontRequest {
+            families: &families,
+            size: 13.0,
+            weight: FontWeight(weight),
+            style: FontStyle::Normal,
+            numeric: FontVariantNumeric::Normal,
+        });
+        // SAFETY: the font is valid, and Core Text gives the variation of a font as numbers
+        // under the numbers of its axes.
+        let variation = unsafe {
+            CFRetained::cast_unchecked::<CFDictionary<CFNumber, CFNumber>>(font.variation().expect("the font varies"))
+        };
+        variation
+            .get(&CFNumber::new_i64(WEIGHT_AXIS))
+            .and_then(|value| value.as_f64())
+    }
+
+    #[test]
+    fn the_system_font_is_set_at_the_exact_weight_of_css() {
+        assert_eq!(weight_axis_of_the_system_font(500), Some(500.0));
+        assert_eq!(weight_axis_of_the_system_font(600), Some(600.0));
+        assert_eq!(weight_axis_of_the_system_font(450), Some(450.0));
+    }
 
     fn thousandths(weight: u16) -> i64 {
         (core_text_weight(FontWeight(weight)) * 1000.0).round() as i64

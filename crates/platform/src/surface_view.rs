@@ -220,7 +220,7 @@ impl SurfaceView {
         let geometry = self.target_geometry();
         if !geometry.is_empty() {
             let mut content = self.content().borrow_mut();
-            let tree = content.frame(geometry.viewport);
+            let tree = content.frame(geometry.viewport, geometry.scale);
             if state.surface_is_stale.get() || !tree.damage().is_empty() {
                 if self.present(tree.display_list(), &geometry) {
                     state.surface_is_stale.set(false);

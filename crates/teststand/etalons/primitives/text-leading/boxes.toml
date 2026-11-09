@@ -1,0 +1,125 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 264.0
+height = 316.0
+
+[[light]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 264.0
+height = 296.375
+
+[[light]]
+node = "#2 .lines"
+x = 16.0
+y = 16.0
+width = 232.0
+height = 264.375
+
+[[light]]
+node = "#3 .column.leading-tight"
+x = 16.0
+y = 16.0
+width = 200.0
+height = 81.0
+
+[[light]]
+node = "#4 text"
+x = 24.0
+y = 24.0
+width = 184.0
+height = 65.0
+
+[[light]]
+node = "#5 .column.leading-normal"
+x = 16.0
+y = 105.0
+width = 200.0
+height = 76.0
+
+[[light]]
+node = "#6 text"
+x = 24.0
+y = 113.0
+width = 184.0
+height = 60.0
+
+[[light]]
+node = "#7 .column"
+x = 16.0
+y = 189.0
+width = 200.0
+height = 91.375
+
+[[light]]
+node = "#8 text"
+x = 24.0
+y = 197.0
+width = 184.0
+height = 75.375
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 264.0
+height = 316.0
+
+[[dark]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 264.0
+height = 296.375
+
+[[dark]]
+node = "#2 .lines"
+x = 16.0
+y = 16.0
+width = 232.0
+height = 264.375
+
+[[dark]]
+node = "#3 .column.leading-tight"
+x = 16.0
+y = 16.0
+width = 200.0
+height = 81.0
+
+[[dark]]
+node = "#4 text"
+x = 24.0
+y = 24.0
+width = 184.0
+height = 65.0
+
+[[dark]]
+node = "#5 .column.leading-normal"
+x = 16.0
+y = 105.0
+width = 200.0
+height = 76.0
+
+[[dark]]
+node = "#6 text"
+x = 24.0
+y = 113.0
+width = 184.0
+height = 60.0
+
+[[dark]]
+node = "#7 .column"
+x = 16.0
+y = 189.0
+width = 200.0
+height = 91.375
+
+[[dark]]
+node = "#8 text"
+x = 24.0
+y = 197.0
+width = 184.0
+height = 75.375

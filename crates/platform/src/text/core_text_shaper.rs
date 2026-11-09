@@ -85,8 +85,6 @@ impl CoreTextShaper {
 }
 
 impl TextShaper for CoreTextShaper {
-    /// Ascent, descent and line gap are whole pixels: browsers round them, and a baseline
-    /// computed from fractions would sit off theirs.
     fn font_metrics(&mut self, font: &FontRequest<'_>) -> FontMetrics {
         let (_, font) = resolved(font);
         // SAFETY: the font is valid.
@@ -101,9 +99,9 @@ impl TextShaper for CoreTextShaper {
             )
         };
         FontMetrics {
-            ascent: ascent.round() as f32,
-            descent: descent.round() as f32,
-            line_gap: line_gap.round() as f32,
+            ascent: ascent as f32,
+            descent: descent as f32,
+            line_gap: line_gap as f32,
             underline_top: (-underline_position - thickness / 2.0) as f32,
             line_through_top: (-x_height / 2.0 - thickness / 2.0) as f32,
             decoration_thickness: thickness as f32,

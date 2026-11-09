@@ -23,6 +23,8 @@ const TOKENS: &str = "\
 pub(crate) struct Scene {
     pub(crate) tree: ElementTree,
     pub(crate) viewport: Size,
+    /// Device pixels to a CSS pixel on the surface the scene is laid out for.
+    pub(crate) scale: f32,
     pub(crate) text_shaper: CoreTextShaper,
     tokens: CompiledTokens,
     style_sheet: StyleSheet,
@@ -40,6 +42,7 @@ impl Scene {
         Self {
             tree: ElementTree::new(style_sheet.clone(), tokens.light.clone()),
             viewport,
+            scale: 1.0,
             text_shaper: CoreTextShaper::new(),
             tokens,
             style_sheet,
@@ -86,7 +89,8 @@ impl Scene {
     /// Runs the three stages of a frame.
     pub(crate) fn frame(&mut self) {
         self.tree.resolve_styles();
-        self.tree.compute_layout(self.viewport, &mut self.text_shaper);
+        self.tree
+            .compute_layout(self.viewport, self.scale, &mut self.text_shaper);
         self.tree.build_display_list();
     }
 
@@ -96,6 +100,7 @@ impl Scene {
 
     /// Runs a frame and draws its display list offscreen with `scale` device pixels to a CSS pixel.
     pub(crate) fn render(&mut self, renderer: &Renderer, scale: f32) -> FrameImage {
+        self.scale = scale;
         self.frame();
         OffscreenTarget::new(renderer, self.viewport, scale).render(self.tree.display_list())
     }
@@ -125,9 +130,10 @@ impl WindowScene {
 }
 
 impl SurfaceContent for WindowScene {
-    fn frame(&mut self, viewport: Size) -> &ElementTree {
+    fn frame(&mut self, viewport: Size, scale: f32) -> &ElementTree {
         self.frame_viewports.push(viewport);
         self.scene.viewport = viewport;
+        self.scene.scale = scale;
         self.scene.frame();
         &self.scene.tree
     }

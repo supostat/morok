@@ -6,10 +6,12 @@ use morok_style::{Color, FontStyle, FontVariantNumeric, FontWeight};
 use support::{ELLIPSIS, RequestedFont, Scene};
 
 /// A font size of 20 pixels makes a character of the test font 12.5 pixels wide, with 18.75
-/// pixels above the baseline and 6.25 below it: a content area of 25 pixels.
+/// pixels above the baseline and 6.25 below it. A surface of scale 1 rounds them to 19 and 6:
+/// a content area of 25 pixels.
 const TOKENS: &str = "--color-ink: #000000; --color-red: #FF0000; \
     --font-code: \"Plain Mono\", monospace; \
     --text-size: 20px; --text-small: 12px; --text-leading-flat: 1; --text-leading-loose: 2; \
+    --text-leading-book: 1.45; \
     --text-weight-heavy: 800;";
 
 const RED: Color = Color {
@@ -107,11 +109,13 @@ fn decorations(scene: &Scene) -> Vec<(Rect, Color)> {
         .collect()
 }
 
+/// A line height of 40 pixels leaves 15 over a content area of 25: 7 above it, the half
+/// rounded down, and 8 below.
 #[test]
 fn a_line_box_is_as_high_as_the_line_height_with_the_content_area_in_its_middle() {
     let (scene, block, text) = text_in_block(&format!(".loose {{ {LOOSE} }}"), &["loose"], "word");
 
-    assert_eq!(scene.tree.line_boxes(text), [line(0.0, 0.0, 50.0, 40.0, 26.25)]);
+    assert_eq!(scene.tree.line_boxes(text), [line(0.0, 0.0, 50.0, 40.0, 26.0)]);
     assert_eq!(scene.border_box(text), Rect::new(0.0, 0.0, 800.0, 40.0));
     assert_eq!(
         scene.border_box(block).size(),
@@ -122,6 +126,8 @@ fn a_line_box_is_as_high_as_the_line_height_with_the_content_area_in_its_middle(
     );
 }
 
+/// A line height of 20 pixels is 5 short of the content area: the half above, rounded down,
+/// takes 3 away.
 #[test]
 fn a_line_height_below_the_content_area_pulls_the_baseline_up() {
     let (scene, _, text) = text_in_block(
@@ -130,14 +136,42 @@ fn a_line_height_below_the_content_area_pulls_the_baseline_up() {
         "word",
     );
 
-    assert_eq!(scene.tree.line_boxes(text), [line(0.0, 0.0, 50.0, 20.0, 16.25)]);
+    assert_eq!(scene.tree.line_boxes(text), [line(0.0, 0.0, 50.0, 20.0, 16.0)]);
 }
 
 #[test]
 fn a_normal_line_height_is_the_one_the_font_asks_for() {
     let (scene, _, text) = text_in_block(&format!(".sized {{ {SIZED} }}"), &["sized"], "word");
 
-    assert_eq!(scene.tree.line_boxes(text), [line(0.0, 0.0, 50.0, 25.0, 18.75)]);
+    assert_eq!(scene.tree.line_boxes(text), [line(0.0, 0.0, 50.0, 25.0, 19.0)]);
+}
+
+/// At 12 pixels the test font has 11.25 pixels above the baseline and 3.75 below it. A
+/// surface of scale 1 rounds them to 11 and 4, one of scale 2 to 11.5 and 4.
+#[test]
+fn a_font_is_as_high_as_its_metrics_in_whole_device_pixels_of_the_surface() {
+    let (mut scene, _, text) = text_in_block(".small { font-size: var(--text-small); }", &["small"], "word");
+
+    assert_eq!(scene.tree.line_boxes(text), [line(0.0, 0.0, 30.0, 15.0, 11.0)]);
+
+    scene.scale = 2.0;
+    scene.frame();
+
+    assert_eq!(scene.tree.line_boxes(text), [line(0.0, 0.0, 30.0, 15.5, 11.5)]);
+    assert_eq!(scene.border_box(text), Rect::new(0.0, 0.0, 800.0, 15.5));
+}
+
+/// 12 pixels at a line height of 1.45 are 17.4 pixels, which browsers keep as 1113 of their
+/// sixty-fourths of a pixel. The 2.39 pixels left over the content area of 15 put 1 above it.
+#[test]
+fn a_computed_line_height_is_cut_to_the_length_unit_of_browsers() {
+    let (scene, _, text) = text_in_block(
+        ".book { font-size: var(--text-small); line-height: var(--text-leading-book); }",
+        &["book"],
+        "word",
+    );
+
+    assert_eq!(scene.tree.line_boxes(text), [line(0.0, 0.0, 30.0, 17.390_625, 12.0)]);
 }
 
 #[test]
@@ -150,7 +184,7 @@ fn lines_break_at_the_width_of_the_box_and_stack_at_the_line_height() {
 
     assert_eq!(
         scene.tree.line_boxes(text),
-        [line(0.0, 0.0, 87.5, 40.0, 26.25), line(0.0, 40.0, 87.5, 40.0, 66.25)]
+        [line(0.0, 0.0, 87.5, 40.0, 26.0), line(0.0, 40.0, 87.5, 40.0, 66.0)]
     );
     assert_eq!(lines_of_text(&scene), ["aaa bbb", "ccc ddd"]);
     assert_eq!(scene.border_box(text), Rect::new(0.0, 0.0, 100.0, 80.0));
@@ -210,7 +244,7 @@ fn a_line_wider_than_its_box_starts_at_the_edge_whatever_the_alignment() {
         "aaaaaa",
     );
 
-    assert_eq!(scene.tree.line_boxes(text), [line(0.0, 0.0, 75.0, 25.0, 18.75)]);
+    assert_eq!(scene.tree.line_boxes(text), [line(0.0, 0.0, 75.0, 25.0, 19.0)]);
 }
 
 #[test]
@@ -221,7 +255,7 @@ fn letter_spacing_follows_every_character() {
         "abcd",
     );
 
-    assert_eq!(scene.tree.line_boxes(text), [line(0.0, 0.0, 60.0, 25.0, 18.75)]);
+    assert_eq!(scene.tree.line_boxes(text), [line(0.0, 0.0, 60.0, 25.0, 19.0)]);
     assert_eq!(glyph_runs(&scene)[0].2, [0.0, 15.0, 30.0, 45.0]);
 }
 
@@ -241,7 +275,7 @@ fn nowrap_keeps_the_text_on_one_line_however_narrow_the_box() {
     );
 
     assert_eq!(lines_of_text(&scene), ["one two three"]);
-    assert_eq!(scene.tree.line_boxes(text), [line(0.0, 0.0, 162.5, 25.0, 18.75)]);
+    assert_eq!(scene.tree.line_boxes(text), [line(0.0, 0.0, 162.5, 25.0, 19.0)]);
 }
 
 #[test]
@@ -255,7 +289,7 @@ fn pre_keeps_white_space_and_breaks_only_where_the_text_does() {
     assert_eq!(lines_of_text(&scene), [" a", "  bcd"]);
     assert_eq!(
         scene.tree.line_boxes(text),
-        [line(0.0, 0.0, 25.0, 25.0, 18.75), line(0.0, 25.0, 62.5, 25.0, 43.75)]
+        [line(0.0, 0.0, 25.0, 25.0, 19.0), line(0.0, 25.0, 62.5, 25.0, 44.0)]
     );
 }
 
@@ -285,7 +319,7 @@ fn a_line_that_overflows_a_clipping_box_ends_with_an_ellipsis() {
     );
 
     assert_eq!(lines_of_text(&scene), [format!("abcdefg{ELLIPSIS}")]);
-    assert_eq!(scene.tree.line_boxes(text), [line(0.0, 0.0, 100.0, 25.0, 18.75)]);
+    assert_eq!(scene.tree.line_boxes(text), [line(0.0, 0.0, 100.0, 25.0, 19.0)]);
 }
 
 #[test]
@@ -345,8 +379,8 @@ fn an_underline_lies_under_the_glyphs_of_every_line() {
     assert_eq!(
         decorations(&scene),
         [
-            (Rect::new(text_box.x, text_box.y + 18.75 + 2.5, 87.5, 1.25), RED),
-            (Rect::new(text_box.x, text_box.y + 43.75 + 2.5, 37.5, 1.25), RED),
+            (Rect::new(text_box.x, text_box.y + 19.0 + 2.5, 87.5, 1.25), RED),
+            (Rect::new(text_box.x, text_box.y + 44.0 + 2.5, 37.5, 1.25), RED),
         ]
     );
 }
@@ -363,7 +397,7 @@ fn a_line_through_the_text_lies_over_its_glyphs() {
     let text_box = scene.border_box(text);
     assert_eq!(
         decorations(&scene),
-        [(Rect::new(text_box.x, text_box.y + 18.75 - 7.5, 50.0, 1.25), RED)]
+        [(Rect::new(text_box.x, text_box.y + 19.0 - 7.5, 50.0, 1.25), RED)]
     );
 }
 
@@ -389,7 +423,7 @@ fn a_glyph_run_starts_on_the_baseline_of_its_line_in_the_color_of_the_text() {
     assert_eq!(scene.border_box(text), Rect::new(20.0, 10.0, 760.0, 40.0));
     assert_eq!(
         glyph_runs(&scene),
-        [(Point { x: 20.0, y: 36.25 }, String::from("ab"), vec![0.0, 12.5])]
+        [(Point { x: 20.0, y: 36.0 }, String::from("ab"), vec![0.0, 12.5])]
     );
     let colors: Vec<Color> = scene
         .tree
@@ -412,7 +446,7 @@ fn the_padding_of_a_text_moves_its_lines_inside_its_box() {
 
     scene.frame();
 
-    assert_eq!(scene.tree.line_boxes(text), [line(8.0, 5.0, 25.0, 25.0, 23.75)]);
+    assert_eq!(scene.tree.line_boxes(text), [line(8.0, 5.0, 25.0, 25.0, 24.0)]);
     assert_eq!(
         scene.border_box(text).size(),
         Size {
@@ -474,8 +508,8 @@ fn text_properties_pass_from_an_element_to_the_text_below_it() {
 
     scene.frame();
 
-    assert_eq!(scene.tree.line_boxes(inherited), [line(25.0, 0.0, 75.0, 40.0, 26.25)]);
-    assert_eq!(scene.tree.line_boxes(overridden), [line(0.0, 0.0, 75.0, 40.0, 26.25)]);
+    assert_eq!(scene.tree.line_boxes(inherited), [line(25.0, 0.0, 75.0, 40.0, 26.0)]);
+    assert_eq!(scene.tree.line_boxes(overridden), [line(0.0, 0.0, 75.0, 40.0, 26.0)]);
 }
 
 #[test]

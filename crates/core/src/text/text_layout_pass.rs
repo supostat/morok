@@ -20,6 +20,8 @@ pub(crate) struct TextLayoutPass<'a> {
     pub(crate) elements: &'a mut ElementArena,
     pub(crate) theme: &'a Theme,
     pub(crate) text_shaper: &'a mut dyn TextShaper,
+    /// Device pixels to a CSS pixel on the surface.
+    pub(crate) scale: f32,
     /// Scratch space for texts whose white space collapses.
     pub(crate) processed_text: &'a mut String,
 }
@@ -91,7 +93,7 @@ impl TextLayoutPass<'_> {
             &mut text_layout.shaped,
         );
         text_layout.font_metrics = self.text_shaper.font_metrics(&font);
-        let line = LineMetrics::of(&style, &text_layout.font_metrics);
+        let line = LineMetrics::of(&style, &text_layout.font_metrics, self.scale);
         text_layout.lines.clear();
         for (position, shaped_line) in text_layout.shaped.lines.iter().enumerate() {
             let top = content_top + position as f32 * line.line_height;

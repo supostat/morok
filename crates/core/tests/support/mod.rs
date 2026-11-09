@@ -168,6 +168,8 @@ pub(crate) struct Scene {
     pub(crate) tree: ElementTree,
     pub(crate) text_shaper: MonospaceShaper,
     pub(crate) viewport: Size,
+    /// Device pixels to a CSS pixel on the surface the scene is laid out for.
+    pub(crate) scale: f32,
     tokens: CompiledTokens,
     style_sheet: StyleSheet,
 }
@@ -188,6 +190,7 @@ impl Scene {
             tree: ElementTree::new(style_sheet.clone(), tokens.light.clone()),
             text_shaper: MonospaceShaper::default(),
             viewport: VIEWPORT,
+            scale: 1.0,
             tokens,
             style_sheet,
         }
@@ -227,7 +230,9 @@ impl Scene {
     /// Runs the three stages of a frame.
     pub(crate) fn frame(&mut self) -> Frame {
         let resolved = self.tree.resolve_styles();
-        let laid_out = self.tree.compute_layout(self.viewport, &mut self.text_shaper);
+        let laid_out = self
+            .tree
+            .compute_layout(self.viewport, self.scale, &mut self.text_shaper);
         let rebuilt = self.tree.build_display_list();
         Frame {
             resolved,

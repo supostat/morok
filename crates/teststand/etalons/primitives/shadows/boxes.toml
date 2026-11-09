@@ -1,0 +1,83 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 496.0
+height = 176.0
+
+[[light]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 496.0
+height = 160.0
+
+[[light]]
+node = "#2 .elevations"
+x = 16.0
+y = 16.0
+width = 464.0
+height = 128.0
+
+[[light]]
+node = "#3 .card.raised"
+x = 48.0
+y = 48.0
+width = 96.0
+height = 64.0
+
+[[light]]
+node = "#4 .card.float"
+x = 192.0
+y = 48.0
+width = 96.0
+height = 64.0
+
+[[light]]
+node = "#5 .card.modal"
+x = 336.0
+y = 48.0
+width = 96.0
+height = 64.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 496.0
+height = 176.0
+
+[[dark]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 496.0
+height = 160.0
+
+[[dark]]
+node = "#2 .elevations"
+x = 16.0
+y = 16.0
+width = 464.0
+height = 128.0
+
+[[dark]]
+node = "#3 .card.raised"
+x = 48.0
+y = 48.0
+width = 96.0
+height = 64.0
+
+[[dark]]
+node = "#4 .card.float"
+x = 192.0
+y = 48.0
+width = 96.0
+height = 64.0
+
+[[dark]]
+node = "#5 .card.modal"
+x = 336.0
+y = 48.0
+width = 96.0
+height = 64.0

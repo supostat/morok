@@ -397,8 +397,10 @@ fn the_first_family_the_system_has_is_the_font() {
     );
 }
 
+/// The shaper reports what the font says; rounding to the pixels of a surface is the work of
+/// line layout, which knows the scale of the surface.
 #[test]
-fn font_metrics_are_whole_pixels_that_grow_with_the_size() {
+fn font_metrics_are_those_of_the_font_and_grow_with_the_size() {
     let mut shaper = CoreTextShaper::new();
 
     let metrics = shaper.font_metrics(&system_font());
@@ -406,14 +408,6 @@ fn font_metrics_are_whole_pixels_that_grow_with_the_size() {
 
     assert!(metrics.ascent >= 12.0 && metrics.ascent <= 18.0, "{metrics:?}");
     assert!(metrics.descent >= 2.0 && metrics.descent <= 6.0, "{metrics:?}");
-    for whole_pixels in [metrics.ascent, metrics.descent, metrics.line_gap] {
-        assert_close(
-            whole_pixels.fract(),
-            0.0,
-            f32::EPSILON,
-            "the fraction of a rounded metric",
-        );
-    }
     assert!(
         metrics.underline_top > 0.0 && metrics.underline_top < metrics.descent + 2.0,
         "{metrics:?}"
@@ -426,8 +420,14 @@ fn font_metrics_are_whole_pixels_that_grow_with_the_size() {
     assert_close(
         doubled.ascent,
         metrics.ascent * 2.0,
-        1.0,
+        0.01,
         "the ascent at twice the size",
+    );
+    assert_close(
+        doubled.descent,
+        metrics.descent * 2.0,
+        0.01,
+        "the descent at twice the size",
     );
 }
 

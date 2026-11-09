@@ -1,0 +1,125 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 420.0
+height = 264.0
+
+[[light]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 420.0
+height = 244.53125
+
+[[light]]
+node = "#2 .lines"
+x = 16.0
+y = 16.0
+width = 388.0
+height = 212.53125
+
+[[light]]
+node = "#3 .size-xs"
+x = 16.0
+y = 16.0
+width = 388.0
+height = 15.9453125
+
+[[light]]
+node = "#4 .size-sm"
+x = 16.0
+y = 39.945313
+width = 388.0
+height = 17.398438
+
+[[light]]
+node = "#5 text"
+x = 16.0
+y = 65.34375
+width = 388.0
+height = 18.84375
+
+[[light]]
+node = "#6 .size-lg"
+x = 16.0
+y = 92.1875
+width = 388.0
+height = 21.75
+
+[[light]]
+node = "#7 .size-xl"
+x = 16.0
+y = 121.9375
+width = 388.0
+height = 58.0
+
+[[light]]
+node = "#8 .size-2xl"
+x = 16.0
+y = 187.9375
+width = 388.0
+height = 40.59375
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 420.0
+height = 264.0
+
+[[dark]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 420.0
+height = 244.53125
+
+[[dark]]
+node = "#2 .lines"
+x = 16.0
+y = 16.0
+width = 388.0
+height = 212.53125
+
+[[dark]]
+node = "#3 .size-xs"
+x = 16.0
+y = 16.0
+width = 388.0
+height = 15.9453125
+
+[[dark]]
+node = "#4 .size-sm"
+x = 16.0
+y = 39.945313
+width = 388.0
+height = 17.398438
+
+[[dark]]
+node = "#5 text"
+x = 16.0
+y = 65.34375
+width = 388.0
+height = 18.84375
+
+[[dark]]
+node = "#6 .size-lg"
+x = 16.0
+y = 92.1875
+width = 388.0
+height = 21.75
+
+[[dark]]
+node = "#7 .size-xl"
+x = 16.0
+y = 121.9375
+width = 388.0
+height = 58.0
+
+[[dark]]
+node = "#8 .size-2xl"
+x = 16.0
+y = 187.9375
+width = 388.0
+height = 40.59375

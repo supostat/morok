@@ -1,0 +1,125 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 264.0
+height = 172.0
+
+[[light]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 264.0
+height = 155.4375
+
+[[light]]
+node = "#2 .lines"
+x = 16.0
+y = 16.0
+width = 232.0
+height = 123.4375
+
+[[light]]
+node = "#3 .column.truncated"
+x = 16.0
+y = 16.0
+width = 200.0
+height = 34.84375
+
+[[light]]
+node = "#4 text"
+x = 24.0
+y = 24.0
+width = 184.0
+height = 18.84375
+
+[[light]]
+node = "#5 .column.truncated"
+x = 16.0
+y = 58.84375
+width = 200.0
+height = 34.84375
+
+[[light]]
+node = "#6 text"
+x = 24.0
+y = 66.84375
+width = 184.0
+height = 18.84375
+
+[[light]]
+node = "#7 .column.truncated.size-lg.accented"
+x = 16.0
+y = 101.6875
+width = 200.0
+height = 37.75
+
+[[light]]
+node = "#8 text"
+x = 24.0
+y = 109.6875
+width = 184.0
+height = 21.75
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 264.0
+height = 172.0
+
+[[dark]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 264.0
+height = 155.4375
+
+[[dark]]
+node = "#2 .lines"
+x = 16.0
+y = 16.0
+width = 232.0
+height = 123.4375
+
+[[dark]]
+node = "#3 .column.truncated"
+x = 16.0
+y = 16.0
+width = 200.0
+height = 34.84375
+
+[[dark]]
+node = "#4 text"
+x = 24.0
+y = 24.0
+width = 184.0
+height = 18.84375
+
+[[dark]]
+node = "#5 .column.truncated"
+x = 16.0
+y = 58.84375
+width = 200.0
+height = 34.84375
+
+[[dark]]
+node = "#6 text"
+x = 24.0
+y = 66.84375
+width = 184.0
+height = 18.84375
+
+[[dark]]
+node = "#7 .column.truncated.size-lg.accented"
+x = 16.0
+y = 101.6875
+width = 200.0
+height = 37.75
+
+[[dark]]
+node = "#8 text"
+x = 24.0
+y = 109.6875
+width = 184.0
+height = 21.75

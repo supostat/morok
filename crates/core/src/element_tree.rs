@@ -39,6 +39,8 @@ pub struct ElementTree {
     root: ElementId,
     style_sheet: StyleSheet,
     theme: Theme,
+    /// Device pixels to a CSS pixel on the surface the tree was last laid out for.
+    scale: f32,
     matched_rules: Vec<u32>,
     pending: Vec<ElementId>,
     paint_steps: Vec<PaintStep>,
@@ -70,6 +72,7 @@ impl ElementTree {
             root,
             style_sheet,
             theme,
+            scale: 1.0,
             matched_rules: Vec::new(),
             pending: Vec::new(),
             paint_steps: Vec::new(),
@@ -292,11 +295,9 @@ impl ElementTree {
             element
                 .dirty
                 .insert(Dirty::STYLE.union(Dirty::STYLE_BELOW).union(Dirty::PAINT));
-            element.layout_cache.clear();
             self.pending.extend(&element.children);
-            self.elements.invalidate_text(id);
         }
-        self.elements.invalidate_layout(self.root);
+        self.forget_layout();
         self.request_frame();
     }
 
@@ -344,24 +345,33 @@ impl ElementTree {
         outcome.resolved_elements
     }
 
-    /// The layout stage: lays the tree out in a surface of the size of `viewport`. Elements whose
-    /// boxes cannot have changed keep them. Returns the number of elements laid out.
+    /// The layout stage: lays the tree out in a surface of the size of `viewport` that shows
+    /// a CSS pixel with `scale` device pixels. Elements whose boxes cannot have changed keep
+    /// them. Returns the number of elements laid out.
+    ///
+    /// The scale is a part of layout: a line of text is as high as its font is in whole device
+    /// pixels, so a surface that moves to a display of another scale lays its texts out again.
     ///
     /// # Panics
     ///
     /// When a change waits for the style stage.
-    pub fn compute_layout(&mut self, viewport: Size, text_shaper: &mut dyn TextShaper) -> usize {
+    pub fn compute_layout(&mut self, viewport: Size, scale: f32, text_shaper: &mut dyn TextShaper) -> usize {
         assert!(
             !self.elements[self.root]
                 .dirty
                 .intersects(Dirty::STYLE.union(Dirty::STYLE_BELOW)),
             "styles are resolved before layout"
         );
+        if scale.to_bits() != self.scale.to_bits() {
+            self.scale = scale;
+            self.forget_layout();
+        }
         let laid_out_elements = LayoutPass {
             elements: &mut self.elements,
             style_sheet: &self.style_sheet,
             theme: &self.theme,
             text_shaper: &mut *text_shaper,
+            scale,
             processed_text: &mut self.processed_text,
             laid_out_elements: 0,
         }
@@ -376,6 +386,7 @@ impl ElementTree {
             elements: &mut self.elements,
             theme: &self.theme,
             text_shaper,
+            scale,
             processed_text: &mut self.processed_text,
         }
         .run();
@@ -424,6 +435,19 @@ impl ElementTree {
         .run();
         self.has_unpainted_changes = false;
         rebuilt_elements
+    }
+
+    /// Drops the cached boxes and the lines of every element: all of them are laid out again.
+    fn forget_layout(&mut self) {
+        self.pending.clear();
+        self.pending.push(self.root);
+        while let Some(id) = self.pending.pop() {
+            let element = &mut self.elements[id];
+            element.layout_cache.clear();
+            self.pending.extend(&element.children);
+            self.elements.invalidate_text(id);
+        }
+        self.elements.invalidate_layout(self.root);
     }
 
     fn is_inclusive_ancestor(&self, ancestor: ElementId, of: ElementId) -> bool {

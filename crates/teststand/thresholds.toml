@@ -1,0 +1,10 @@
+# How far a rendering of the kit may be from its Chrome etalon.
+
+# The distance, in CSS pixels, an edge of an element box may be from the same edge in the etalon.
+box_tolerance = 0.5
+# The CIEDE2000 difference above which a pixel that is not anti-aliasing mismatches.
+pixel_difference = 2.0
+# The share of the pixels of a case that may mismatch.
+mismatch_fraction = 0.005
+# The mean CIEDE2000 difference over a case that may not be exceeded.
+mean_difference = 1.0

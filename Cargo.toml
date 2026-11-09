@@ -5,6 +5,7 @@ members = [
     "crates/css",
     "crates/core",
     "crates/platform",
+    "crates/teststand",
     "crates/xtask",
 ]
 
@@ -19,9 +20,12 @@ repository = "https://github.com/supostat/morok"
 morok-style = { path = "crates/style", version = "=0.1.0" }
 morok-css = { path = "crates/css", version = "=0.1.0" }
 morok-core = { path = "crates/core", version = "=0.1.0" }
+morok-platform = { path = "crates/platform", version = "=0.1.0" }
 bytemuck = { version = "=1.25.2", features = ["derive"] }
+chromiumoxide = { version = "=0.9.1", default-features = false, features = ["fetcher", "rustls", "zip8"] }
 cssparser = "=0.38.0"
 dispatch2 = { version = "=0.3.1", default-features = false, features = ["std"] }
+futures = "=0.3.34"
 objc2 = { version = "=0.6.5", default-features = false, features = ["std"] }
 objc2-app-kit = { version = "=0.3.2", default-features = false, features = ["std"] }
 objc2-core-foundation = { version = "=0.3.2", default-features = false, features = ["std"] }
@@ -30,11 +34,16 @@ objc2-core-text = { version = "=0.3.2", default-features = false, features = ["s
 objc2-foundation = { version = "=0.3.2", default-features = false, features = ["std"] }
 objc2-metal = { version = "=0.3.2", default-features = false, features = ["std"] }
 objc2-quartz-core = { version = "=0.3.2", default-features = false, features = ["std"] }
+png = "=0.18.1"
 prettyplease = "=0.3.0"
 proc-macro2 = "=1.0.107"
 quote = "=1.0.47"
+serde = { version = "=1.0.229", features = ["derive"] }
+sha2 = "=0.11.1"
 syn = { version = "=3.0.9", features = ["full"] }
 taffy = { version = "=0.15.1", default-features = false, features = ["std", "flexbox", "grid", "block_layout", "calc"] }
+tokio = { version = "=1.54.1", features = ["rt"] }
+toml = "=1.1.8"
 
 [workspace.lints.rust]
 unsafe_op_in_unsafe_fn = "deny"

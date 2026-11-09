@@ -1,0 +1,125 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 320.0
+height = 220.0
+
+[[light]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 320.0
+height = 204.0
+
+[[light]]
+node = "#2 .stack"
+x = 16.0
+y = 16.0
+width = 288.0
+height = 108.0
+
+[[light]]
+node = "#3 .plate.focused"
+x = 16.0
+y = 16.0
+width = 288.0
+height = 36.0
+
+[[light]]
+node = "#4 .plate"
+x = 16.0
+y = 52.0
+width = 288.0
+height = 36.0
+
+[[light]]
+node = "#5 .plate"
+x = 16.0
+y = 88.0
+width = 288.0
+height = 36.0
+
+[[light]]
+node = "#6 .badge"
+x = 276.0
+y = 24.0
+width = 20.0
+height = 20.0
+
+[[light]]
+node = "#7 .porthole"
+x = 16.0
+y = 140.0
+width = 288.0
+height = 48.0
+
+[[light]]
+node = "#8 .flood"
+x = 16.0
+y = 140.0
+width = 172.79688
+height = 96.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 320.0
+height = 220.0
+
+[[dark]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 320.0
+height = 204.0
+
+[[dark]]
+node = "#2 .stack"
+x = 16.0
+y = 16.0
+width = 288.0
+height = 108.0
+
+[[dark]]
+node = "#3 .plate.focused"
+x = 16.0
+y = 16.0
+width = 288.0
+height = 36.0
+
+[[dark]]
+node = "#4 .plate"
+x = 16.0
+y = 52.0
+width = 288.0
+height = 36.0
+
+[[dark]]
+node = "#5 .plate"
+x = 16.0
+y = 88.0
+width = 288.0
+height = 36.0
+
+[[dark]]
+node = "#6 .badge"
+x = 276.0
+y = 24.0
+width = 20.0
+height = 20.0
+
+[[dark]]
+node = "#7 .porthole"
+x = 16.0
+y = 140.0
+width = 288.0
+height = 48.0
+
+[[dark]]
+node = "#8 .flood"
+x = 16.0
+y = 140.0
+width = 172.79688
+height = 96.0

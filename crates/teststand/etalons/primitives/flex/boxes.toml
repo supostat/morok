@@ -1,0 +1,363 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 332.0
+
+[[light]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 316.0
+
+[[light]]
+node = "#2 .rows"
+x = 16.0
+y = 16.0
+width = 328.0
+height = 284.0
+
+[[light]]
+node = "#3 .row"
+x = 16.0
+y = 16.0
+width = 328.0
+height = 48.0
+
+[[light]]
+node = "#4 .chip"
+x = 24.0
+y = 24.0
+width = 40.0
+height = 20.0
+
+[[light]]
+node = "#5 .chip.tall"
+x = 72.0
+y = 24.0
+width = 40.0
+height = 32.0
+
+[[light]]
+node = "#6 .chip.growing"
+x = 120.0
+y = 24.0
+width = 168.0
+height = 20.0
+
+[[light]]
+node = "#7 .chip"
+x = 296.0
+y = 24.0
+width = 40.0
+height = 20.0
+
+[[light]]
+node = "#8 .row.centered"
+x = 16.0
+y = 72.0
+width = 328.0
+height = 52.0
+
+[[light]]
+node = "#9 .chip"
+x = 112.0
+y = 88.0
+width = 40.0
+height = 20.0
+
+[[light]]
+node = "#10 .chip.tall"
+x = 160.0
+y = 82.0
+width = 40.0
+height = 32.0
+
+[[light]]
+node = "#11 .chip"
+x = 208.0
+y = 88.0
+width = 40.0
+height = 20.0
+
+[[light]]
+node = "#12 .row.spread"
+x = 16.0
+y = 132.0
+width = 328.0
+height = 52.0
+
+[[light]]
+node = "#13 .chip"
+x = 24.0
+y = 156.0
+width = 40.0
+height = 20.0
+
+[[light]]
+node = "#14 .chip.tall"
+x = 160.0
+y = 144.0
+width = 40.0
+height = 32.0
+
+[[light]]
+node = "#15 .chip"
+x = 296.0
+y = 156.0
+width = 40.0
+height = 20.0
+
+[[light]]
+node = "#16 .row.wrapping"
+x = 16.0
+y = 192.0
+width = 328.0
+height = 64.0
+
+[[light]]
+node = "#17 .chip.wide"
+x = 24.0
+y = 200.0
+width = 120.0
+height = 20.0
+
+[[light]]
+node = "#18 .chip.wide"
+x = 152.0
+y = 200.0
+width = 120.0
+height = 20.0
+
+[[light]]
+node = "#19 .chip.half"
+x = 24.0
+y = 228.0
+width = 156.0
+height = 20.0
+
+[[light]]
+node = "#20 .chip.pushed"
+x = 296.0
+y = 228.0
+width = 40.0
+height = 20.0
+
+[[light]]
+node = "#21 .row"
+x = 16.0
+y = 264.0
+width = 328.0
+height = 36.0
+
+[[light]]
+node = "#22 .chip.rigid"
+x = 24.0
+y = 272.0
+width = 120.0
+height = 20.0
+
+[[light]]
+node = "#23 .chip.wide"
+x = 152.0
+y = 272.0
+width = 56.0
+height = 20.0
+
+[[light]]
+node = "#24 .chip.wide"
+x = 216.0
+y = 272.0
+width = 56.0
+height = 20.0
+
+[[light]]
+node = "#25 .chip.wide"
+x = 280.0
+y = 272.0
+width = 56.0
+height = 20.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 332.0
+
+[[dark]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 316.0
+
+[[dark]]
+node = "#2 .rows"
+x = 16.0
+y = 16.0
+width = 328.0
+height = 284.0
+
+[[dark]]
+node = "#3 .row"
+x = 16.0
+y = 16.0
+width = 328.0
+height = 48.0
+
+[[dark]]
+node = "#4 .chip"
+x = 24.0
+y = 24.0
+width = 40.0
+height = 20.0
+
+[[dark]]
+node = "#5 .chip.tall"
+x = 72.0
+y = 24.0
+width = 40.0
+height = 32.0
+
+[[dark]]
+node = "#6 .chip.growing"
+x = 120.0
+y = 24.0
+width = 168.0
+height = 20.0
+
+[[dark]]
+node = "#7 .chip"
+x = 296.0
+y = 24.0
+width = 40.0
+height = 20.0
+
+[[dark]]
+node = "#8 .row.centered"
+x = 16.0
+y = 72.0
+width = 328.0
+height = 52.0
+
+[[dark]]
+node = "#9 .chip"
+x = 112.0
+y = 88.0
+width = 40.0
+height = 20.0
+
+[[dark]]
+node = "#10 .chip.tall"
+x = 160.0
+y = 82.0
+width = 40.0
+height = 32.0
+
+[[dark]]
+node = "#11 .chip"
+x = 208.0
+y = 88.0
+width = 40.0
+height = 20.0
+
+[[dark]]
+node = "#12 .row.spread"
+x = 16.0
+y = 132.0
+width = 328.0
+height = 52.0
+
+[[dark]]
+node = "#13 .chip"
+x = 24.0
+y = 156.0
+width = 40.0
+height = 20.0
+
+[[dark]]
+node = "#14 .chip.tall"
+x = 160.0
+y = 144.0
+width = 40.0
+height = 32.0
+
+[[dark]]
+node = "#15 .chip"
+x = 296.0
+y = 156.0
+width = 40.0
+height = 20.0
+
+[[dark]]
+node = "#16 .row.wrapping"
+x = 16.0
+y = 192.0
+width = 328.0
+height = 64.0
+
+[[dark]]
+node = "#17 .chip.wide"
+x = 24.0
+y = 200.0
+width = 120.0
+height = 20.0
+
+[[dark]]
+node = "#18 .chip.wide"
+x = 152.0
+y = 200.0
+width = 120.0
+height = 20.0
+
+[[dark]]
+node = "#19 .chip.half"
+x = 24.0
+y = 228.0
+width = 156.0
+height = 20.0
+
+[[dark]]
+node = "#20 .chip.pushed"
+x = 296.0
+y = 228.0
+width = 40.0
+height = 20.0
+
+[[dark]]
+node = "#21 .row"
+x = 16.0
+y = 264.0
+width = 328.0
+height = 36.0
+
+[[dark]]
+node = "#22 .chip.rigid"
+x = 24.0
+y = 272.0
+width = 120.0
+height = 20.0
+
+[[dark]]
+node = "#23 .chip.wide"
+x = 152.0
+y = 272.0
+width = 56.0
+height = 20.0
+
+[[dark]]
+node = "#24 .chip.wide"
+x = 216.0
+y = 272.0
+width = 56.0
+height = 20.0
+
+[[dark]]
+node = "#25 .chip.wide"
+x = 280.0
+y = 272.0
+width = 56.0
+height = 20.0

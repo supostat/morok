@@ -1,0 +1,97 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 328.0
+height = 192.0
+
+[[light]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 328.0
+height = 176.0
+
+[[light]]
+node = "#2 .gradients"
+x = 16.0
+y = 16.0
+width = 296.0
+height = 144.0
+
+[[light]]
+node = "#3 .gradient.across"
+x = 16.0
+y = 16.0
+width = 132.0
+height = 64.0
+
+[[light]]
+node = "#4 .gradient.diagonal"
+x = 164.0
+y = 16.0
+width = 132.0
+height = 64.0
+
+[[light]]
+node = "#5 .gradient.fading"
+x = 16.0
+y = 96.0
+width = 132.0
+height = 64.0
+
+[[light]]
+node = "#6 .gradient.spot"
+x = 164.0
+y = 96.0
+width = 132.0
+height = 64.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 328.0
+height = 192.0
+
+[[dark]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 328.0
+height = 176.0
+
+[[dark]]
+node = "#2 .gradients"
+x = 16.0
+y = 16.0
+width = 296.0
+height = 144.0
+
+[[dark]]
+node = "#3 .gradient.across"
+x = 16.0
+y = 16.0
+width = 132.0
+height = 64.0
+
+[[dark]]
+node = "#4 .gradient.diagonal"
+x = 164.0
+y = 16.0
+width = 132.0
+height = 64.0
+
+[[dark]]
+node = "#5 .gradient.fading"
+x = 16.0
+y = 96.0
+width = 132.0
+height = 64.0
+
+[[dark]]
+node = "#6 .gradient.spot"
+x = 164.0
+y = 96.0
+width = 132.0
+height = 64.0

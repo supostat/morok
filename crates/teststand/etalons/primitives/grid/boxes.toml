@@ -1,0 +1,223 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 228.0
+
+[[light]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 212.0
+
+[[light]]
+node = "#2 .grid"
+x = 16.0
+y = 16.0
+width = 328.0
+height = 100.0
+
+[[light]]
+node = "#3 .cell"
+x = 16.0
+y = 16.0
+width = 80.0
+height = 28.0
+
+[[light]]
+node = "#4 .cell.across"
+x = 108.0
+y = 16.0
+width = 236.0
+height = 28.0
+
+[[light]]
+node = "#5 .cell.down"
+x = 16.0
+y = 52.0
+width = 80.0
+height = 64.0
+
+[[light]]
+node = "#6 .cell"
+x = 108.0
+y = 52.0
+width = 74.66406
+height = 28.0
+
+[[light]]
+node = "#7 .cell.inset"
+x = 210.66406
+y = 52.0
+width = 117.33594
+height = 28.0
+
+[[light]]
+node = "#8 .cell.last"
+x = 194.66406
+y = 88.0
+width = 149.33594
+height = 28.0
+
+[[light]]
+node = "#9 .grid.even"
+x = 16.0
+y = 132.0
+width = 328.0
+height = 64.0
+
+[[light]]
+node = "#10 .cell"
+x = 16.0
+y = 132.0
+width = 73.0
+height = 28.0
+
+[[light]]
+node = "#11 .cell"
+x = 101.0
+y = 132.0
+width = 73.0
+height = 28.0
+
+[[light]]
+node = "#12 .cell"
+x = 186.0
+y = 132.0
+width = 73.0
+height = 28.0
+
+[[light]]
+node = "#13 .cell"
+x = 271.0
+y = 132.0
+width = 73.0
+height = 28.0
+
+[[light]]
+node = "#14 .cell"
+x = 16.0
+y = 168.0
+width = 73.0
+height = 28.0
+
+[[light]]
+node = "#15 .cell"
+x = 101.0
+y = 168.0
+width = 73.0
+height = 28.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 228.0
+
+[[dark]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 212.0
+
+[[dark]]
+node = "#2 .grid"
+x = 16.0
+y = 16.0
+width = 328.0
+height = 100.0
+
+[[dark]]
+node = "#3 .cell"
+x = 16.0
+y = 16.0
+width = 80.0
+height = 28.0
+
+[[dark]]
+node = "#4 .cell.across"
+x = 108.0
+y = 16.0
+width = 236.0
+height = 28.0
+
+[[dark]]
+node = "#5 .cell.down"
+x = 16.0
+y = 52.0
+width = 80.0
+height = 64.0
+
+[[dark]]
+node = "#6 .cell"
+x = 108.0
+y = 52.0
+width = 74.66406
+height = 28.0
+
+[[dark]]
+node = "#7 .cell.inset"
+x = 210.66406
+y = 52.0
+width = 117.33594
+height = 28.0
+
+[[dark]]
+node = "#8 .cell.last"
+x = 194.66406
+y = 88.0
+width = 149.33594
+height = 28.0
+
+[[dark]]
+node = "#9 .grid.even"
+x = 16.0
+y = 132.0
+width = 328.0
+height = 64.0
+
+[[dark]]
+node = "#10 .cell"
+x = 16.0
+y = 132.0
+width = 73.0
+height = 28.0
+
+[[dark]]
+node = "#11 .cell"
+x = 101.0
+y = 132.0
+width = 73.0
+height = 28.0
+
+[[dark]]
+node = "#12 .cell"
+x = 186.0
+y = 132.0
+width = 73.0
+height = 28.0
+
+[[dark]]
+node = "#13 .cell"
+x = 271.0
+y = 132.0
+width = 73.0
+height = 28.0
+
+[[dark]]
+node = "#14 .cell"
+x = 16.0
+y = 168.0
+width = 73.0
+height = 28.0
+
+[[dark]]
+node = "#15 .cell"
+x = 101.0
+y = 168.0
+width = 73.0
+height = 28.0

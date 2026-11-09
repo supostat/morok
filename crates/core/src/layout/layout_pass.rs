@@ -29,6 +29,8 @@ pub(crate) struct LayoutPass<'a> {
     pub(crate) style_sheet: &'a StyleSheet,
     pub(crate) theme: &'a Theme,
     pub(crate) text_shaper: &'a mut dyn TextShaper,
+    /// Device pixels to a CSS pixel on the surface.
+    pub(crate) scale: f32,
     /// Scratch space for texts whose white space collapses.
     pub(crate) processed_text: &'a mut String,
     pub(crate) laid_out_elements: usize,
@@ -104,6 +106,7 @@ impl LayoutPass<'_> {
         let text_shaper = &mut *self.text_shaper;
         let processed_text = &mut *self.processed_text;
         let theme = self.theme;
+        let scale = self.scale;
         compute_leaf_layout(
             inputs,
             &styles.taffy_style(id),
@@ -129,7 +132,7 @@ impl LayoutPass<'_> {
                         WidthConstraint::MaxContent
                     },
                 });
-                let line = LineMetrics::of(style, &text_shaper.font_metrics(&font));
+                let line = LineMetrics::of(style, &text_shaper.font_metrics(&font), scale);
                 taffy::Size {
                     width: known_dimensions.width.unwrap_or(extent.width),
                     height: known_dimensions

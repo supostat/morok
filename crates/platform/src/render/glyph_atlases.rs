@@ -1,7 +1,5 @@
-use std::collections::{HashMap, HashSet};
-use std::ptr;
+use std::collections::HashSet;
 
-use morok_core::FontId;
 use objc2::rc::Retained;
 use objc2::runtime::ProtocolObject;
 use objc2_core_text::CTFontSymbolicTraits;
@@ -14,7 +12,6 @@ use crate::render::glyph_key::GlyphKey;
 use crate::render::glyph_rasterizer::rasterize;
 use crate::renderer_options::RendererOptions;
 use crate::text::font_library::font_library;
-use crate::text::shared_font::SharedFont;
 
 const MASK_FORMAT: MTLPixelFormat = MTLPixelFormat::R8Unorm;
 const MASK_BYTES_PER_TEXEL: usize = 1;
@@ -28,21 +25,12 @@ pub(crate) struct PlacedGlyph {
     pub(crate) entry: AtlasEntry,
 }
 
-/// A font at the size its glyphs are rasterized in: the size of the font times the scale of
-/// the surface.
-#[derive(Debug)]
-struct DeviceFont {
-    font: SharedFont,
-    has_color_glyphs: bool,
-}
-
 /// The glyphs every surface of a renderer draws: rasterized when first drawn, kept in the
 /// mask atlas or, for a color font, in the color atlas.
 #[derive(Debug)]
 pub(crate) struct GlyphAtlases {
     mask: Atlas,
     color: Atlas,
-    device_fonts: HashMap<(FontId, u32), DeviceFont>,
     /// The glyphs known to have no pixels.
     blank_glyphs: HashSet<GlyphKey>,
     /// Scratch space for the pixels of the glyph being rasterized.
@@ -63,7 +51,6 @@ impl GlyphAtlases {
         Self {
             mask: atlas(MASK_FORMAT, MASK_BYTES_PER_TEXEL),
             color: atlas(COLOR_FORMAT, COLOR_BYTES_PER_TEXEL),
-            device_fonts: HashMap::new(),
             blank_glyphs: HashSet::new(),
             pixels: Vec::new(),
         }
@@ -106,13 +93,13 @@ impl GlyphAtlases {
         if self.blank_glyphs.contains(&glyph) {
             return None;
         }
-        let device_font = self
-            .device_fonts
-            .entry((glyph.font, glyph.scale))
-            .or_insert_with(|| device_font(glyph.font, f32::from_bits(glyph.scale)));
-        let in_color = device_font.has_color_glyphs;
+        let library = font_library();
+        let font = library.font(glyph.font);
+        // SAFETY: the font is valid.
+        let in_color = unsafe { font.symbolic_traits() }.contains(CTFontSymbolicTraits::TraitColorGlyphs);
         let Some(extent) = rasterize(
-            &device_font.font.0,
+            font,
+            f64::from(f32::from_bits(glyph.scale)),
             glyph.glyph,
             glyph.subpixel_phase,
             in_color,
@@ -129,20 +116,5 @@ impl GlyphAtlases {
         atlas
             .insert(glyph, extent, &self.pixels)
             .map(|entry| PlacedGlyph { atlas: kind, entry })
-    }
-}
-
-fn device_font(font: FontId, scale: f32) -> DeviceFont {
-    let library = font_library();
-    let font = library.font(font);
-    // SAFETY: the font is valid; a null matrix and no descriptor keep everything but the size.
-    let (device_font, traits) = unsafe {
-        let device_font = font.copy_with_attributes(font.size() * f64::from(scale), ptr::null(), None);
-        let traits = device_font.symbolic_traits();
-        (device_font, traits)
-    };
-    DeviceFont {
-        font: SharedFont(device_font),
-        has_color_glyphs: traits.contains(CTFontSymbolicTraits::TraitColorGlyphs),
     }
 }

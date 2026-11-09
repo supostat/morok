@@ -16,14 +16,17 @@ const SPILL: i32 = 1;
 const BITS_PER_CHANNEL: usize = 8;
 const COLOR_CHANNELS: usize = 4;
 
-/// Draws one glyph of a font, at the size of the font, into `pixels`: rows from the top, one
-/// byte of coverage a pixel, or four of premultiplied blue, green, red and alpha for a color
-/// font. Returns none for a glyph without pixels, such as a space.
+/// Draws one glyph of a font, `scale` device pixels to a CSS pixel, into `pixels`: rows from
+/// the top, one byte of coverage a pixel, or four of premultiplied blue, green, red and alpha
+/// for a color font. Returns none for a glyph without pixels, such as a space.
 ///
 /// The glyph is drawn in grayscale anti-aliasing with the pen at a fraction of a pixel and
-/// without the stem darkening of font smoothing, as browsers draw `antialiased` text.
+/// without the stem darkening of font smoothing, as browsers draw `antialiased` text. The
+/// font stays at its own size and the drawing is scaled: a font made larger would pick the
+/// optical size of the larger size, and a browser keeps the design of the size CSS asks for.
 pub(crate) fn rasterize(
     font: &CTFont,
+    scale: f64,
     glyph: CGGlyph,
     subpixel_phase: u8,
     in_color: bool,
@@ -43,10 +46,10 @@ pub(crate) fn rasterize(
     if bounds.size.width <= 0.0 || bounds.size.height <= 0.0 {
         return None;
     }
-    let left = (bounds.origin.x + shift).floor() as i32 - SPILL;
-    let bottom = bounds.origin.y.floor() as i32 - SPILL;
-    let right = (bounds.origin.x + bounds.size.width + shift).ceil() as i32 + SPILL;
-    let top = (bounds.origin.y + bounds.size.height).ceil() as i32 + SPILL;
+    let left = (bounds.origin.x * scale + shift).floor() as i32 - SPILL;
+    let bottom = (bounds.origin.y * scale).floor() as i32 - SPILL;
+    let right = ((bounds.origin.x + bounds.size.width) * scale + shift).ceil() as i32 + SPILL;
+    let top = ((bounds.origin.y + bounds.size.height) * scale).ceil() as i32 + SPILL;
     let width = (right - left) as usize;
     let height = (top - bottom) as usize;
     let bytes_per_pixel = if in_color { COLOR_CHANNELS } else { 1 };
@@ -81,9 +84,10 @@ pub(crate) fn rasterize(
     CGContext::set_should_subpixel_position_fonts(drawn, true);
     CGContext::set_allows_font_subpixel_quantization(drawn, false);
     CGContext::set_should_subpixel_quantize_fonts(drawn, false);
+    CGContext::scale_ctm(drawn, scale, scale);
     let mut pen = CGPoint {
-        x: shift - f64::from(left),
-        y: -f64::from(bottom),
+        x: (shift - f64::from(left)) / scale,
+        y: -f64::from(bottom) / scale,
     };
     // SAFETY: the pointers are to one glyph and one position.
     unsafe { font.draw_glyphs(NonNull::from(&mut glyph), NonNull::from(&mut pen), 1, &context) };
