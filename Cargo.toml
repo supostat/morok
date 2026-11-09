@@ -3,6 +3,7 @@ resolver = "3"
 members = [
     "crates/style",
     "crates/css",
+    "crates/core",
     "crates/xtask",
 ]
 
@@ -15,11 +16,13 @@ repository = "https://github.com/supostat/morok"
 
 [workspace.dependencies]
 morok-style = { path = "crates/style", version = "=0.1.0" }
+morok-css = { path = "crates/css", version = "=0.1.0" }
 cssparser = "=0.38.0"
 prettyplease = "=0.3.0"
 proc-macro2 = "=1.0.107"
 quote = "=1.0.47"
 syn = { version = "=3.0.9", features = ["full"] }
+taffy = { version = "=0.15.1", default-features = false, features = ["std", "flexbox", "grid", "block_layout", "calc"] }
 
 [workspace.lints.rust]
 unsafe_op_in_unsafe_fn = "deny"

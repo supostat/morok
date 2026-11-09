@@ -1,0 +1,18 @@
+[package]
+name = "morok-core"
+description = "Element tree, style resolution, layout, damage and display list of the morok UI kit"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+morok-style.workspace = true
+taffy.workspace = true
+
+[dev-dependencies]
+morok-css.workspace = true

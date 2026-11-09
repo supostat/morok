@@ -28,6 +28,12 @@ impl States {
         Self(self.0 | other.0)
     }
 
+    /// The states of `self` that `other` does not hold.
+    #[must_use]
+    pub const fn difference(self, other: Self) -> Self {
+        Self(self.0 & !other.0)
+    }
+
     pub const fn contains(self, other: Self) -> bool {
         self.0 & other.0 == other.0
     }

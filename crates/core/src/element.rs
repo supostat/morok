@@ -1,0 +1,66 @@
+use morok_style::{Class, States};
+use taffy::{Cache, DetailedLayoutInfo, Layout};
+
+use crate::dirty::Dirty;
+use crate::element_id::ElementId;
+use crate::geometry::rect::Rect;
+use crate::paint::painted_element::PaintedElement;
+use crate::role::Role;
+use crate::style::computed_style::ComputedStyle;
+use crate::style::inline_style::InlineStyle;
+use crate::style::selector_target::SelectorTarget;
+
+/// One node of an element tree with everything the frame stages keep about it.
+#[derive(Debug)]
+pub(crate) struct Element {
+    pub(crate) role: Role,
+    pub(crate) parent: Option<ElementId>,
+    pub(crate) children: Vec<ElementId>,
+    /// Whether the element is the root or one of its descendants.
+    pub(crate) is_attached: bool,
+    pub(crate) classes: Vec<Class>,
+    pub(crate) states: States,
+    pub(crate) inline_style: InlineStyle,
+    pub(crate) text: String,
+    pub(crate) dirty: Dirty,
+    pub(crate) style: ComputedStyle,
+    pub(crate) layout_cache: Cache,
+    /// The box layout gave the element, relative to the element that positions it.
+    pub(crate) layout: Layout,
+    /// The containing block of an out-of-flow element: the ancestor its box is relative to.
+    pub(crate) containing_block: Option<ElementId>,
+    pub(crate) grid_info: DetailedLayoutInfo<String>,
+    /// The border box on the surface.
+    pub(crate) border_box: Rect,
+    pub(crate) painted: PaintedElement,
+}
+
+impl Element {
+    pub(crate) fn new(role: Role) -> Self {
+        Self {
+            role,
+            parent: None,
+            children: Vec::new(),
+            is_attached: false,
+            classes: Vec::new(),
+            states: States::NONE,
+            inline_style: InlineStyle::default(),
+            text: String::new(),
+            dirty: Dirty::STYLE.union(Dirty::PAINT),
+            style: ComputedStyle::INITIAL,
+            layout_cache: Cache::new(),
+            layout: Layout::new(),
+            containing_block: None,
+            grid_info: DetailedLayoutInfo::None,
+            border_box: Rect::ZERO,
+            painted: PaintedElement::default(),
+        }
+    }
+
+    pub(crate) fn selector_target(&self) -> SelectorTarget<'_> {
+        SelectorTarget {
+            classes: &self.classes,
+            states: self.states,
+        }
+    }
+}
