@@ -1,9 +1,8 @@
-use std::mem;
-
 use cssparser::Parser;
 use morok_style::{Color, Easing, FontFamilies, FontWeight, Leading, Milliseconds, Pixels, Shadow};
 
 use crate::token_kind::TokenKind;
+use crate::value_kind::ValueKind;
 use crate::value_syntax::{Parsed, color, font_families, length, motion, number, shadow};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -34,20 +33,16 @@ impl TokenValue {
         }
     }
 
-    pub(crate) fn is_same_kind_as(&self, other: &Self) -> bool {
-        mem::discriminant(self) == mem::discriminant(other)
-    }
-
-    pub(crate) fn description(&self) -> &'static str {
+    pub(crate) fn kind(&self) -> ValueKind {
         match self {
-            Self::Color(_) => "a color",
-            Self::Length(_) => "a length",
-            Self::FontFamilies(_) => "a list of font families",
-            Self::Leading(_) => "a line height",
-            Self::FontWeight(_) => "a font weight",
-            Self::Shadow(_) => "a shadow",
-            Self::Duration(_) => "a duration",
-            Self::Easing(_) => "an easing",
+            Self::Color(_) => ValueKind::Color,
+            Self::Length(_) => ValueKind::Length,
+            Self::FontFamilies(_) => ValueKind::FontFamilies,
+            Self::Leading(_) => ValueKind::Leading,
+            Self::FontWeight(_) => ValueKind::FontWeight,
+            Self::Shadow(_) => ValueKind::Shadow,
+            Self::Duration(_) => ValueKind::Duration,
+            Self::Easing(_) => ValueKind::Easing,
         }
     }
 }

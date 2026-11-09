@@ -2,6 +2,7 @@ use cssparser::{Delimiter, ParseError, Parser, Token};
 use morok_style::ColorScheme;
 
 use crate::diagnostic::Diagnostic;
+use crate::rule_prelude::{self, RuleEnd};
 use crate::source_file::SourceFile;
 use crate::span::Span;
 use crate::token_declaration::TokenDeclaration;
@@ -40,22 +41,6 @@ enum Nesting {
     DarkMedia,
 }
 
-/// What closes the prelude of a rule: the `{` of its block, a `;`, or the end of the input.
-enum RuleEnd {
-    Block,
-    Semicolon,
-    EndOfInput,
-}
-
-impl RuleEnd {
-    fn terminator_length(&self) -> usize {
-        match self {
-            Self::Block | Self::Semicolon => 1,
-            Self::EndOfInput => 0,
-        }
-    }
-}
-
 struct Reader<'a> {
     source: &'a SourceFile,
     diagnostics: &'a mut Vec<Diagnostic>,
@@ -66,27 +51,13 @@ struct Reader<'a> {
 impl Reader<'_> {
     fn rules(&mut self, input: &mut Parser<'_>, nesting: Nesting) {
         loop {
-            input.skip_whitespace();
-            let prelude_start = input.position().byte_index();
-            let rule_end = loop {
-                match input.next().ok().cloned() {
-                    Some(Token::CurlyBracketBlock) => break RuleEnd::Block,
-                    Some(Token::Semicolon) => break RuleEnd::Semicolon,
-                    Some(_) => {}
-                    None => break RuleEnd::EndOfInput,
-                }
-            };
-            let prelude = Span {
-                start: prelude_start,
-                end: input.position().byte_index() - rule_end.terminator_length(),
-            }
-            .without_surrounding_whitespace(self.source.text());
+            let (prelude, rule_end) = rule_prelude::read(input, self.source.text());
             match rule_end {
                 RuleEnd::Block => self.block(input, prelude, nesting),
                 RuleEnd::Semicolon | RuleEnd::EndOfInput if prelude.is_empty() => {}
                 RuleEnd::Semicolon | RuleEnd::EndOfInput => self.report_foreign_rule(prelude),
             }
-            if matches!(rule_end, RuleEnd::EndOfInput) {
+            if rule_end == RuleEnd::EndOfInput {
                 return;
             }
         }

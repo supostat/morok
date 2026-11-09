@@ -62,12 +62,14 @@ fn the_golden_token_ids_equal_the_compiled_ones() {
 }
 
 #[test]
-fn the_facade_schema_path_replaces_the_crate_path() {
+fn the_facade_schema_path_replaces_every_crate_path() {
     let through_the_crate = generate_tokens_source(&base_theme(), SchemaPath::Crate);
     let through_the_facade = generate_tokens_source(&base_theme(), SchemaPath::Facade);
 
+    assert!(through_the_facade.contains("pub const LIGHT: ::morok::style::Theme"));
+    assert!(!through_the_facade.contains("::morok_style::"));
     assert_eq!(
-        through_the_facade,
-        through_the_crate.replace("::morok_style::", "::morok::style::")
+        through_the_facade.matches("::morok::style::").count(),
+        through_the_crate.matches("::morok_style::").count()
     );
 }

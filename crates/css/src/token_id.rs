@@ -1,5 +1,7 @@
 use morok_style::{Color, Easing, FontFamilies, FontWeight, Leading, Milliseconds, Pixels, Shadow, Token};
 
+use crate::value_kind::ValueKind;
+
 /// The typed ID of a compiled token.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum TokenId {
@@ -14,6 +16,23 @@ pub enum TokenId {
 }
 
 impl TokenId {
+    pub(crate) fn kind(self) -> ValueKind {
+        match self {
+            Self::Color(_) => ValueKind::Color,
+            Self::Length(_) => ValueKind::Length,
+            Self::FontFamilies(_) => ValueKind::FontFamilies,
+            Self::Leading(_) => ValueKind::Leading,
+            Self::FontWeight(_) => ValueKind::FontWeight,
+            Self::Shadow(_) => ValueKind::Shadow,
+            Self::Duration(_) => ValueKind::Duration,
+            Self::Easing(_) => ValueKind::Easing,
+        }
+    }
+
+    pub(crate) fn description(self) -> &'static str {
+        self.kind().description()
+    }
+
     pub(crate) fn index(self) -> usize {
         match self {
             Self::Color(token) => token.index(),

@@ -87,7 +87,7 @@ fn paired(
         let (Some(light_value), Some(dark_value)) = (&light_declaration.value, &dark_declaration.value) else {
             continue;
         };
-        if light_value.is_same_kind_as(dark_value) {
+        if light_value.kind() == dark_value.kind() {
             pairs.push(TokenPair {
                 name: light_declaration.name.clone(),
                 light: light_value.clone(),
@@ -100,8 +100,8 @@ fn paired(
                 format!(
                     "`{}` is {} in the light scheme and {} in the dark scheme",
                     dark_declaration.name,
-                    light_value.description(),
-                    dark_value.description()
+                    light_value.kind().description(),
+                    dark_value.kind().description()
                 ),
                 "a token holds one kind of value in both schemes",
             ));

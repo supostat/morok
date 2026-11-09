@@ -1,0 +1,33 @@
+/* A grid container with gradients, calc() and an absolutely positioned badge. */
+.panel {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr) fit-content(250px);
+  grid-template-rows: repeat(2, auto) repeat(auto-fill, minmax(24px, max-content));
+  grid-auto-rows: min-content;
+  grid-auto-columns: 1fr 2fr;
+  grid-auto-flow: column dense;
+  justify-items: stretch;
+  align-content: space-between;
+  width: calc(100% - var(--space-4) * 2);
+  min-width: 0;
+  max-height: none;
+  overflow: hidden visible;
+  background-image: linear-gradient(to bottom right, var(--color-surface), var(--color-surface-2) 60%, transparent);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.panel > .badge {
+  position: absolute;
+  inset: var(--space-2) var(--space-2) auto auto;
+  grid-column: 2 / span 2;
+  grid-row: -1;
+  justify-self: end;
+  align-self: auto;
+  flex-flow: column wrap;
+  background: radial-gradient(circle closest-side at 25% top, var(--color-accent-soft), currentColor 12px);
+  border-bottom: 2px solid currentColor;
+}
+
+.panel:focus-within {
+  background-image: linear-gradient(45deg, var(--color-accent-soft), var(--color-surface));
+}

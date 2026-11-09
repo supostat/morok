@@ -3,13 +3,14 @@ use std::fmt;
 
 use crate::diagnostic::Diagnostic;
 
-/// Every error found in one compilation, ordered by position in the source; never empty.
+/// Every error found in one compilation, ordered by file and position; never empty.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Diagnostics(Vec<Diagnostic>);
 
 impl Diagnostics {
     pub(crate) fn new(mut diagnostics: Vec<Diagnostic>) -> Self {
-        diagnostics.sort_by_key(|diagnostic| (diagnostic.line, diagnostic.column));
+        diagnostics
+            .sort_by(|left, right| (&left.path, left.line, left.column).cmp(&(&right.path, right.line, right.column)));
         Self(diagnostics)
     }
 
