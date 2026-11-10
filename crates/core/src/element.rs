@@ -4,6 +4,7 @@ use taffy::{Cache, DetailedLayoutInfo, Layout};
 use crate::dirty::Dirty;
 use crate::element_id::ElementId;
 use crate::geometry::rect::Rect;
+use crate::input::focusability::Focusability;
 use crate::media::media_content::MediaContent;
 use crate::motion::element_motion::ElementMotion;
 use crate::paint::painted_element::PaintedElement;
@@ -24,6 +25,7 @@ pub(crate) struct Element {
     pub(crate) is_attached: bool,
     pub(crate) classes: Vec<Class>,
     pub(crate) states: States,
+    pub(crate) focusability: Focusability,
     pub(crate) inline_style: InlineStyle,
     pub(crate) text: String,
     /// The picture, icon or canvas of a leaf of those roles.
@@ -60,6 +62,7 @@ impl Element {
             is_attached: false,
             classes: Vec::new(),
             states: States::NONE,
+            focusability: Focusability::NotFocusable,
             inline_style: InlineStyle::default(),
             text: String::new(),
             media: MediaContent::None,

@@ -1,7 +1,7 @@
 use std::fmt::{self, Debug, Formatter};
 use std::time::Duration;
 
-use morok_core::{ElementTree, FrameScheduler, Size};
+use morok_core::{ElementTree, FrameScheduler, KeyEvent, PointerInput, Size};
 use morok_platform::{CoreTextShaper, SurfaceContent, SurfaceSettings};
 use morok_style::ColorScheme;
 
@@ -55,6 +55,13 @@ impl SurfaceContent for SceneContent {
 
     fn reduced_motion_changed(&mut self, reduces_motion: bool) {
         self.scene_tree.tree_mut().set_reduced_motion(reduces_motion);
+    }
+
+    /// A scene is scripted: a pointer that happens to be over its window changes nothing.
+    fn pointer_input(&mut self, _input: &PointerInput) {}
+
+    fn key_input(&mut self, _event: &KeyEvent) -> bool {
+        false
     }
 }
 

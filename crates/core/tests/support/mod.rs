@@ -3,8 +3,10 @@
 use std::time::Duration;
 
 use morok_core::{
-    ElementId, ElementTree, FontId, FontMetrics, FontRequest, ItemRange, Rect, Role, ShapedGlyph, ShapedLine,
-    ShapedRun, ShapedText, Size, TextExtent, TextRequest, TextShaper, WidthConstraint,
+    ElementId, ElementTree, FontId, FontMetrics, FontRequest, InputHandler, ItemRange, Key, KeyEvent, KeyPhase,
+    Modifiers, Point, PointerButton, PointerEvent, PointerEventKind, PointerInput, PointerInputKind, Propagation, Rect,
+    Role, ShapedGlyph, ShapedLine, ShapedRun, ShapedText, ShortcutId, Size, TextExtent, TextRequest, TextShaper,
+    WidthConstraint,
 };
 use morok_css::{CompiledTokens, SourceFile, TokenId, compile_stylesheets, compile_tokens};
 use morok_style::{Class, Color, FontStyle, FontVariantNumeric, FontWeight, StyleSheet, Theme};
@@ -256,6 +258,49 @@ impl Scene {
         self.tree.border_box(element)
     }
 
+    /// Gives the tree what the pointer did at a point of the surface, with no modifier held.
+    pub(crate) fn pointer(&mut self, kind: PointerInputKind, x: f32, y: f32, log: &mut InputLog) {
+        let input = PointerInput {
+            kind,
+            position: Point { x, y },
+            modifiers: Modifiers::NONE,
+        };
+        self.tree.pointer_input(&input, log);
+    }
+
+    pub(crate) fn move_pointer(&mut self, x: f32, y: f32, log: &mut InputLog) {
+        self.pointer(PointerInputKind::Moved, x, y, log);
+    }
+
+    /// Presses the primary button once.
+    pub(crate) fn press(&mut self, x: f32, y: f32, log: &mut InputLog) {
+        let pressed = PointerInputKind::Pressed {
+            button: PointerButton::Primary,
+            click_count: 1,
+        };
+        self.pointer(pressed, x, y, log);
+    }
+
+    /// Releases the primary button after one press.
+    pub(crate) fn release(&mut self, x: f32, y: f32, log: &mut InputLog) {
+        let released = PointerInputKind::Released {
+            button: PointerButton::Primary,
+            click_count: 1,
+        };
+        self.pointer(released, x, y, log);
+    }
+
+    /// Presses a key once. Returns whether the tree used the key.
+    pub(crate) fn press_key(&mut self, key: Key, modifiers: Modifiers, log: &mut InputLog) -> bool {
+        let event = KeyEvent {
+            phase: KeyPhase::Pressed,
+            key,
+            modifiers,
+            is_repeat: false,
+        };
+        self.tree.key_input(&event, log)
+    }
+
     pub(crate) fn light_theme(&self) -> Theme {
         self.tokens.light.clone()
     }
@@ -277,5 +322,55 @@ impl Scene {
             Some(TokenId::Color(token)) => token,
             other => panic!("`--{token_name}` is not a color token: {other:?}"),
         }
+    }
+}
+
+/// Remembers the input a tree routed to its elements.
+#[derive(Debug, Default)]
+pub(crate) struct InputLog {
+    pub(crate) pointer_events: Vec<(ElementId, PointerEventKind)>,
+    pub(crate) key_events: Vec<(ElementId, KeyPhase, Key)>,
+    pub(crate) shortcuts: Vec<ShortcutId>,
+    /// The elements that use every event routed to them.
+    pub(crate) consumers: Vec<ElementId>,
+}
+
+impl InputLog {
+    /// The elements that heard of a pointer event of the kind, in the order they heard of it.
+    pub(crate) fn receivers_of(&self, kind: PointerEventKind) -> Vec<ElementId> {
+        self.pointer_events
+            .iter()
+            .filter(|(_, heard)| *heard == kind)
+            .map(|(element, _)| *element)
+            .collect()
+    }
+
+    /// The elements that were offered a key, in the order they were offered it.
+    pub(crate) fn key_receivers(&self) -> Vec<ElementId> {
+        self.key_events.iter().map(|(element, _, _)| *element).collect()
+    }
+
+    fn answer(&self, element: ElementId) -> Propagation {
+        if self.consumers.contains(&element) {
+            Propagation::Stop
+        } else {
+            Propagation::Continue
+        }
+    }
+}
+
+impl InputHandler for InputLog {
+    fn pointer_event(&mut self, element: ElementId, event: &PointerEvent) -> Propagation {
+        self.pointer_events.push((element, event.kind));
+        self.answer(element)
+    }
+
+    fn key_event(&mut self, element: ElementId, event: &KeyEvent) -> Propagation {
+        self.key_events.push((element, event.phase, event.key));
+        self.answer(element)
+    }
+
+    fn shortcut(&mut self, shortcut: ShortcutId) {
+        self.shortcuts.push(shortcut);
     }
 }

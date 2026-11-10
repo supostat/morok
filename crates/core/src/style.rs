@@ -9,6 +9,7 @@ pub(crate) mod positioning;
 pub(crate) mod resolved_length;
 pub(crate) mod resolved_length_or_auto;
 pub(crate) mod selector_change;
+pub(crate) mod selector_marker;
 pub(crate) mod selector_target;
 pub(crate) mod style_lists;
 pub(crate) mod style_outcome;

@@ -27,7 +27,7 @@ pub struct Window<Content> {
 impl<Content: SurfaceContent + 'static> Window<Content> {
     /// Opens a window on the content `build_content` returns. The content is given the frame
     /// scheduler of the window, for its tree to ask for frames through, and the settings of the
-    /// system the window opens under.
+    /// system the window opens under. The surface takes the keyboard of the window.
     pub fn open(
         application: &Application,
         options: &WindowOptions,
@@ -59,6 +59,7 @@ impl<Content: SurfaceContent + 'static> Window<Content> {
         };
         native.setTitle(&NSString::from_str(&options.title));
         native.setContentView(Some(&view));
+        native.makeFirstResponder(Some(&view));
         native.center();
         native.makeKeyAndOrderFront(None);
         Self { native, view, content }

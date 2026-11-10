@@ -9,6 +9,7 @@ mod frame_requester;
 mod frame_statistics;
 mod image_statistics;
 mod image_status;
+mod input_translation;
 mod media;
 mod render;
 mod renderer_error;

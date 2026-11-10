@@ -21,11 +21,13 @@ objc2-app-kit = { workspace = true, features = [
   "NSAccessibility",
   "NSAppearance",
   "NSApplication",
+  "NSEvent",
   "NSFont",
   "NSFontDescriptor",
   "NSGraphics",
   "NSResponder",
   "NSRunningApplication",
+  "NSTrackingArea",
   "NSView",
   "NSWindow",
   "NSWorkspace",
@@ -63,6 +65,7 @@ objc2-core-text = { workspace = true, features = [
 objc2-foundation = { workspace = true, features = [
   "NSArray",
   "NSDate",
+  "NSDictionary",
   "NSError",
   "NSGeometry",
   "NSNotification",
@@ -112,10 +115,23 @@ objc2-quartz-core = { workspace = true, features = [
 
 [dev-dependencies]
 morok-css.workspace = true
-objc2-foundation = { workspace = true, features = ["NSDate", "NSRunLoop"] }
+objc2.workspace = true
+objc2-app-kit = { workspace = true, features = [
+  "NSApplication",
+  "NSEvent",
+  "NSGraphicsContext",
+  "NSResponder",
+  "NSView",
+  "NSWindow",
+] }
+objc2-foundation = { workspace = true, features = ["NSArray", "NSDate", "NSGeometry", "NSRunLoop", "NSString"] }
 
 [[test]]
 name = "display_link_idle"
+harness = false
+
+[[test]]
+name = "event_translation"
 harness = false
 
 [[test]]

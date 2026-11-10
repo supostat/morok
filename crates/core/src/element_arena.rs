@@ -72,6 +72,48 @@ impl ElementArena {
         }
     }
 
+    /// Whether `ancestor` is `of` or one of the elements around it.
+    pub(crate) fn is_inclusive_ancestor(&self, ancestor: ElementId, of: ElementId) -> bool {
+        let mut current = Some(of);
+        while let Some(id) = current {
+            if id == ancestor {
+                return true;
+            }
+            current = self[id].parent;
+        }
+        false
+    }
+
+    /// The innermost element that is, or is around, both elements; none when either is none
+    /// or the two belong to different trees.
+    pub(crate) fn common_ancestor(&self, first: Option<ElementId>, second: Option<ElementId>) -> Option<ElementId> {
+        let (mut first, mut second) = (first?, second?);
+        let (mut first_depth, mut second_depth) = (self.depth(first), self.depth(second));
+        while first_depth > second_depth {
+            first = self[first].parent?;
+            first_depth -= 1;
+        }
+        while second_depth > first_depth {
+            second = self[second].parent?;
+            second_depth -= 1;
+        }
+        while first != second {
+            first = self[first].parent?;
+            second = self[second].parent?;
+        }
+        Some(first)
+    }
+
+    fn depth(&self, id: ElementId) -> usize {
+        let mut depth = 0;
+        let mut ancestor = self[id].parent;
+        while let Some(current) = ancestor {
+            depth += 1;
+            ancestor = self[current].parent;
+        }
+        depth
+    }
+
     pub(crate) fn slot_count(&self) -> u32 {
         self.slots.len() as u32
     }

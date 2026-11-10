@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use morok_core::{ElementTree, Size};
+use morok_core::{ElementTree, KeyEvent, PointerInput, Size};
 use morok_style::ColorScheme;
 
 /// What a window shows. The window asks its content for a frame whenever the tree of the
@@ -17,4 +17,11 @@ pub trait SurfaceContent {
 
     /// The user turned "Reduce motion" on or off in the accessibility settings of the system.
     fn reduced_motion_changed(&mut self, reduces_motion: bool);
+
+    /// The pointer moved over the surface, pressed or released a button on it, or left it.
+    fn pointer_input(&mut self, input: &PointerInput);
+
+    /// A key went down or up while the surface had the keyboard. Returns whether the content
+    /// used the key; a key it did not use goes on to the window and the application.
+    fn key_input(&mut self, event: &KeyEvent) -> bool;
 }

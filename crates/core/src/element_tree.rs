@@ -7,10 +7,28 @@ use crate::dirty::Dirty;
 use crate::element::Element;
 use crate::element_arena::ElementArena;
 use crate::element_id::ElementId;
+use crate::frame_requests::FrameRequests;
 use crate::frame_scheduler::FrameScheduler;
+use crate::geometry::point::Point;
 use crate::geometry::rect::Rect;
 use crate::geometry::size::Size;
 use crate::geometry::transform::Transform;
+use crate::input::focus_manager::FocusManager;
+use crate::input::focusability::Focusability;
+use crate::input::hit_test::HitTest;
+use crate::input::input_handler::InputHandler;
+use crate::input::input_modality::InputModality;
+use crate::input::input_state::InputState;
+use crate::input::key_chord::KeyChord;
+use crate::input::key_event::KeyEvent;
+use crate::input::key_router::KeyRouter;
+use crate::input::pointer_input::PointerInput;
+use crate::input::pointer_input_kind::PointerInputKind;
+use crate::input::pointer_router::PointerRouter;
+use crate::input::pointer_targets::PointerTargets;
+use crate::input::shortcut::Shortcut;
+use crate::input::shortcut_id::ShortcutId;
+use crate::input::shortcut_scope::ShortcutScope;
 use crate::layout::geometry_pass::GeometryPass;
 use crate::layout::layout_pass::LayoutPass;
 use crate::media::canvas_id::CanvasId;
@@ -34,6 +52,7 @@ use crate::paint::unpaint::unpaint_subtree;
 use crate::role::Role;
 use crate::style::computed_style::ComputedStyle;
 use crate::style::selector_change::SelectorChange;
+use crate::style::selector_marker::SelectorMarker;
 use crate::style::style_pass::StylePass;
 use crate::style::style_resolver::StyleResolver;
 use crate::style::style_scratch::StyleScratch;
@@ -48,6 +67,9 @@ use crate::text::text_shaper::TextShaper;
 /// [`compute_layout`](Self::compute_layout), [`build_display_list`](Self::build_display_list).
 /// A tree with a [`FrameScheduler`] asks it for a frame whenever a change waits for one, and for
 /// every next frame while a transition, an animation or a spring runs.
+///
+/// The tree drives the `hover`, `active` and focus states of its elements from the input it is
+/// given, and routes that input to the elements through an [`InputHandler`].
 #[derive(Debug)]
 pub struct ElementTree {
     elements: ElementArena,
@@ -77,9 +99,8 @@ pub struct ElementTree {
     pending_damage: Damage,
     /// Scratch space for texts whose white space collapses.
     processed_text: String,
-    frame_scheduler: Option<Box<dyn FrameScheduler>>,
-    /// Whether a change waits for a frame that has not begun.
-    frame_is_pending: bool,
+    input: InputState,
+    frame_requests: FrameRequests,
 }
 
 impl ElementTree {
@@ -111,18 +132,15 @@ impl ElementTree {
             damage: Damage::default(),
             pending_damage: Damage::default(),
             processed_text: String::new(),
-            frame_scheduler: None,
-            frame_is_pending: true,
+            input: InputState::default(),
+            frame_requests: FrameRequests::awaiting_first_frame(),
         }
     }
 
     /// Names the host that runs the frames of the tree. A tree that already waits for a frame
     /// asks for it at once.
     pub fn set_frame_scheduler(&mut self, frame_scheduler: Box<dyn FrameScheduler>) {
-        if self.frame_is_pending {
-            frame_scheduler.request_frame();
-        }
-        self.frame_scheduler = Some(frame_scheduler);
+        self.frame_requests.set_scheduler(frame_scheduler);
     }
 
     pub fn root(&self) -> ElementId {
@@ -166,7 +184,7 @@ impl ElementTree {
             "the child is detached before it is inserted"
         );
         assert!(
-            !self.is_inclusive_ancestor(child, parent),
+            !self.elements.is_inclusive_ancestor(child, parent),
             "an element cannot contain itself"
         );
         self.elements[parent].children.insert(position, child);
@@ -186,6 +204,10 @@ impl ElementTree {
     ///
     /// When the element has no parent.
     pub fn detach(&mut self, element: ElementId) {
+        if self.elements[element].is_attached {
+            self.pointer_targets().forget_subtree(element);
+            self.focus_manager().forget_subtree(element);
+        }
         let parent = self.elements[element]
             .parent
             .take()
@@ -216,6 +238,11 @@ impl ElementTree {
             let removed = self.elements.remove(removed);
             self.pending.extend(removed.children);
         }
+        let elements = &self.elements;
+        self.input.shortcuts.retain(|shortcut| match shortcut.scope {
+            ShortcutScope::Surface => true,
+            ShortcutScope::Element(scope) => elements.contains(scope),
+        });
     }
 
     pub fn role(&self, element: ElementId) -> Role {
@@ -240,7 +267,7 @@ impl ElementTree {
             return;
         }
         classes.push(class);
-        self.mark_selector_change(element, SelectorChange::ClassAdded);
+        self.selector_marker().mark(element, SelectorChange::ClassAdded);
     }
 
     pub fn remove_class(&mut self, element: ElementId, class: Class) {
@@ -250,7 +277,7 @@ impl ElementTree {
         };
         let last = classes.len() - 1;
         classes.swap(position, last);
-        self.mark_selector_change(element, SelectorChange::ClassLeaving);
+        self.selector_marker().mark(element, SelectorChange::ClassLeaving);
         self.elements[element].classes.pop();
     }
 
@@ -259,18 +286,14 @@ impl ElementTree {
     }
 
     /// Turns the given states of the element on or off; its other states stay as they are.
+    /// The tree turns `hover`, `active` and the focus states on and off itself as input
+    /// arrives. A focused element that is disabled loses focus.
     pub fn set_state(&mut self, element: ElementId, state: States, is_on: bool) {
-        let before = self.elements[element].states;
-        let after = if is_on {
-            before.union(state)
-        } else {
-            before.difference(state)
-        };
-        if after == before {
-            return;
+        self.selector_marker().set_state(element, state, is_on);
+        let disables_focused = is_on && state.contains(States::DISABLED) && self.input.focused == Some(element);
+        if disables_focused {
+            self.blur();
         }
-        self.elements[element].states = after;
-        self.mark_selector_change(element, SelectorChange::States { before });
     }
 
     /// Sets one property on the element directly. The declaration overrides every rule of the
@@ -434,7 +457,7 @@ impl ElementTree {
     pub fn resolve_styles(&mut self, now: Duration) -> usize {
         assert!(now >= self.timeline.now, "the time of a frame never goes back");
         self.timeline.now = now;
-        self.frame_is_pending = false;
+        self.frame_requests.frame_began();
         for position in 0..self.moving_elements.len() {
             let moving = self.moving_elements[position];
             if self.elements.contains(moving) && self.elements[moving].is_attached {
@@ -600,7 +623,8 @@ impl ElementTree {
     }
 
     /// The display list stage: rebuilds the display items of the elements that changed and
-    /// collects the damage. Returns the number of elements whose items were rebuilt.
+    /// collects the damage. Returns the number of elements whose items were rebuilt. A focused
+    /// element that is no longer rendered loses focus here.
     ///
     /// # Panics
     ///
@@ -610,6 +634,9 @@ impl ElementTree {
             !self.elements.layout_is_stale(),
             "layout is computed before the display list"
         );
+        // Past the style stage of this frame: the elements around the lost focus are styled
+        // again by the next one.
+        self.focus_manager().drop_hidden_focus();
         mem::swap(&mut self.damage, &mut self.pending_damage);
         self.pending_damage.clear();
         if !self.has_unpainted_changes {
@@ -642,7 +669,173 @@ impl ElementTree {
         }
         .run();
         self.has_unpainted_changes = false;
+        if rebuilt_elements > 0 && self.input.pointer.is_some() {
+            self.input.hover_is_stale = true;
+            self.request_frame();
+        }
         rebuilt_elements
+    }
+
+    /// The element shown at a point of the surface, as the last display list drew the tree:
+    /// the topmost box that holds the point and that no clip hides there. A box is found
+    /// whatever it paints, and by its border edge, rounded corners cut off.
+    pub fn element_at(&mut self, point: Point) -> Option<ElementId> {
+        HitTest {
+            elements: &self.elements,
+            steps: &self.paint_steps,
+            group_points: &mut self.input.group_points,
+        }
+        .element_at(point)
+    }
+
+    /// Takes what the pointer did on the surface: moves hover with it, makes the element the
+    /// primary button goes down on active, with its ancestors, until the button is released,
+    /// gives focus to the innermost focusable element around a press, and tells the elements
+    /// concerned through `handler`.
+    ///
+    /// From a press of the primary button to its release the pointer belongs to the pressed
+    /// element: it hears of every move and of the release, and nothing outside it is hovered.
+    pub fn pointer_input(&mut self, input: &PointerInput, handler: &mut dyn InputHandler) {
+        let is_on_surface = input.kind != PointerInputKind::Exited;
+        let hit = if is_on_surface {
+            self.element_at(input.position)
+        } else {
+            None
+        };
+        self.input.pointer = is_on_surface.then_some(input.position);
+        self.input.pointer_modifiers = input.modifiers;
+        self.input.hover_is_stale = false;
+        PointerRouter {
+            targets: self.pointer_targets(),
+            handler,
+        }
+        .route(input, hit);
+        if matches!(input.kind, PointerInputKind::Pressed { .. }) {
+            self.focus_manager().pointer_pressed(hit);
+        }
+    }
+
+    /// Works out again what a resting pointer is over when the last frame may have moved the
+    /// boxes under it, and tells the elements it left and came over. A host calls this at the
+    /// start of every frame, before the style stage.
+    pub fn refresh_hover(&mut self, handler: &mut dyn InputHandler) {
+        if !mem::take(&mut self.input.hover_is_stale) {
+            return;
+        }
+        let Some(position) = self.input.pointer else {
+            return;
+        };
+        let hit = self.element_at(position);
+        let resting = PointerInput {
+            kind: PointerInputKind::Moved,
+            position,
+            modifiers: self.input.pointer_modifiers,
+        };
+        PointerRouter {
+            targets: self.pointer_targets(),
+            handler,
+        }
+        .hover(hit, &resting);
+    }
+
+    /// Takes a key that went down or up: offers it to the focused element and then to each
+    /// element around it, tries the shortcuts on the way and those of the surface last, and
+    /// moves focus on Tab and Shift-Tab when nothing used the key. Returns whether the key
+    /// was used.
+    pub fn key_input(&mut self, event: &KeyEvent, handler: &mut dyn InputHandler) -> bool {
+        if event.shows_keyboard_use() {
+            self.focus_manager().set_modality(InputModality::Keyboard);
+        }
+        let router = KeyRouter {
+            elements: &self.elements,
+            shortcuts: &self.input.shortcuts,
+            handler,
+        };
+        if router.route(self.input.focused.unwrap_or(self.root), event) {
+            return true;
+        }
+        event
+            .focus_move()
+            .is_some_and(|direction| self.focus_manager().move_focus(direction))
+    }
+
+    pub fn focusability(&self, element: ElementId) -> Focusability {
+        self.elements[element].focusability
+    }
+
+    /// Says whether the element takes focus and whether the Tab key stops on it. A focused
+    /// element that stops being focusable loses focus.
+    pub fn set_focusability(&mut self, element: ElementId, focusability: Focusability) {
+        self.elements[element].focusability = focusability;
+        if focusability == Focusability::NotFocusable && self.input.focused == Some(element) {
+            self.blur();
+        }
+    }
+
+    /// The element that has keyboard focus.
+    pub fn focused(&self) -> Option<ElementId> {
+        self.input.focused
+    }
+
+    /// Gives keyboard focus to the element. Returns whether it has focus now: an element that
+    /// is outside the tree, is not focusable, is disabled or lies outside the innermost focus
+    /// trap takes none.
+    pub fn focus(&mut self, element: ElementId) -> bool {
+        self.focus_manager().focus(element)
+    }
+
+    /// Takes keyboard focus from the element that has it.
+    pub fn blur(&mut self) {
+        self.focus_manager().blur();
+    }
+
+    /// Keeps focus inside the element until the trap is released: the Tab key walks the stops
+    /// inside it, and nothing outside it takes focus. Focus that is outside it now is dropped.
+    /// Of several traps the one set last holds.
+    ///
+    /// # Panics
+    ///
+    /// When the element is outside the tree.
+    pub fn trap_focus(&mut self, element: ElementId) {
+        assert!(
+            self.elements[element].is_attached,
+            "a focus trap is set inside the tree"
+        );
+        self.focus_manager().trap(element);
+    }
+
+    /// Releases the trap set on the element. When it was the trap set last, the element that
+    /// had focus when it was set takes focus back, if it still can.
+    ///
+    /// # Panics
+    ///
+    /// When the element traps no focus.
+    pub fn release_focus_trap(&mut self, element: ElementId) {
+        self.focus_manager().release_trap(element);
+    }
+
+    /// Registers a shortcut: when the chord is pressed with focus in the scope and no element
+    /// between focus and the scope uses the key, the handler of the input hears of it. Of two
+    /// shortcuts with one chord the innermost scope answers, and in one scope the one
+    /// registered last. The shortcuts of an element go with it when it is removed.
+    pub fn register_shortcut(&mut self, scope: ShortcutScope, chord: KeyChord) -> ShortcutId {
+        self.input.last_shortcut += 1;
+        let id = ShortcutId::new(self.input.last_shortcut);
+        self.input.shortcuts.push(Shortcut { id, scope, chord });
+        id
+    }
+
+    /// # Panics
+    ///
+    /// When the shortcut is not registered.
+    pub fn unregister_shortcut(&mut self, shortcut: ShortcutId) {
+        let position = self
+            .input
+            .shortcuts
+            .iter()
+            .position(|registered| registered.id == shortcut)
+            .expect("a shortcut is registered until it is unregistered or its element is removed");
+        self.input.shortcuts.remove(position);
     }
 
     /// Drops the cached boxes and the lines of every element: all of them are laid out again.
@@ -656,17 +849,6 @@ impl ElementTree {
             self.elements.invalidate_text(id);
         }
         self.elements.invalidate_layout(self.root);
-    }
-
-    fn is_inclusive_ancestor(&self, ancestor: ElementId, of: ElementId) -> bool {
-        let mut current = Some(of);
-        while let Some(id) = current {
-            if id == ancestor {
-                return true;
-            }
-            current = self.elements[id].parent;
-        }
-        false
     }
 
     /// Brings a subtree into the frames of the tree: every element in it is styled against its
@@ -708,38 +890,47 @@ impl ElementTree {
         }
     }
 
-    /// Asks the host for a frame unless a frame that has not begun already waits. A change made
-    /// once the first stage ran is too late for the running frame and asks for the next one.
     fn request_frame(&mut self) {
-        if self.frame_is_pending {
-            return;
-        }
-        self.frame_is_pending = true;
-        if let Some(frame_scheduler) = &self.frame_scheduler {
-            frame_scheduler.request_frame();
+        self.frame_requests.request();
+    }
+
+    fn pointer_targets(&mut self) -> PointerTargets<'_> {
+        PointerTargets {
+            marker: SelectorMarker {
+                elements: &mut self.elements,
+                resolver: StyleResolver {
+                    style_sheet: &self.style_sheet,
+                    theme: &self.theme,
+                },
+                frame_requests: &mut self.frame_requests,
+            },
+            input: &mut self.input,
         }
     }
 
-    /// Marks for the style stage the element and those of its children that a child rule
-    /// styles differently after the change.
-    fn mark_selector_change(&mut self, element: ElementId, change: SelectorChange) {
-        if !self.elements[element].is_attached {
-            return;
+    fn focus_manager(&mut self) -> FocusManager<'_> {
+        FocusManager {
+            marker: SelectorMarker {
+                elements: &mut self.elements,
+                resolver: StyleResolver {
+                    style_sheet: &self.style_sheet,
+                    theme: &self.theme,
+                },
+                frame_requests: &mut self.frame_requests,
+            },
+            input: &mut self.input,
+            root: self.root,
         }
-        self.request_frame();
-        self.elements.mark(element, Dirty::STYLE, Dirty::STYLE_BELOW);
-        let resolver = StyleResolver {
-            style_sheet: &self.style_sheet,
-            theme: &self.theme,
-        };
-        for position in 0..self.elements[element].children.len() {
-            let parent = &self.elements[element];
-            let child = parent.children[position];
-            let (before, after) = change.targets(parent);
-            let child_target = self.elements[child].selector_target();
-            if resolver.child_rules_tell_parents_apart(child_target, before, after) {
-                self.elements.mark(child, Dirty::STYLE, Dirty::STYLE_BELOW);
-            }
+    }
+
+    fn selector_marker(&mut self) -> SelectorMarker<'_> {
+        SelectorMarker {
+            elements: &mut self.elements,
+            resolver: StyleResolver {
+                style_sheet: &self.style_sheet,
+                theme: &self.theme,
+            },
+            frame_requests: &mut self.frame_requests,
         }
     }
 }

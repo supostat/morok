@@ -1,6 +1,7 @@
 use crate::geometry::corners::Corners;
 use crate::geometry::rect::Rect;
 use crate::geometry::sides::Sides;
+use crate::geometry::size::Size;
 
 /// The geometry of the box a display item belongs to.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -21,6 +22,37 @@ impl BoxFrame {
             bottom: -self.border_widths.bottom,
             left: -self.border_widths.left,
         })
+    }
+
+    /// The radii of the corners of the padding box, across in the width and down in the
+    /// height: each corner loses the widths of the two borders that meet in it, and a corner
+    /// whose radius does not reach past both of them is square.
+    pub fn padding_radii(&self) -> Corners<Size> {
+        let Sides {
+            top,
+            right,
+            bottom,
+            left,
+        } = self.border_widths;
+        Corners {
+            top_left: padding_corner(self.radii.top_left, left, top),
+            top_right: padding_corner(self.radii.top_right, right, top),
+            bottom_right: padding_corner(self.radii.bottom_right, right, bottom),
+            bottom_left: padding_corner(self.radii.bottom_left, left, bottom),
+        }
+    }
+}
+
+fn padding_corner(radius: f32, side_border: f32, top_or_bottom_border: f32) -> Size {
+    let across = radius - side_border;
+    let down = radius - top_or_bottom_border;
+    if across > 0.0 && down > 0.0 {
+        Size {
+            width: across,
+            height: down,
+        }
+    } else {
+        Size::default()
     }
 }
 
@@ -52,6 +84,7 @@ mod tests {
     use crate::geometry::corners::Corners;
     use crate::geometry::rect::Rect;
     use crate::geometry::sides::Sides;
+    use crate::geometry::size::Size;
 
     fn uniform_radii(radius: f32) -> Corners<f32> {
         Corners {
@@ -95,6 +128,38 @@ mod tests {
                 top_right: 25.0,
                 bottom_right: 0.0,
                 bottom_left: 0.0,
+            }
+        );
+    }
+
+    #[test]
+    fn a_padding_corner_keeps_what_the_two_borders_leave_of_the_radius() {
+        let frame = BoxFrame {
+            border_box: Rect::new(0.0, 0.0, 100.0, 50.0),
+            border_widths: Sides {
+                top: 2.0,
+                right: 12.0,
+                bottom: 3.0,
+                left: 4.0,
+            },
+            radii: uniform_radii(10.0),
+        };
+
+        let radii = frame.padding_radii();
+
+        assert_eq!(
+            radii.top_left,
+            Size {
+                width: 6.0,
+                height: 8.0
+            }
+        );
+        assert_eq!(radii.top_right, Size::default());
+        assert_eq!(
+            radii.bottom_left,
+            Size {
+                width: 6.0,
+                height: 7.0
             }
         );
     }

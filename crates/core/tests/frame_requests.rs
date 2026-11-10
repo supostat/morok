@@ -5,7 +5,7 @@ use std::rc::Rc;
 
 use morok_core::{FrameScheduler, Role};
 use morok_style::States;
-use support::Scene;
+use support::{InputLog, Scene};
 
 const TOOLBAR: &str = ".app { display: flex; background-color: var(--color-bg); }\n\
     .button { width: 100px; height: 30px; background-color: var(--color-surface); }\n\
@@ -148,4 +148,65 @@ fn a_change_made_once_a_frame_began_asks_for_the_next_frame() {
     scene.tree.set_state(button, States::HOVER, false);
 
     assert_eq!(requested_frames.get(), 1);
+}
+
+#[test]
+fn a_pointer_that_changes_no_state_asks_for_no_frame() {
+    let (mut scene, requested_frames) = hosted_scene();
+    scene.add(scene.root(), Role::Element, &["button"]);
+    scene.frame();
+    let mut log = InputLog::default();
+    scene.move_pointer(300.0, 300.0, &mut log);
+    scene.frame();
+    scene.tree.refresh_hover(&mut log);
+    scene.frame();
+    requested_frames.set(0);
+
+    scene.move_pointer(310.0, 310.0, &mut log);
+
+    assert_eq!(requested_frames.get(), 0);
+}
+
+#[test]
+fn a_pointer_that_comes_over_an_element_asks_for_the_frame_that_shows_the_hover() {
+    let (mut scene, requested_frames) = hosted_scene();
+    let button = scene.add(scene.root(), Role::Element, &["button"]);
+    scene.frame();
+    requested_frames.set(0);
+    let mut log = InputLog::default();
+
+    scene.move_pointer(10.0, 10.0, &mut log);
+
+    assert!(scene.tree.states(button).contains(States::HOVER));
+    assert_eq!(requested_frames.get(), 1);
+}
+
+#[test]
+fn a_frame_that_repaints_under_a_resting_pointer_asks_for_one_more_to_follow_the_boxes() {
+    let (mut scene, requested_frames) = hosted_scene();
+    scene.add(scene.root(), Role::Element, &["button"]);
+    scene.frame();
+    let mut log = InputLog::default();
+    scene.move_pointer(10.0, 10.0, &mut log);
+    requested_frames.set(0);
+
+    scene.frame();
+    assert_eq!(requested_frames.get(), 1, "the frame painted the hover");
+
+    scene.tree.refresh_hover(&mut log);
+    scene.frame();
+    assert_eq!(requested_frames.get(), 1, "the boxes rest: nothing more to ask for");
+}
+
+#[test]
+fn a_frame_that_repaints_with_no_pointer_on_the_surface_asks_for_nothing() {
+    let (mut scene, requested_frames) = hosted_scene();
+    let button = scene.add(scene.root(), Role::Element, &["button"]);
+    scene.frame();
+    scene.tree.set_state(button, States::HOVER, true);
+    requested_frames.set(0);
+
+    scene.frame();
+
+    assert_eq!(requested_frames.get(), 0);
 }

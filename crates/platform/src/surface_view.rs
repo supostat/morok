@@ -2,13 +2,13 @@ use std::cell::{Cell, OnceCell, RefCell};
 use std::rc::Rc;
 use std::time::Duration;
 
-use morok_core::{DisplayList, FrameScheduler, Size};
+use morok_core::{DisplayList, FrameScheduler, KeyPhase, PointerButton, PointerInputKind, Size};
 use morok_style::ColorScheme;
 use objc2::rc::Retained;
 use objc2::runtime::{AnyObject, ProtocolObject};
-use objc2::{DefinedClass, MainThreadMarker, MainThreadOnly, define_class, msg_send, sel};
+use objc2::{AnyThread, DefinedClass, MainThreadMarker, MainThreadOnly, define_class, msg_send, sel};
 use objc2_app_kit::{
-    NSAppearanceCustomization, NSResponder, NSView, NSWorkspace,
+    NSAppearanceCustomization, NSEvent, NSResponder, NSTrackingArea, NSTrackingAreaOptions, NSView, NSWorkspace,
     NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification,
 };
 use objc2_core_foundation::CGSize;
@@ -22,6 +22,7 @@ use crate::canvas::canvas_painter::CanvasPainter;
 use crate::frame_loop::FrameLoop;
 use crate::frame_requester::FrameRequester;
 use crate::frame_statistics::FrameStatistics;
+use crate::input_translation;
 use crate::render::frame_renderer::FrameRenderer;
 use crate::render::renderer::{PIXEL_FORMAT, Renderer};
 use crate::render::screen_target::ScreenTarget;
@@ -51,7 +52,8 @@ pub(crate) struct SurfaceState {
 
 define_class!(
     /// The view of a surface: a Metal layer the display lists of its content are drawn into,
-    /// and the display link that paces the frames.
+    /// the display link that paces the frames, and the responder that takes the mouse and the
+    /// keyboard for its content.
     #[unsafe(super(NSView, NSResponder))]
     #[thread_kind = MainThreadOnly]
     #[ivars = SurfaceState]
@@ -92,6 +94,96 @@ define_class!(
         #[unsafe(method(accessibilityDisplayOptionsDidChange:))]
         fn accessibility_display_options_did_change(&self, _notification: &NSNotification) {
             self.motion_setting_changed();
+        }
+
+        #[unsafe(method(acceptsFirstResponder))]
+        fn accepts_first_responder(&self) -> bool {
+            true
+        }
+
+        /// The click that brings an inactive window forward also presses what it lands on,
+        /// as it does on a button of the system.
+        #[unsafe(method(acceptsFirstMouse:))]
+        fn accepts_first_mouse(&self, _event: Option<&NSEvent>) -> bool {
+            true
+        }
+
+        #[unsafe(method(mouseDown:))]
+        fn mouse_down(&self, event: &NSEvent) {
+            self.pointer_pressed(event, PointerButton::Primary);
+        }
+
+        #[unsafe(method(mouseUp:))]
+        fn mouse_up(&self, event: &NSEvent) {
+            self.pointer_released(event, PointerButton::Primary);
+        }
+
+        #[unsafe(method(rightMouseDown:))]
+        fn right_mouse_down(&self, event: &NSEvent) {
+            self.pointer_pressed(event, PointerButton::Secondary);
+        }
+
+        #[unsafe(method(rightMouseUp:))]
+        fn right_mouse_up(&self, event: &NSEvent) {
+            self.pointer_released(event, PointerButton::Secondary);
+        }
+
+        #[unsafe(method(otherMouseDown:))]
+        fn other_mouse_down(&self, event: &NSEvent) {
+            self.pointer_pressed(event, PointerButton::Auxiliary);
+        }
+
+        #[unsafe(method(otherMouseUp:))]
+        fn other_mouse_up(&self, event: &NSEvent) {
+            self.pointer_released(event, PointerButton::Auxiliary);
+        }
+
+        #[unsafe(method(mouseMoved:))]
+        fn mouse_moved(&self, event: &NSEvent) {
+            self.pointer_input(event, PointerInputKind::Moved);
+        }
+
+        #[unsafe(method(mouseDragged:))]
+        fn mouse_dragged(&self, event: &NSEvent) {
+            self.pointer_input(event, PointerInputKind::Moved);
+        }
+
+        #[unsafe(method(rightMouseDragged:))]
+        fn right_mouse_dragged(&self, event: &NSEvent) {
+            self.pointer_input(event, PointerInputKind::Moved);
+        }
+
+        #[unsafe(method(otherMouseDragged:))]
+        fn other_mouse_dragged(&self, event: &NSEvent) {
+            self.pointer_input(event, PointerInputKind::Moved);
+        }
+
+        #[unsafe(method(mouseEntered:))]
+        fn mouse_entered(&self, event: &NSEvent) {
+            self.pointer_input(event, PointerInputKind::Moved);
+        }
+
+        #[unsafe(method(mouseExited:))]
+        fn mouse_exited(&self, event: &NSEvent) {
+            self.pointer_input(event, PointerInputKind::Exited);
+        }
+
+        #[unsafe(method(keyDown:))]
+        fn key_down(&self, event: &NSEvent) {
+            if !self.key_input(event, KeyPhase::Pressed) {
+                // SAFETY: the superclass implements the method with this signature; it hands
+                // the key on along the responder chain.
+                let (): () = unsafe { msg_send![super(self), keyDown: event] };
+            }
+        }
+
+        #[unsafe(method(keyUp:))]
+        fn key_up(&self, event: &NSEvent) {
+            if !self.key_input(event, KeyPhase::Released) {
+                // SAFETY: the superclass implements the method with this signature; it hands
+                // the key on along the responder chain.
+                let (): () = unsafe { msg_send![super(self), keyUp: event] };
+            }
         }
     }
 );
@@ -148,6 +240,25 @@ impl SurfaceView {
                     None,
                 );
         }
+        // The area follows the visible part of the view by itself, so its rectangle is not
+        // read. The pointer is followed in the active application only, as controls of the
+        // system follow it.
+        let tracking_options = NSTrackingAreaOptions::MouseEnteredAndExited
+            | NSTrackingAreaOptions::MouseMoved
+            | NSTrackingAreaOptions::ActiveInActiveApp
+            | NSTrackingAreaOptions::InVisibleRect;
+        // SAFETY: the owner is the view, which implements the mouse methods the area calls, and
+        // no user info is passed.
+        let tracking_area = unsafe {
+            NSTrackingArea::initWithRect_options_owner_userInfo(
+                NSTrackingArea::alloc(),
+                NSRect::ZERO,
+                tracking_options,
+                Some(observer),
+                None,
+            )
+        };
+        view.addTrackingArea(&tracking_area);
         view.surface_changed();
         view
     }
@@ -248,6 +359,27 @@ impl SurfaceView {
             return;
         }
         self.content().borrow_mut().reduced_motion_changed(reduces_motion);
+    }
+
+    fn pointer_pressed(&self, event: &NSEvent, button: PointerButton) {
+        let click_count = input_translation::click_count(event);
+        self.pointer_input(event, PointerInputKind::Pressed { button, click_count });
+    }
+
+    fn pointer_released(&self, event: &NSEvent, button: PointerButton) {
+        let click_count = input_translation::click_count(event);
+        self.pointer_input(event, PointerInputKind::Released { button, click_count });
+    }
+
+    fn pointer_input(&self, event: &NSEvent, kind: PointerInputKind) {
+        let input = input_translation::pointer_input(self, event, kind);
+        self.content().borrow_mut().pointer_input(&input);
+    }
+
+    /// Returns whether the content used the key.
+    fn key_input(&self, event: &NSEvent, phase: KeyPhase) -> bool {
+        input_translation::key_event(event, phase)
+            .is_some_and(|key_event| self.content().borrow_mut().key_input(&key_event))
     }
 
     fn content(&self) -> &Rc<RefCell<dyn SurfaceContent>> {

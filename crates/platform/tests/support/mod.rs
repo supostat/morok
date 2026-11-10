@@ -3,7 +3,7 @@
 use std::process::ExitCode;
 use std::time::Duration;
 
-use morok_core::{ElementId, ElementTree, FrameScheduler, Rect, Role, Size};
+use morok_core::{ElementId, ElementTree, FrameScheduler, KeyEvent, PointerInput, Rect, Role, Size};
 use morok_css::{CompiledTokens, SourceFile, compile_stylesheets, compile_tokens};
 use morok_platform::{CoreTextShaper, FrameImage, OffscreenTarget, Renderer, SurfaceContent, SurfaceSettings};
 use morok_style::{ColorScheme, StyleSheet, Theme};
@@ -150,6 +150,14 @@ impl SurfaceContent for WindowScene {
 
     fn reduced_motion_changed(&mut self, reduces_motion: bool) {
         self.scene.tree.set_reduced_motion(reduces_motion);
+    }
+
+    /// The scene is changed by its test alone: a pointer that happens to be over the window
+    /// changes nothing.
+    fn pointer_input(&mut self, _input: &PointerInput) {}
+
+    fn key_input(&mut self, _event: &KeyEvent) -> bool {
+        false
     }
 }
 

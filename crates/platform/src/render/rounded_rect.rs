@@ -1,5 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use morok_core::{BoxFrame, Corners, Rect, Sides};
+use morok_core::{BoxFrame, Corners, Rect};
 
 /// A rectangle whose corners are quarter ellipses, as the shader reads it.
 #[repr(C)]
@@ -26,22 +26,11 @@ impl RoundedRect {
     /// The padding edge of a box: each corner loses the widths of the two borders that meet in
     /// it, and a corner whose radius does not reach past both of them is square.
     pub(crate) fn padding_box(frame: &BoxFrame) -> Self {
-        let Sides {
-            top,
-            right,
-            bottom,
-            left,
-        } = frame.border_widths;
-        let corners = [
-            inner_corner(frame.radii.top_left, left, top),
-            inner_corner(frame.radii.top_right, right, top),
-            inner_corner(frame.radii.bottom_right, right, bottom),
-            inner_corner(frame.radii.bottom_left, left, bottom),
-        ];
+        let radii = corners_clockwise(frame.padding_radii());
         Self {
             rect: origin_and_size(&frame.padding_box()),
-            horizontal_radii: corners.map(|(horizontal, _)| horizontal),
-            vertical_radii: corners.map(|(_, vertical)| vertical),
+            horizontal_radii: radii.map(|corner| corner.width),
+            vertical_radii: radii.map(|corner| corner.height),
         }
     }
 
@@ -90,23 +79,13 @@ fn origin_and_size(rect: &Rect) -> [f32; 4] {
     [rect.x, rect.y, rect.width, rect.height]
 }
 
-fn corners_clockwise(corners: Corners<f32>) -> [f32; 4] {
+fn corners_clockwise<T>(corners: Corners<T>) -> [T; 4] {
     [
         corners.top_left,
         corners.top_right,
         corners.bottom_right,
         corners.bottom_left,
     ]
-}
-
-fn inner_corner(radius: f32, horizontal_border: f32, vertical_border: f32) -> (f32, f32) {
-    let horizontal = radius - horizontal_border;
-    let vertical = radius - vertical_border;
-    if horizontal > 0.0 && vertical > 0.0 {
-        (horizontal, vertical)
-    } else {
-        (0.0, 0.0)
-    }
 }
 
 /// A square corner stays square. A radius smaller than the distance grows by less than the
