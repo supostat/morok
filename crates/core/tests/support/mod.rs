@@ -3,10 +3,10 @@
 use std::time::Duration;
 
 use morok_core::{
-    ElementId, ElementTree, FontId, FontMetrics, FontRequest, InputHandler, ItemRange, Key, KeyEvent, KeyPhase,
-    Modifiers, Point, PointerButton, PointerEvent, PointerEventKind, PointerInput, PointerInputKind, Propagation, Rect,
-    Role, ShapedGlyph, ShapedLine, ShapedRun, ShapedText, ShortcutId, Size, TextExtent, TextRequest, TextShaper,
-    WidthConstraint,
+    AccessibilityAction, ElementId, ElementTree, FontId, FontMetrics, FontRequest, InputHandler, ItemRange, Key,
+    KeyEvent, KeyPhase, Modifiers, Point, PointerButton, PointerEvent, PointerEventKind, PointerInput,
+    PointerInputKind, Propagation, Rect, Role, ShapedGlyph, ShapedLine, ShapedRun, ShapedText, ShortcutId, Size,
+    TextExtent, TextRequest, TextShaper, WidthConstraint,
 };
 use morok_css::{CompiledTokens, SourceFile, TokenId, compile_stylesheets, compile_tokens};
 use morok_style::{Class, Color, FontStyle, FontVariantNumeric, FontWeight, StyleSheet, Theme};
@@ -331,6 +331,8 @@ pub(crate) struct InputLog {
     pub(crate) pointer_events: Vec<(ElementId, PointerEventKind)>,
     pub(crate) key_events: Vec<(ElementId, KeyPhase, Key)>,
     pub(crate) shortcuts: Vec<ShortcutId>,
+    /// What an assistive technology asked of which element, as the debug form of the action.
+    pub(crate) accessibility_actions: Vec<(ElementId, String)>,
     /// The elements that use every event routed to them.
     pub(crate) consumers: Vec<ElementId>,
 }
@@ -372,5 +374,9 @@ impl InputHandler for InputLog {
 
     fn shortcut(&mut self, shortcut: ShortcutId) {
         self.shortcuts.push(shortcut);
+    }
+
+    fn accessibility_action(&mut self, element: ElementId, action: &AccessibilityAction<'_>) {
+        self.accessibility_actions.push((element, format!("{action:?}")));
     }
 }

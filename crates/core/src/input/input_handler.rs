@@ -1,3 +1,4 @@
+use crate::accessibility::accessibility_action::AccessibilityAction;
 use crate::element_id::ElementId;
 use crate::input::key_event::KeyEvent;
 use crate::input::pointer_event::PointerEvent;
@@ -19,4 +20,7 @@ pub trait InputHandler {
     /// The chord of a registered shortcut was pressed and no element between focus and the
     /// scope of the shortcut used the key.
     fn shortcut(&mut self, shortcut: ShortcutId);
+
+    /// An assistive technology asks the element for one of the actions the element offers.
+    fn accessibility_action(&mut self, element: ElementId, action: &AccessibilityAction<'_>);
 }

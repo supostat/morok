@@ -1,3 +1,4 @@
+mod accessibility;
 mod appearance;
 mod application;
 mod atlas_statistics;

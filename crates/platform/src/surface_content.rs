@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use morok_core::accesskit::{ActionRequest, TreeUpdate};
 use morok_core::{ElementTree, KeyEvent, PointerInput, Size};
 use morok_style::ColorScheme;
 
@@ -24,4 +25,15 @@ pub trait SurfaceContent {
     /// A key went down or up while the surface had the keyboard. Returns whether the content
     /// used the key; a key it did not use goes on to the window and the application.
     fn key_input(&mut self, event: &KeyEvent) -> bool;
+
+    /// The whole accessibility tree of the surface: asked for once, when an assistive
+    /// technology starts to read the surface.
+    fn accessibility_tree(&mut self) -> TreeUpdate;
+
+    /// What the last frame changed of the accessibility tree: asked for after every frame
+    /// for as long as an assistive technology reads the surface.
+    fn accessibility_update(&mut self) -> TreeUpdate;
+
+    /// An assistive technology asks a node of the accessibility tree for an action.
+    fn accessibility_action(&mut self, request: &ActionRequest);
 }

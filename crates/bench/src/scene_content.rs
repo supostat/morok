@@ -1,6 +1,7 @@
 use std::fmt::{self, Debug, Formatter};
 use std::time::Duration;
 
+use morok_core::accesskit::{ActionRequest, TreeUpdate};
 use morok_core::{ElementTree, FrameScheduler, KeyEvent, PointerInput, Size};
 use morok_platform::{CoreTextShaper, SurfaceContent, SurfaceSettings};
 use morok_style::ColorScheme;
@@ -63,6 +64,16 @@ impl SurfaceContent for SceneContent {
     fn key_input(&mut self, _event: &KeyEvent) -> bool {
         false
     }
+
+    fn accessibility_tree(&mut self) -> TreeUpdate {
+        self.scene_tree.tree_mut().accessibility_tree()
+    }
+
+    fn accessibility_update(&mut self) -> TreeUpdate {
+        self.scene_tree.tree_mut().accessibility_update()
+    }
+
+    fn accessibility_action(&mut self, _request: &ActionRequest) {}
 }
 
 impl Debug for SceneContent {

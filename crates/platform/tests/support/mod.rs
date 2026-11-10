@@ -3,6 +3,7 @@
 use std::process::ExitCode;
 use std::time::Duration;
 
+use morok_core::accesskit::{ActionRequest, TreeUpdate};
 use morok_core::{ElementId, ElementTree, FrameScheduler, KeyEvent, PointerInput, Rect, Role, Size};
 use morok_css::{CompiledTokens, SourceFile, compile_stylesheets, compile_tokens};
 use morok_platform::{CoreTextShaper, FrameImage, OffscreenTarget, Renderer, SurfaceContent, SurfaceSettings};
@@ -159,6 +160,16 @@ impl SurfaceContent for WindowScene {
     fn key_input(&mut self, _event: &KeyEvent) -> bool {
         false
     }
+
+    fn accessibility_tree(&mut self) -> TreeUpdate {
+        self.scene.tree.accessibility_tree()
+    }
+
+    fn accessibility_update(&mut self) -> TreeUpdate {
+        self.scene.tree.accessibility_update()
+    }
+
+    fn accessibility_action(&mut self, _request: &ActionRequest) {}
 }
 
 /// Lets the main run loop deliver what is due, display-link callbacks among it, for `duration`.

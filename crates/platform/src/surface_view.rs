@@ -1,4 +1,5 @@
 use std::cell::{Cell, OnceCell, RefCell};
+use std::ffi::c_void;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -8,15 +9,17 @@ use objc2::rc::Retained;
 use objc2::runtime::{AnyObject, ProtocolObject};
 use objc2::{AnyThread, DefinedClass, MainThreadMarker, MainThreadOnly, define_class, msg_send, sel};
 use objc2_app_kit::{
-    NSAppearanceCustomization, NSEvent, NSResponder, NSTrackingArea, NSTrackingAreaOptions, NSView, NSWorkspace,
+    NSAppearanceCustomization, NSEvent, NSResponder, NSTrackingArea, NSTrackingAreaOptions, NSView,
+    NSWindowDidBecomeKeyNotification, NSWindowDidResignKeyNotification, NSWorkspace,
     NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification,
 };
 use objc2_core_foundation::CGSize;
 use objc2_core_graphics::{CGColorSpace, kCGColorSpaceSRGB};
-use objc2_foundation::{NSNotification, NSRect, NSSize};
+use objc2_foundation::{NSNotification, NSNotificationCenter, NSPoint, NSRect, NSSize};
 use objc2_metal::{MTLDrawable, MTLResidencySet};
 use objc2_quartz_core::{CADisplayLink, CALayer, CAMetalDrawable, CAMetalLayer};
 
+use crate::accessibility::surface_accessibility::SurfaceAccessibility;
 use crate::appearance::color_scheme_of;
 use crate::canvas::canvas_painter::CanvasPainter;
 use crate::frame_loop::FrameLoop;
@@ -42,6 +45,8 @@ pub(crate) struct SurfaceState {
     frame_loop: OnceCell<Rc<FrameLoop>>,
     /// Set by the window before the view enters it.
     content: OnceCell<Rc<RefCell<dyn SurfaceContent>>>,
+    /// Set with the content, whose accessibility tree it shows.
+    accessibility: OnceCell<SurfaceAccessibility>,
     color_scheme: Cell<ColorScheme>,
     reduces_motion: Cell<bool>,
     /// Whether the screen no longer shows the last display list: the surface was resized,
@@ -52,8 +57,9 @@ pub(crate) struct SurfaceState {
 
 define_class!(
     /// The view of a surface: a Metal layer the display lists of its content are drawn into,
-    /// the display link that paces the frames, and the responder that takes the mouse and the
-    /// keyboard for its content.
+    /// the display link that paces the frames, the responder that takes the mouse and the
+    /// keyboard for its content, and the accessibility element whose children are the nodes
+    /// of the accessibility tree of the content.
     #[unsafe(super(NSView, NSResponder))]
     #[thread_kind = MainThreadOnly]
     #[ivars = SurfaceState]
@@ -94,6 +100,31 @@ define_class!(
         #[unsafe(method(accessibilityDisplayOptionsDidChange:))]
         fn accessibility_display_options_did_change(&self, _notification: &NSNotification) {
             self.motion_setting_changed();
+        }
+
+        #[unsafe(method(windowDidBecomeKey:))]
+        fn window_did_become_key(&self, notification: &NSNotification) {
+            self.window_key_state_changed(notification, true);
+        }
+
+        #[unsafe(method(windowDidResignKey:))]
+        fn window_did_resign_key(&self, notification: &NSNotification) {
+            self.window_key_state_changed(notification, false);
+        }
+
+        #[unsafe(method(accessibilityChildren))]
+        fn accessibility_children(&self) -> *mut AnyObject {
+            self.accessibility().children()
+        }
+
+        #[unsafe(method(accessibilityFocusedUIElement))]
+        fn accessibility_focused_ui_element(&self) -> *mut AnyObject {
+            self.accessibility().focused_element()
+        }
+
+        #[unsafe(method(accessibilityHitTest:))]
+        fn accessibility_hit_test(&self, screen_point: NSPoint) -> *mut AnyObject {
+            self.accessibility().element_at(screen_point)
         }
 
         #[unsafe(method(acceptsFirstResponder))]
@@ -210,6 +241,7 @@ impl SurfaceView {
             layer: layer.clone(),
             frame_loop: OnceCell::new(),
             content: OnceCell::new(),
+            accessibility: OnceCell::new(),
             color_scheme: Cell::new(settings.color_scheme),
             reduces_motion: Cell::new(settings.reduces_motion),
             surface_is_stale: Cell::new(true),
@@ -228,8 +260,8 @@ impl SurfaceView {
             .set(Rc::new(FrameLoop::new(display_link)))
             .expect("a view gets its frame loop once");
         let observer: &AnyObject = &view;
-        // SAFETY: the view implements the selector, taking the notification, and it stops
-        // observing when its window closes. The name is a constant of `AppKit`.
+        // SAFETY: the view implements the selectors, each taking the notification, and it
+        // stops observing when its window closes. The names are constants of `AppKit`.
         unsafe {
             NSWorkspace::sharedWorkspace()
                 .notificationCenter()
@@ -239,6 +271,19 @@ impl SurfaceView {
                     Some(NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification),
                     None,
                 );
+            let window_notifications = NSNotificationCenter::defaultCenter();
+            window_notifications.addObserver_selector_name_object(
+                observer,
+                sel!(windowDidBecomeKey:),
+                Some(NSWindowDidBecomeKeyNotification),
+                None,
+            );
+            window_notifications.addObserver_selector_name_object(
+                observer,
+                sel!(windowDidResignKey:),
+                Some(NSWindowDidResignKeyNotification),
+                None,
+            );
         }
         // The area follows the visible part of the view by itself, so its rectangle is not
         // read. The pointer is followed in the active application only, as controls of the
@@ -274,8 +319,11 @@ impl SurfaceView {
     ///
     /// When the view already has its content.
     pub(crate) fn set_content(&self, content: Rc<RefCell<dyn SurfaceContent>>) {
+        let is_in_key_window = self.window().is_some_and(|window| window.isKeyWindow());
+        let accessibility = SurfaceAccessibility::new(self, is_in_key_window, Rc::clone(&content));
+        let state = self.ivars();
         assert!(
-            self.ivars().content.set(content).is_ok(),
+            state.content.set(content).is_ok() && state.accessibility.set(accessibility).is_ok(),
             "a view gets its content once"
         );
     }
@@ -303,6 +351,7 @@ impl SurfaceView {
             NSWorkspace::sharedWorkspace()
                 .notificationCenter()
                 .removeObserver(observer);
+            NSNotificationCenter::defaultCenter().removeObserver(observer);
         }
     }
 
@@ -382,6 +431,26 @@ impl SurfaceView {
             .is_some_and(|key_event| self.content().borrow_mut().key_input(&key_event))
     }
 
+    /// A window got or lost the keyboard; the accessibility of the view follows its own window.
+    fn window_key_state_changed(&self, notification: &NSNotification, is_key: bool) {
+        let Some(window) = self.window() else {
+            return;
+        };
+        let is_of_this_window = notification.object().is_some_and(|object| {
+            Retained::as_ptr(&object).cast::<c_void>() == Retained::as_ptr(&window).cast::<c_void>()
+        });
+        if is_of_this_window {
+            self.accessibility().view_focus_changed(is_key);
+        }
+    }
+
+    fn accessibility(&self) -> &SurfaceAccessibility {
+        self.ivars()
+            .accessibility
+            .get()
+            .expect("a view has its content before it enters a window")
+    }
+
     fn content(&self) -> &Rc<RefCell<dyn SurfaceContent>> {
         self.ivars()
             .content
@@ -413,6 +482,7 @@ impl SurfaceView {
         }
         state.statistics.set(statistics);
         frame_loop.end_frame();
+        self.accessibility().frame_ran();
     }
 
     /// Draws the display list into the next drawable of the layer. Returns whether the layer

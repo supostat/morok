@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
 
+mod accessibility;
 mod dirty;
 mod element;
 mod element_arena;
@@ -17,6 +18,11 @@ mod role;
 mod style;
 mod text;
 
+pub use accessibility::accessibility_action::AccessibilityAction;
+pub use accessibility::accessible_actions::AccessibleActions;
+pub use accessibility::accessible_value::AccessibleValue;
+pub use accessibility::numeric_value::NumericValue;
+pub use accesskit;
 pub use element_id::ElementId;
 pub use element_tree::ElementTree;
 pub use frame_scheduler::FrameScheduler;

@@ -11,6 +11,7 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
+accesskit.workspace = true
 morok-style.workspace = true
 taffy.workspace = true
 

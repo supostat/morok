@@ -1,8 +1,15 @@
 use std::mem;
 use std::time::Duration;
 
+use accesskit::{Action, ActionData, ActionRequest, TreeUpdate};
 use morok_style::{Class, Declaration, States, StyleSheet, Theme};
 
+use crate::accessibility::accessibility_action::AccessibilityAction;
+use crate::accessibility::accessibility_pass::AccessibilityPass;
+use crate::accessibility::accessible_actions::AccessibleActions;
+use crate::accessibility::accessible_value::AccessibleValue;
+use crate::accessibility::node_identity::element_of;
+use crate::accessibility::semantics::Semantics;
 use crate::dirty::Dirty;
 use crate::element::Element;
 use crate::element_arena::ElementArena;
@@ -70,6 +77,10 @@ use crate::text::text_shaper::TextShaper;
 ///
 /// The tree drives the `hover`, `active` and focus states of its elements from the input it is
 /// given, and routes that input to the elements through an [`InputHandler`].
+///
+/// An element with an accessible role has a node in the accessibility tree; the root always
+/// has one. After the stages of a frame [`accessibility_update`](Self::accessibility_update)
+/// tells what the frame changed of that tree.
 #[derive(Debug)]
 pub struct ElementTree {
     elements: ElementArena,
@@ -100,6 +111,8 @@ pub struct ElementTree {
     /// Scratch space for texts whose white space collapses.
     processed_text: String,
     input: InputState,
+    /// The number of the last accessibility update worked out.
+    accessibility_updates: u64,
     frame_requests: FrameRequests,
 }
 
@@ -109,6 +122,7 @@ impl ElementTree {
         let mut elements = ElementArena::default();
         let mut root_element = Element::new(Role::Element);
         root_element.is_attached = true;
+        root_element.semantics = Some(Box::new(Semantics::new(accesskit::Role::Window)));
         let root = elements.insert(root_element);
         elements.invalidate_layout(root);
         Self {
@@ -133,6 +147,7 @@ impl ElementTree {
             pending_damage: Damage::default(),
             processed_text: String::new(),
             input: InputState::default(),
+            accessibility_updates: 0,
             frame_requests: FrameRequests::awaiting_first_frame(),
         }
     }
@@ -324,6 +339,9 @@ impl ElementTree {
         }
         held.text.clear();
         held.text.push_str(text);
+        if let Some(semantics) = &mut held.semantics {
+            semantics.text_changed();
+        }
         held.dirty.insert(Dirty::PAINT);
         let is_attached = held.is_attached;
         self.elements.invalidate_text(element);
@@ -892,6 +910,155 @@ impl ElementTree {
 
     fn request_frame(&mut self) {
         self.frame_requests.request();
+    }
+
+    /// The role of the node the element has in the accessibility tree.
+    pub fn accessible_role(&self, element: ElementId) -> Option<accesskit::Role> {
+        self.elements[element].semantics.as_deref().map(Semantics::role)
+    }
+
+    /// Gives the element a node of the role in the accessibility tree, or takes its node away
+    /// with the name, the value and the actions of the node. The nodes of what is inside an
+    /// element without a node belong to the nearest element around it that has one. The root
+    /// is a window unless given another role.
+    ///
+    /// # Panics
+    ///
+    /// When the node of the root is taken away.
+    pub fn set_accessible_role(&mut self, element: ElementId, role: Option<accesskit::Role>) {
+        assert!(
+            role.is_some() || element != self.root,
+            "the root always has a node in the accessibility tree"
+        );
+        let held = &mut self.elements[element].semantics;
+        let changes = match (held.as_deref_mut(), role) {
+            (Some(semantics), Some(role)) => semantics.set_role(role),
+            (None, Some(role)) => {
+                *held = Some(Box::new(Semantics::new(role)));
+                true
+            }
+            (Some(_), None) => {
+                *held = None;
+                true
+            }
+            (None, None) => false,
+        };
+        self.accessibility_changed(element, changes);
+    }
+
+    /// Names the node of the element: what an assistive technology calls it.
+    ///
+    /// # Panics
+    ///
+    /// When the element has no accessible role.
+    pub fn set_accessible_name(&mut self, element: ElementId, name: &str) {
+        let changes = self.semantics_mut(element).set_name(name);
+        self.accessibility_changed(element, changes);
+    }
+
+    /// Says what the node of the element holds. With no value of its own a text element
+    /// gives its text.
+    ///
+    /// # Panics
+    ///
+    /// When the element has no accessible role.
+    pub fn set_accessible_value(&mut self, element: ElementId, value: AccessibleValue<'_>) {
+        let changes = self.semantics_mut(element).set_value(value);
+        self.accessibility_changed(element, changes);
+    }
+
+    /// Says what an assistive technology may ask the element to do. Taking focus is offered
+    /// by every element that takes it.
+    ///
+    /// # Panics
+    ///
+    /// When the element has no accessible role.
+    pub fn set_accessible_actions(&mut self, element: ElementId, actions: AccessibleActions) {
+        let changes = self.semantics_mut(element).set_actions(actions);
+        self.accessibility_changed(element, changes);
+    }
+
+    /// The whole accessibility tree as the last frame left it: what an assistive technology
+    /// is given when it starts to read the surface. The updates that follow tell what changed
+    /// since.
+    pub fn accessibility_tree(&mut self) -> TreeUpdate {
+        self.accessibility_pass(true)
+    }
+
+    /// What changed of the accessibility tree since the last update, or since the whole tree
+    /// was given: the nodes that are new or differ, and the node that has focus. A host works
+    /// this out after the display list stage of a frame, for as long as an assistive
+    /// technology reads the surface.
+    pub fn accessibility_update(&mut self) -> TreeUpdate {
+        self.accessibility_pass(false)
+    }
+
+    /// Takes what an assistive technology asks of a node: gives focus to the element when
+    /// asked to, as the keyboard would, and tells the element through `handler` of an action
+    /// it offers. A request the element does not offer, or one for a node that is no longer
+    /// in the tree, does nothing.
+    pub fn accessibility_action(&mut self, request: &ActionRequest, handler: &mut dyn InputHandler) {
+        let target = element_of(request.target_node);
+        if !self.elements.contains(target) {
+            return;
+        }
+        let element = &self.elements[target];
+        let Some(semantics) = element.semantics.as_deref() else {
+            return;
+        };
+        if !element.is_attached || element.states.contains(States::DISABLED) {
+            return;
+        }
+        let offered = semantics.actions();
+        let action = match (request.action, &request.data) {
+            (Action::Focus, _) => {
+                let mut focus = self.focus_manager();
+                focus.set_modality(InputModality::Keyboard);
+                focus.focus(target);
+                return;
+            }
+            (Action::Click, _) if offered.contains(AccessibleActions::CLICK) => AccessibilityAction::Click,
+            (Action::Increment, _) if offered.contains(AccessibleActions::INCREMENT) => AccessibilityAction::Increment,
+            (Action::Decrement, _) if offered.contains(AccessibleActions::DECREMENT) => AccessibilityAction::Decrement,
+            (Action::SetValue, Some(ActionData::Value(text))) if offered.contains(AccessibleActions::SET_VALUE) => {
+                AccessibilityAction::SetText(text)
+            }
+            (Action::SetValue, Some(ActionData::NumericValue(number)))
+                if offered.contains(AccessibleActions::SET_VALUE) =>
+            {
+                AccessibilityAction::SetNumber(*number)
+            }
+            _ => return,
+        };
+        handler.accessibility_action(target, &action);
+    }
+
+    fn accessibility_pass(&mut self, holds_whole_tree: bool) -> TreeUpdate {
+        self.accessibility_updates += 1;
+        AccessibilityPass {
+            elements: &mut self.elements,
+            root: self.root,
+            focused: self.input.focused,
+            scale: self.scale,
+            update: self.accessibility_updates,
+            holds_whole_tree,
+            nodes: Vec::new(),
+        }
+        .run()
+    }
+
+    fn semantics_mut(&mut self, element: ElementId) -> &mut Semantics {
+        self.elements[element]
+            .semantics
+            .as_deref_mut()
+            .expect("an element gets an accessible role before a name, a value or actions")
+    }
+
+    /// A change to the node of an attached element waits for the frame whose update tells of it.
+    fn accessibility_changed(&mut self, element: ElementId, changes: bool) {
+        if changes && self.elements[element].is_attached {
+            self.request_frame();
+        }
     }
 
     fn pointer_targets(&mut self) -> PointerTargets<'_> {

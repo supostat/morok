@@ -1,6 +1,7 @@
 use morok_style::{Class, States};
 use taffy::{Cache, DetailedLayoutInfo, Layout};
 
+use crate::accessibility::semantics::Semantics;
 use crate::dirty::Dirty;
 use crate::element_id::ElementId;
 use crate::geometry::rect::Rect;
@@ -26,6 +27,9 @@ pub(crate) struct Element {
     pub(crate) classes: Vec<Class>,
     pub(crate) states: States,
     pub(crate) focusability: Focusability,
+    /// What the element is to an assistive technology; none for an element without a node in
+    /// the accessibility tree.
+    pub(crate) semantics: Option<Box<Semantics>>,
     pub(crate) inline_style: InlineStyle,
     pub(crate) text: String,
     /// The picture, icon or canvas of a leaf of those roles.
@@ -63,6 +67,7 @@ impl Element {
             classes: Vec::new(),
             states: States::NONE,
             focusability: Focusability::NotFocusable,
+            semantics: None,
             inline_style: InlineStyle::default(),
             text: String::new(),
             media: MediaContent::None,

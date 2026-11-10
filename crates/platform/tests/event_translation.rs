@@ -4,10 +4,11 @@ use std::process::ExitCode;
 use std::ptr;
 use std::time::Duration;
 
+use morok_core::accesskit::{ActionRequest, TreeUpdate};
 use morok_core::{
-    ElementId, ElementTree, Focusability, InputHandler, Key, KeyChord, KeyEvent, KeyPhase, Modifiers, Point,
-    PointerButton, PointerEvent, PointerEventKind, PointerInput, PointerInputKind, Propagation, ShortcutId,
-    ShortcutScope, Size,
+    AccessibilityAction, ElementId, ElementTree, Focusability, InputHandler, Key, KeyChord, KeyEvent, KeyPhase,
+    Modifiers, Point, PointerButton, PointerEvent, PointerEventKind, PointerInput, PointerInputKind, Propagation,
+    ShortcutId, ShortcutScope, Size,
 };
 use morok_platform::{Application, SurfaceContent, Window, WindowOptions};
 use morok_style::{ColorScheme, States};
@@ -61,6 +62,8 @@ impl InputHandler for Heard {
     fn shortcut(&mut self, shortcut: ShortcutId) {
         self.shortcuts.push(shortcut);
     }
+
+    fn accessibility_action(&mut self, _element: ElementId, _action: &AccessibilityAction<'_>) {}
 }
 
 /// A scene in a window that gives the input of the window to its tree and remembers both what
@@ -94,6 +97,21 @@ impl SurfaceContent for InputScene {
     fn key_input(&mut self, event: &KeyEvent) -> bool {
         self.key_inputs.push(*event);
         self.window_scene.scene.tree.key_input(event, &mut self.heard)
+    }
+
+    fn accessibility_tree(&mut self) -> TreeUpdate {
+        self.window_scene.accessibility_tree()
+    }
+
+    fn accessibility_update(&mut self) -> TreeUpdate {
+        self.window_scene.accessibility_update()
+    }
+
+    fn accessibility_action(&mut self, request: &ActionRequest) {
+        self.window_scene
+            .scene
+            .tree
+            .accessibility_action(request, &mut self.heard);
     }
 }
 
