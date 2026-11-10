@@ -1,4 +1,5 @@
 use std::mem;
+use std::time::Duration;
 
 use morok_style::{Class, Declaration, States, StyleSheet, Theme};
 
@@ -16,6 +17,12 @@ use crate::media::canvas_id::CanvasId;
 use crate::media::icon_id::IconId;
 use crate::media::image_id::ImageId;
 use crate::media::media_content::MediaContent;
+use crate::motion::motion_resolver::MotionResolver;
+use crate::motion::running_spring::RunningSpring;
+use crate::motion::spring::Spring;
+use crate::motion::spring_id::SpringId;
+use crate::motion::spring_sample::SpringSample;
+use crate::motion::timeline::Timeline;
 use crate::paint::box_painter::BoxPainter;
 use crate::paint::damage::Damage;
 use crate::paint::display_list::DisplayList;
@@ -29,6 +36,7 @@ use crate::style::computed_style::ComputedStyle;
 use crate::style::selector_change::SelectorChange;
 use crate::style::style_pass::StylePass;
 use crate::style::style_resolver::StyleResolver;
+use crate::style::style_scratch::StyleScratch;
 use crate::text::line_box::LineBox;
 use crate::text::text_layout_pass::TextLayoutPass;
 use crate::text::text_shaper::TextShaper;
@@ -38,7 +46,8 @@ use crate::text::text_shaper::TextShaper;
 /// Changing the tree only marks what the change touches. The work is done by the three stages
 /// of a frame, called in this order: [`resolve_styles`](Self::resolve_styles),
 /// [`compute_layout`](Self::compute_layout), [`build_display_list`](Self::build_display_list).
-/// A tree with a [`FrameScheduler`] asks it for a frame whenever a change waits for one.
+/// A tree with a [`FrameScheduler`] asks it for a frame whenever a change waits for one, and for
+/// every next frame while a transition, an animation or a spring runs.
 #[derive(Debug)]
 pub struct ElementTree {
     elements: ElementArena,
@@ -47,8 +56,14 @@ pub struct ElementTree {
     theme: Theme,
     /// Device pixels to a CSS pixel on the surface the tree was last laid out for.
     scale: f32,
-    matched_rules: Vec<u32>,
+    timeline: Timeline,
+    style_scratch: StyleScratch,
     pending: Vec<ElementId>,
+    /// The elements whose transitions or animations go on after the last frame.
+    moving_elements: Vec<ElementId>,
+    springs: Vec<RunningSpring>,
+    /// The serial number of the last spring started.
+    last_spring: u64,
     paint_steps: Vec<PaintStep>,
     /// Scratch space for the groups open while the display list is written.
     open_groups: Vec<OpenGroup>,
@@ -81,8 +96,12 @@ impl ElementTree {
             style_sheet,
             theme,
             scale: 1.0,
-            matched_rules: Vec::new(),
+            timeline: Timeline::default(),
+            style_scratch: StyleScratch::default(),
             pending: Vec::new(),
+            moving_elements: Vec::new(),
+            springs: Vec::new(),
+            last_spring: 0,
             paint_steps: Vec::new(),
             open_groups: Vec::new(),
             paint_order_is_stale: true,
@@ -382,7 +401,7 @@ impl ElementTree {
         let mut current = Some(element);
         while let Some(id) = current {
             let transformed = &self.elements[id];
-            on_surface = on_surface.then(&local_transform(transformed, &self.style_sheet, &self.theme));
+            on_surface = on_surface.then(&local_transform(transformed));
             current = transformed.parent;
         }
         on_surface.bounds_of(&self.elements[element].border_box)
@@ -403,23 +422,133 @@ impl ElementTree {
         &self.damage
     }
 
-    /// The style stage: resolves the style of every element a change marked, and of the
-    /// elements that inherit from them. Returns the number of elements resolved.
-    pub fn resolve_styles(&mut self) -> usize {
+    /// The style stage of the frame shown at `now`, a time on the clock of the host: resolves
+    /// the style of every element a change marked, and of the elements that inherit from them,
+    /// and works out what every element in motion shows at that time. While a transition, an
+    /// animation or a spring goes on, the tree asks for the next frame. Returns the number of
+    /// elements whose style was resolved.
+    ///
+    /// # Panics
+    ///
+    /// When `now` is earlier than the time of the frame before it.
+    pub fn resolve_styles(&mut self, now: Duration) -> usize {
+        assert!(now >= self.timeline.now, "the time of a frame never goes back");
+        self.timeline.now = now;
         self.frame_is_pending = false;
+        for position in 0..self.moving_elements.len() {
+            let moving = self.moving_elements[position];
+            if self.elements.contains(moving) && self.elements[moving].is_attached {
+                self.elements.mark(moving, Dirty::MOTION, Dirty::STYLE_BELOW);
+            }
+        }
+        self.moving_elements.clear();
         let outcome = StylePass {
             elements: &mut self.elements,
             resolver: StyleResolver {
                 style_sheet: &self.style_sheet,
                 theme: &self.theme,
             },
-            matched_rules: &mut self.matched_rules,
+            motion: MotionResolver {
+                style_sheet: &self.style_sheet,
+                theme: &self.theme,
+                timeline: self.timeline,
+            },
+            scratch: &mut self.style_scratch,
             pending: &mut self.pending,
+            moving: &mut self.moving_elements,
         }
         .run(self.root);
         self.paint_order_is_stale |= outcome.reorders_paint;
         self.has_unpainted_changes |= outcome.repaints || outcome.reorders_paint;
+        self.advance_springs();
+        if !self.moving_elements.is_empty() || self.springs.iter().any(|spring| !spring.is_settled) {
+            self.request_frame();
+        }
         outcome.resolved_elements
+    }
+
+    /// Follows the setting of the system that asks for less motion. While it is on, a
+    /// transition ends at once, a spring fades its content in at its target instead of moving
+    /// it, and an animation that never ends does not run.
+    pub fn set_reduced_motion(&mut self, reduces_motion: bool) {
+        if self.timeline.reduces_motion == reduces_motion {
+            return;
+        }
+        self.timeline.reduces_motion = reduces_motion;
+        if reduces_motion {
+            for spring in &mut self.springs {
+                spring.is_settled = true;
+            }
+        }
+        self.pending.clear();
+        self.pending.push(self.root);
+        while let Some(id) = self.pending.pop() {
+            let element = &mut self.elements[id];
+            element.dirty.insert(Dirty::STYLE.union(Dirty::STYLE_BELOW));
+            self.pending.extend(&element.children);
+        }
+        self.request_frame();
+    }
+
+    /// Starts a spring that moves a value from `from` towards `to`, at `velocity` units per
+    /// second to begin with. It runs from the next frame on, holding the frames of the tree
+    /// until it settles; under reduced motion it fades instead.
+    pub fn start_spring(&mut self, spring: Spring, from: f32, to: f32, velocity: f32) -> SpringId {
+        self.last_spring += 1;
+        let id = SpringId::new(self.last_spring);
+        self.springs.push(RunningSpring {
+            id,
+            spring,
+            from,
+            to,
+            velocity,
+            start_time: None,
+            fades: self.timeline.reduces_motion,
+            is_settled: false,
+        });
+        self.request_frame();
+        id
+    }
+
+    /// Where the value of the spring stands at the time of the last frame.
+    ///
+    /// # Panics
+    ///
+    /// When the spring was stopped.
+    pub fn spring_sample(&self, spring: SpringId) -> SpringSample {
+        self.running_spring(spring).sample(&self.timeline)
+    }
+
+    /// Stops the spring; its ID names nothing from now on.
+    ///
+    /// # Panics
+    ///
+    /// When the spring was stopped already.
+    pub fn stop_spring(&mut self, spring: SpringId) {
+        let position = self
+            .springs
+            .iter()
+            .position(|running| running.id == spring)
+            .expect("the spring runs until it is stopped");
+        self.springs.remove(position);
+    }
+
+    fn running_spring(&self, spring: SpringId) -> &RunningSpring {
+        self.springs
+            .iter()
+            .find(|running| running.id == spring)
+            .expect("the spring runs until it is stopped")
+    }
+
+    /// Starts the springs started since the last frame at the time of this one and notes the
+    /// springs that came to rest.
+    fn advance_springs(&mut self) {
+        for spring in &mut self.springs {
+            spring.start_time.get_or_insert(self.timeline.now);
+            if !spring.is_settled && spring.sample(&self.timeline).is_settled {
+                spring.is_settled = true;
+            }
+        }
     }
 
     /// The layout stage: lays the tree out in a surface of the size of `viewport` that shows
@@ -563,7 +692,11 @@ impl ElementTree {
         while let Some(id) = self.pending.pop() {
             let element = &mut self.elements[id];
             element.is_attached = false;
+            element.is_rendered = false;
             element.containing_block = None;
+            if let Some(motion) = &mut element.motion {
+                motion.clear();
+            }
             self.pending.extend(&element.children);
         }
     }

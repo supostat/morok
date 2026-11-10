@@ -86,12 +86,12 @@ pub(crate) const PROPERTIES: &[Property] = &[
     Property {
         name: "flex-basis",
         expectation: "a length, a percentage, `calc()` or `auto`",
-        parse: |tokens, input| Ok(vec![Declaration::FlexBasis(size(tokens, input)?)]),
+        parse: |context, input| Ok(vec![Declaration::FlexBasis(size(context.tokens, input)?)]),
     },
     Property {
         name: "flex",
         expectation: "`none`, or a grow factor, a shrink factor and a basis",
-        parse: flex,
+        parse: |context, input| flex(context.tokens, input),
     },
     Property {
         name: "justify-content",

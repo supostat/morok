@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use morok_core::{ElementId, ElementTree, FrameScheduler, Rect, Role, Size};
 use morok_css::{CompiledTokens, SourceFile, compile_stylesheets, compile_tokens};
-use morok_platform::{CoreTextShaper, FrameImage, OffscreenTarget, Renderer, SurfaceContent};
+use morok_platform::{CoreTextShaper, FrameImage, OffscreenTarget, Renderer, SurfaceContent, SurfaceSettings};
 use morok_style::{ColorScheme, StyleSheet, Theme};
 use objc2_foundation::{NSDate, NSRunLoop};
 
@@ -25,6 +25,8 @@ pub(crate) struct Scene {
     pub(crate) viewport: Size,
     /// Device pixels to a CSS pixel on the surface the scene is laid out for.
     pub(crate) scale: f32,
+    /// The time of the next frame.
+    pub(crate) time: Duration,
     pub(crate) text_shaper: CoreTextShaper,
     tokens: CompiledTokens,
     style_sheet: StyleSheet,
@@ -43,6 +45,7 @@ impl Scene {
             tree: ElementTree::new(style_sheet.clone(), tokens.light.clone()),
             viewport,
             scale: 1.0,
+            time: Duration::ZERO,
             text_shaper: CoreTextShaper::new(),
             tokens,
             style_sheet,
@@ -88,7 +91,7 @@ impl Scene {
 
     /// Runs the three stages of a frame.
     pub(crate) fn frame(&mut self) {
-        self.tree.resolve_styles();
+        self.tree.resolve_styles(self.time);
         self.tree
             .compute_layout(self.viewport, self.scale, &mut self.text_shaper);
         self.tree.build_display_list();
@@ -116,10 +119,11 @@ pub(crate) struct WindowScene {
 }
 
 impl WindowScene {
-    /// A scene under the theme of `color_scheme` whose tree asks `frame_scheduler` for frames.
-    pub(crate) fn new(rules: &str, frame_scheduler: Box<dyn FrameScheduler>, color_scheme: ColorScheme) -> Self {
+    /// A scene under the settings of the system whose tree asks `frame_scheduler` for frames.
+    pub(crate) fn new(rules: &str, frame_scheduler: Box<dyn FrameScheduler>, settings: SurfaceSettings) -> Self {
         let mut scene = Scene::new(rules, Size::default());
-        scene.tree.set_theme(scene.theme(color_scheme));
+        scene.tree.set_theme(scene.theme(settings.color_scheme));
+        scene.tree.set_reduced_motion(settings.reduces_motion);
         scene.tree.set_frame_scheduler(frame_scheduler);
         Self {
             scene,
@@ -130,10 +134,11 @@ impl WindowScene {
 }
 
 impl SurfaceContent for WindowScene {
-    fn frame(&mut self, viewport: Size, scale: f32) -> &ElementTree {
+    fn frame(&mut self, viewport: Size, scale: f32, now: Duration) -> &ElementTree {
         self.frame_viewports.push(viewport);
         self.scene.viewport = viewport;
         self.scene.scale = scale;
+        self.scene.time = now;
         self.scene.frame();
         &self.scene.tree
     }
@@ -141,6 +146,10 @@ impl SurfaceContent for WindowScene {
     fn color_scheme_changed(&mut self, color_scheme: ColorScheme) {
         self.color_scheme_changes.push(color_scheme);
         self.scene.tree.set_theme(self.scene.theme(color_scheme));
+    }
+
+    fn reduced_motion_changed(&mut self, reduces_motion: bool) {
+        self.scene.tree.set_reduced_motion(reduces_motion);
     }
 }
 

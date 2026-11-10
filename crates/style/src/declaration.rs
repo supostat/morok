@@ -21,6 +21,14 @@ use crate::layout::track_size::TrackSize;
 use crate::length::Length;
 use crate::length_percentage::LengthPercentage;
 use crate::length_percentage_auto::LengthPercentageAuto;
+use crate::motion::animatable_properties::AnimatableProperties;
+use crate::motion::animatable_property::AnimatableProperty;
+use crate::motion::animation_direction::AnimationDirection;
+use crate::motion::animation_name::AnimationName;
+use crate::motion::easing_value::EasingValue;
+use crate::motion::fill_mode::FillMode;
+use crate::motion::iteration_count::IterationCount;
+use crate::motion::time_value::TimeValue;
 use crate::paint::background_image::BackgroundImage;
 use crate::paint::box_shadow::BoxShadow;
 use crate::paint::color_value::ColorValue;
@@ -111,4 +119,49 @@ pub enum Declaration {
     BackdropFilter(Cow<'static, [BackdropFilterFunction]>),
     MixBlendMode(BlendMode),
     ObjectFit(ObjectFit),
+    /// The properties of each transition; an empty entry, `none`, transitions nothing.
+    TransitionProperty(Cow<'static, [AnimatableProperties]>),
+    TransitionDuration(Cow<'static, [TimeValue]>),
+    TransitionTimingFunction(Cow<'static, [EasingValue]>),
+    TransitionDelay(Cow<'static, [TimeValue]>),
+    AnimationName(Cow<'static, [AnimationName]>),
+    AnimationDuration(Cow<'static, [TimeValue]>),
+    /// The easing of every interval between two keyframes.
+    AnimationTimingFunction(Cow<'static, [EasingValue]>),
+    AnimationDelay(Cow<'static, [TimeValue]>),
+    AnimationIterationCount(Cow<'static, [IterationCount]>),
+    AnimationDirection(Cow<'static, [AnimationDirection]>),
+    AnimationFillMode(Cow<'static, [FillMode]>),
+}
+
+impl Declaration {
+    /// The property a transition or a keyframe animation interpolates by this declaration;
+    /// none for a property that is not animatable.
+    pub fn animatable_property(&self) -> Option<AnimatableProperty> {
+        Some(match self {
+            Self::Width(_) => AnimatableProperty::Width,
+            Self::Height(_) => AnimatableProperty::Height,
+            Self::MinWidth(_) => AnimatableProperty::MinWidth,
+            Self::MinHeight(_) => AnimatableProperty::MinHeight,
+            Self::MaxWidth(_) => AnimatableProperty::MaxWidth,
+            Self::MaxHeight(_) => AnimatableProperty::MaxHeight,
+            Self::Margin(side, _) => AnimatableProperty::Margin(*side),
+            Self::Padding(side, _) => AnimatableProperty::Padding(*side),
+            Self::Inset(side, _) => AnimatableProperty::Inset(*side),
+            Self::RowGap(_) => AnimatableProperty::RowGap,
+            Self::ColumnGap(_) => AnimatableProperty::ColumnGap,
+            Self::BorderWidth(side, _) => AnimatableProperty::BorderWidth(*side),
+            Self::BorderColor(side, _) => AnimatableProperty::BorderColor(*side),
+            Self::BorderRadius(corner, _) => AnimatableProperty::BorderRadius(*corner),
+            Self::OutlineWidth(_) => AnimatableProperty::OutlineWidth,
+            Self::OutlineColor(_) => AnimatableProperty::OutlineColor,
+            Self::OutlineOffset(_) => AnimatableProperty::OutlineOffset,
+            Self::Color(_) => AnimatableProperty::Color,
+            Self::BackgroundColor(_) => AnimatableProperty::BackgroundColor,
+            Self::BoxShadow(_) => AnimatableProperty::BoxShadow,
+            Self::Opacity(_) => AnimatableProperty::Opacity,
+            Self::Transform(_) => AnimatableProperty::Transform,
+            _ => return None,
+        })
+    }
 }

@@ -2,6 +2,8 @@ use std::borrow::Cow;
 
 use crate::class::Class;
 use crate::class_style::ClassStyle;
+use crate::motion::keyframes::Keyframes;
+use crate::motion::keyframes_rule::KeyframesRule;
 use crate::style_rule::StyleRule;
 
 /// Compiled stylesheets: every rule in cascade order and the classes they name.
@@ -11,6 +13,8 @@ pub struct StyleSheet {
     pub rules: Cow<'static, [StyleRule]>,
     /// Indexed by [`Class`].
     pub classes: Cow<'static, [ClassStyle]>,
+    /// Indexed by [`Keyframes`].
+    pub keyframes: Cow<'static, [KeyframesRule]>,
 }
 
 impl StyleSheet {
@@ -21,5 +25,9 @@ impl StyleSheet {
 
     pub fn class_style(&self, class: Class) -> &ClassStyle {
         &self.classes[class.index()]
+    }
+
+    pub fn keyframes_rule(&self, keyframes: Keyframes) -> &KeyframesRule {
+        &self.keyframes[keyframes.index()]
     }
 }

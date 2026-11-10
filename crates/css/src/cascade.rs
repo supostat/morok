@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use morok_style::{ClassStyle, Declaration, Selector, StyleRule, StyleSheet};
+use morok_style::{ClassStyle, Declaration, KeyframesRule, Selector, StyleRule, StyleSheet};
 
 /// A rule as read from a stylesheet, before the cascade orders it.
 #[derive(Debug)]
@@ -13,7 +13,11 @@ pub(crate) struct SourceRule {
 
 /// Orders rules as the CSS cascade applies them — by specificity, then by source position — and
 /// keys each rule by the first class of its subject.
-pub(crate) fn style_sheet(mut rules: Vec<SourceRule>, class_names: Vec<String>) -> StyleSheet {
+pub(crate) fn style_sheet(
+    mut rules: Vec<SourceRule>,
+    class_names: Vec<String>,
+    keyframes: Vec<KeyframesRule>,
+) -> StyleSheet {
     rules.sort_by_key(|rule| rule.specificity);
     let mut keyed_rules = vec![Vec::new(); class_names.len()];
     for (index, rule) in rules.iter().enumerate() {
@@ -37,5 +41,6 @@ pub(crate) fn style_sheet(mut rules: Vec<SourceRule>, class_names: Vec<String>) 
                 rules: Cow::Owned(rules),
             })
             .collect(),
+        keyframes: Cow::Owned(keyframes),
     }
 }

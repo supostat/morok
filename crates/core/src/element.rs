@@ -5,11 +5,13 @@ use crate::dirty::Dirty;
 use crate::element_id::ElementId;
 use crate::geometry::rect::Rect;
 use crate::media::media_content::MediaContent;
+use crate::motion::element_motion::ElementMotion;
 use crate::paint::painted_element::PaintedElement;
 use crate::role::Role;
 use crate::style::computed_style::ComputedStyle;
 use crate::style::inline_style::InlineStyle;
 use crate::style::selector_target::SelectorTarget;
+use crate::style::style_lists::StyleLists;
 use crate::text::text_layout::TextLayout;
 
 /// One node of an element tree with everything the frame stages keep about it.
@@ -27,7 +29,15 @@ pub(crate) struct Element {
     /// The picture, icon or canvas of a leaf of those roles.
     pub(crate) media: MediaContent,
     pub(crate) dirty: Dirty,
+    /// The style the element shows: the cascaded one with the values of its motion.
     pub(crate) style: ComputedStyle,
+    /// The lists of the style the element shows.
+    pub(crate) lists: StyleLists,
+    /// The transitions and animations of an element that has run one; none for the others.
+    pub(crate) motion: Option<Box<ElementMotion>>,
+    /// Whether the last style stage left the element rendered: attached, and neither it nor an
+    /// ancestor with `display: none`. Only then has it a style a transition can start from.
+    pub(crate) is_rendered: bool,
     pub(crate) layout_cache: Cache,
     /// The box layout gave the element, relative to the element that positions it.
     pub(crate) layout: Layout,
@@ -55,6 +65,9 @@ impl Element {
             media: MediaContent::None,
             dirty: Dirty::STYLE.union(Dirty::PAINT).union(Dirty::TEXT),
             style: ComputedStyle::INITIAL,
+            lists: StyleLists::default(),
+            motion: None,
+            is_rendered: false,
             layout_cache: Cache::new(),
             layout: Layout::new(),
             containing_block: None,

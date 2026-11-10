@@ -36,8 +36,8 @@ fn main() -> ExitCode {
         },
     };
     let mut button = None;
-    let window = Window::open(&application, &options, |frame_scheduler, color_scheme| {
-        let mut content = WindowScene::new(TOOLBAR, frame_scheduler, color_scheme);
+    let window = Window::open(&application, &options, |frame_scheduler, settings| {
+        let mut content = WindowScene::new(TOOLBAR, frame_scheduler, settings);
         let root = content.scene.root();
         content.scene.add_classes(root, &["app"]);
         button = Some(content.scene.add(root, &["button"]));

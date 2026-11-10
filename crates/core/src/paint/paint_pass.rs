@@ -119,7 +119,7 @@ impl PaintPass<'_> {
 
     fn push_group(&mut self, id: ElementId) {
         let element = &self.elements[id];
-        let transform = local_transform(element, self.style_sheet, self.theme).then(&self.transform());
+        let transform = local_transform(element).then(&self.transform());
         let repaints = self.is_marked(id);
         if repaints && element.painted.is_painted {
             self.damage.add(element.painted.group_bounds);
@@ -250,7 +250,7 @@ impl PaintPass<'_> {
         }
         let start = self.display_list.items.len();
         self.painter.paint_box(element, self.display_list);
-        let mut bounds = visual_bounds(&element.style, &element.border_box, self.theme);
+        let mut bounds = visual_bounds(element);
         if let Some(lines) = element.text_layout.bounds() {
             let lines_on_surface = Rect::new(
                 element.border_box.x + lines.x,

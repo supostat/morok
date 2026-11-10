@@ -14,8 +14,8 @@ const FIRST_FRAME_POLL: Duration = Duration::from_millis(100);
 /// After the first frame, the time the window gets to finish opening before it counts as idle.
 const SETTLING: Duration = Duration::from_secs(1);
 
-/// Opens a window on the scene, lets it settle, then leaves it without events for `idle` and
-/// reports what its frame loop did in that time.
+/// Opens a window on the scene, lets it settle — whatever motion it opens with ends in that
+/// time — then leaves it without events for `idle` and reports what its frame loop did.
 pub(crate) fn observe(
     application: &Application,
     scene: Box<dyn Scene>,
@@ -25,7 +25,7 @@ pub(crate) fn observe(
         title: String::from("morok: bench"),
         content_size: scene.viewport(),
     };
-    let mut content = SceneContent::new(scene, application.color_scheme())?;
+    let mut content = SceneContent::new(scene, application.surface_settings())?;
     let window = Window::open(application, &options, |frame_scheduler, _| {
         content.set_frame_scheduler(frame_scheduler);
         content
@@ -36,6 +36,7 @@ pub(crate) fn observe(
     application.run_for(idle);
     let after_idle = window.frame_statistics();
     Ok(IdleObservation {
+        settling_frames: settled.presented_frames,
         duration: idle,
         presented_frames: after_idle.presented_frames - settled.presented_frames,
         display_link_callbacks: after_idle.display_link_callbacks - settled.display_link_callbacks,

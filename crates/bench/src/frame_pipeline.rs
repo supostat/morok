@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use morok_core::Size;
 use morok_platform::{CoreTextShaper, OffscreenTarget, Renderer};
@@ -14,6 +14,8 @@ use crate::scene_tree::SceneTree;
 
 /// Frames are measured as a Retina display shows them.
 const DEVICE_SCALE: f32 = 2.0;
+/// The frames follow one another at the rate of a `ProMotion` display.
+const FRAMES_PER_SECOND: f64 = 120.0;
 
 /// The frame pipeline of the kit on a surface that is not on screen: the stages run on the
 /// tree of a scene and their CPU time and heap allocations are taken frame by frame.
@@ -57,7 +59,7 @@ impl FramePipeline {
         let tree = self.scene_tree.tree_mut();
         let started = Instant::now();
         scene.change(frame, tree);
-        tree.resolve_styles();
+        tree.resolve_styles(Duration::from_secs_f64(frame as f64 / FRAMES_PER_SECOND));
         let events_done = Instant::now();
         tree.compute_layout(self.viewport, DEVICE_SCALE, &mut self.text_shaper);
         let layout_done = Instant::now();

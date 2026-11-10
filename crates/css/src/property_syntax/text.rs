@@ -45,17 +45,17 @@ pub(crate) const PROPERTIES: &[Property] = &[
     Property {
         name: "font-family",
         expectation: "a `font-` token",
-        parse: |tokens, input| Ok(vec![Declaration::FontFamily(font_family(tokens, input)?)]),
+        parse: |context, input| Ok(vec![Declaration::FontFamily(font_family(context.tokens, input)?)]),
     },
     Property {
         name: "font-size",
         expectation: "a `text-` size token or a `calc()` over one, not negative",
-        parse: |tokens, input| Ok(vec![Declaration::FontSize(font_size(tokens, input)?)]),
+        parse: |context, input| Ok(vec![Declaration::FontSize(font_size(context.tokens, input)?)]),
     },
     Property {
         name: "font-weight",
         expectation: "`normal`, `bold` or a `text-weight-` token",
-        parse: |tokens, input| Ok(vec![Declaration::FontWeight(font_weight(tokens, input)?)]),
+        parse: |context, input| Ok(vec![Declaration::FontWeight(font_weight(context.tokens, input)?)]),
     },
     Property {
         name: "font-style",
@@ -65,12 +65,12 @@ pub(crate) const PROPERTIES: &[Property] = &[
     Property {
         name: "line-height",
         expectation: "`normal` or a `text-leading` token",
-        parse: |tokens, input| Ok(vec![Declaration::LineHeight(line_height(tokens, input)?)]),
+        parse: |context, input| Ok(vec![Declaration::LineHeight(line_height(context.tokens, input)?)]),
     },
     Property {
         name: "letter-spacing",
         expectation: "`normal` or a length",
-        parse: |tokens, input| Ok(vec![Declaration::LetterSpacing(letter_spacing(tokens, input)?)]),
+        parse: |context, input| Ok(vec![Declaration::LetterSpacing(letter_spacing(context.tokens, input)?)]),
     },
     Property {
         name: "text-align",

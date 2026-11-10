@@ -23,36 +23,40 @@ pub(crate) const PROPERTIES: &[Property] = &[
     Property {
         name: "grid-template-columns",
         expectation: TEMPLATE,
-        parse: |tokens, input| {
+        parse: |context, input| {
             Ok(vec![Declaration::GridTemplateColumns(Cow::Owned(track::template(
-                tokens, input,
+                context.tokens,
+                input,
             )?))])
         },
     },
     Property {
         name: "grid-template-rows",
         expectation: TEMPLATE,
-        parse: |tokens, input| {
+        parse: |context, input| {
             Ok(vec![Declaration::GridTemplateRows(Cow::Owned(track::template(
-                tokens, input,
+                context.tokens,
+                input,
             )?))])
         },
     },
     Property {
         name: "grid-auto-columns",
         expectation: AUTOMATIC_TRACKS,
-        parse: |tokens, input| {
+        parse: |context, input| {
             Ok(vec![Declaration::GridAutoColumns(Cow::Owned(track::sizes(
-                tokens, input,
+                context.tokens,
+                input,
             )?))])
         },
     },
     Property {
         name: "grid-auto-rows",
         expectation: AUTOMATIC_TRACKS,
-        parse: |tokens, input| {
+        parse: |context, input| {
             Ok(vec![Declaration::GridAutoRows(Cow::Owned(track::sizes(
-                tokens, input,
+                context.tokens,
+                input,
             )?))])
         },
     },

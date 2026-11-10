@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use std::time::Duration;
+
 use morok_core::{
     ElementId, ElementTree, FontId, FontMetrics, FontRequest, ItemRange, Rect, Role, ShapedGlyph, ShapedLine,
     ShapedRun, ShapedText, Size, TextExtent, TextRequest, TextShaper, WidthConstraint,
@@ -170,6 +172,8 @@ pub(crate) struct Scene {
     pub(crate) viewport: Size,
     /// Device pixels to a CSS pixel on the surface the scene is laid out for.
     pub(crate) scale: f32,
+    /// The time of the last frame.
+    pub(crate) time: Duration,
     tokens: CompiledTokens,
     style_sheet: StyleSheet,
 }
@@ -191,6 +195,7 @@ impl Scene {
             text_shaper: MonospaceShaper::default(),
             viewport: VIEWPORT,
             scale: 1.0,
+            time: Duration::ZERO,
             tokens,
             style_sheet,
         }
@@ -227,9 +232,15 @@ impl Scene {
         }
     }
 
-    /// Runs the three stages of a frame.
+    /// Runs the three stages of a frame at the time of the frame before.
     pub(crate) fn frame(&mut self) -> Frame {
-        let resolved = self.tree.resolve_styles();
+        self.frame_at(self.time)
+    }
+
+    /// Runs the three stages of a frame at `time`.
+    pub(crate) fn frame_at(&mut self, time: Duration) -> Frame {
+        self.time = time;
+        let resolved = self.tree.resolve_styles(time);
         let laid_out = self
             .tree
             .compute_layout(self.viewport, self.scale, &mut self.text_shaper);

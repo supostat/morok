@@ -36,7 +36,7 @@ impl BoxPainter<'_> {
     pub(crate) fn paint_box(self, element: &Element, display_list: &mut DisplayList) {
         let frame = Self::frame(element);
         let paint = &element.style.paint;
-        self.paint_shadows(element, frame, false, display_list);
+        Self::paint_shadows(element, frame, false, display_list);
         if paint.background_color.alpha > 0.0 {
             display_list.items.push(DisplayItem::Background {
                 frame,
@@ -46,7 +46,7 @@ impl BoxPainter<'_> {
         if let Some(source) = paint.background_image {
             self.paint_background_image(element, source, frame, display_list);
         }
-        self.paint_shadows(element, frame, true, display_list);
+        Self::paint_shadows(element, frame, true, display_list);
         let border_is_visible = [
             (frame.border_widths.top, paint.border_color.top),
             (frame.border_widths.right, paint.border_color.right),
@@ -172,13 +172,13 @@ impl BoxPainter<'_> {
     }
 
     /// The first layer of a shadow is the topmost in CSS, so the layers are appended last to first.
-    fn paint_shadows(self, element: &Element, frame: BoxFrame, inset: bool, display_list: &mut DisplayList) {
-        let Some(shadow) = element.style.paint.box_shadow else {
-            return;
-        };
-        let layers = self.theme.resolve(shadow).layers.iter().rev();
+    fn paint_shadows(element: &Element, frame: BoxFrame, inset: bool, display_list: &mut DisplayList) {
         display_list.items.extend(
-            layers
+            element
+                .lists
+                .box_shadow
+                .iter()
+                .rev()
                 .filter(|layer| layer.inset == inset && is_visible(layer))
                 .map(|layer| DisplayItem::Shadow { frame, layer: *layer }),
         );

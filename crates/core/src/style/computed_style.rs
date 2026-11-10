@@ -1,5 +1,6 @@
 use crate::style::effect_style::EffectStyle;
 use crate::style::layout_style::LayoutStyle;
+use crate::style::motion_style::MotionStyle;
 use crate::style::paint_style::{INITIAL_COLOR, PaintStyle};
 use crate::style::text_style::TextStyle;
 
@@ -11,6 +12,7 @@ pub struct ComputedStyle {
     pub paint: PaintStyle,
     pub text: TextStyle,
     pub effects: EffectStyle,
+    pub(crate) motion: MotionStyle,
 }
 
 impl ComputedStyle {
@@ -19,5 +21,6 @@ impl ComputedStyle {
         paint: PaintStyle::initial(INITIAL_COLOR),
         text: TextStyle::INITIAL,
         effects: EffectStyle::INITIAL,
+        motion: MotionStyle::INITIAL,
     };
 }

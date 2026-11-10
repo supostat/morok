@@ -28,6 +28,8 @@ pub struct ReferenceScene {
     boxes: Vec<ElementId>,
     changes_per_frame: usize,
     next_change: usize,
+    /// Whether the scene comes on screen in motion and then comes to rest.
+    settles: bool,
 }
 
 impl ReferenceScene {
@@ -37,9 +39,14 @@ impl ReferenceScene {
         Self::with_changes_per_frame((nodes as f64 * CHANGED_SHARE) as usize)
     }
 
-    /// The scene standing still: nothing changes once it is built.
-    pub fn still() -> Self {
-        Self::with_changes_per_frame(0)
+    /// The scene coming on screen and coming to rest: its boxes fade in, the boxes of the first
+    /// row turn hovered once the first frame is drawn and change color in a transition, and
+    /// after that nothing changes.
+    pub fn settling() -> Self {
+        Self {
+            settles: true,
+            ..Self::with_changes_per_frame(0)
+        }
     }
 
     fn with_changes_per_frame(changes_per_frame: usize) -> Self {
@@ -47,6 +54,7 @@ impl ReferenceScene {
             boxes: Vec::with_capacity(BOXES),
             changes_per_frame,
             next_change: 0,
+            settles: false,
         }
     }
 }
@@ -67,6 +75,9 @@ impl Scene for ReferenceScene {
     fn build(&mut self, tree: &mut SceneTree) {
         let root = tree.root();
         tree.add_classes(root, &["scene"]);
+        if self.settles {
+            tree.add_classes(root, &["entering"]);
+        }
         for position in 0..BOXES {
             let element = tree.add(root, &["box"]);
             if position % BOXES_PER_LABEL == 0 {
@@ -76,8 +87,14 @@ impl Scene for ReferenceScene {
         }
     }
 
-    /// Flips the hover state of the next boxes in order, round after round.
-    fn change(&mut self, _frame: usize, tree: &mut ElementTree) {
+    /// Flips the hover state of the next boxes in order, round after round; a settling scene
+    /// hovers its first row once, after the first frame.
+    fn change(&mut self, frame: usize, tree: &mut ElementTree) {
+        if self.settles && frame == 1 {
+            for element in &self.boxes[..COLUMNS] {
+                tree.set_state(*element, States::HOVER, true);
+            }
+        }
         for _ in 0..self.changes_per_frame {
             let element = self.boxes[self.next_change];
             let is_hovered = tree.states(element).contains(States::HOVER);

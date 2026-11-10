@@ -1,0 +1,153 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 640.0
+height = 152.0
+
+[[light]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 640.0
+height = 136.0
+
+[[light]]
+node = "#2 .row"
+x = 16.0
+y = 16.0
+width = 608.0
+height = 104.0
+
+[[light]]
+node = "#3 .mover.tint"
+x = 32.0
+y = 48.0
+width = 40.0
+height = 40.0
+
+[[light]]
+node = "#4 .mover.fade"
+x = 96.0
+y = 48.0
+width = 40.0
+height = 40.0
+
+[[light]]
+node = "#5 .mover.slide"
+x = 191.37593
+y = 38.19502
+width = 40.0
+height = 40.000004
+
+[[light]]
+node = "#6 .mover.widen"
+x = 224.0
+y = 48.0
+width = 76.0
+height = 40.0
+
+[[light]]
+node = "#7 .mover.lift"
+x = 324.0
+y = 48.0
+width = 40.0
+height = 40.0
+
+[[light]]
+node = "#8 .mover.round"
+x = 388.0
+y = 48.0
+width = 40.0
+height = 40.0
+
+[[light]]
+node = "#9 .mover.spin"
+x = 445.15796
+y = 41.157955
+width = 53.684082
+height = 53.684086
+
+[[light]]
+node = "#10 .mover.wait"
+x = 516.0
+y = 48.0
+width = 40.0
+height = 40.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 640.0
+height = 152.0
+
+[[dark]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 640.0
+height = 136.0
+
+[[dark]]
+node = "#2 .row"
+x = 16.0
+y = 16.0
+width = 608.0
+height = 104.0
+
+[[dark]]
+node = "#3 .mover.tint"
+x = 32.0
+y = 48.0
+width = 40.0
+height = 40.0
+
+[[dark]]
+node = "#4 .mover.fade"
+x = 96.0
+y = 48.0
+width = 40.0
+height = 40.0
+
+[[dark]]
+node = "#5 .mover.slide"
+x = 191.37593
+y = 38.19502
+width = 40.0
+height = 40.000004
+
+[[dark]]
+node = "#6 .mover.widen"
+x = 224.0
+y = 48.0
+width = 76.0
+height = 40.0
+
+[[dark]]
+node = "#7 .mover.lift"
+x = 324.0
+y = 48.0
+width = 40.0
+height = 40.0
+
+[[dark]]
+node = "#8 .mover.round"
+x = 388.0
+y = 48.0
+width = 40.0
+height = 40.0
+
+[[dark]]
+node = "#9 .mover.spin"
+x = 445.15796
+y = 41.157955
+width = 53.684082
+height = 53.684086
+
+[[dark]]
+node = "#10 .mover.wait"
+x = 516.0
+y = 48.0
+width = 40.0
+height = 40.0

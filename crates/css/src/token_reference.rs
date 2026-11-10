@@ -116,6 +116,14 @@ impl TokenReference {
         }
     }
 
+    /// The ID of a `motion-` token: a duration or an easing.
+    pub(crate) fn motion(&self) -> ValueResult<TokenId> {
+        match self.id {
+            TokenId::Duration(_) | TokenId::Easing(_) => Ok(self.id),
+            _ => Err(self.is_not("a duration or an easing")),
+        }
+    }
+
     fn is_not(&self, expected: &str) -> ValueError {
         Problem {
             span: self.span,

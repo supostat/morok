@@ -1,12 +1,12 @@
 use cssparser::Parser;
 use morok_style::Declaration;
 
-use crate::compiled_tokens::CompiledTokens;
-use crate::property_syntax::{background, border, effect, flex, grid, layout, text};
+use crate::property_syntax::{background, border, effect, flex, grid, layout, motion, text};
+use crate::value_context::ValueContext;
 use crate::value_error::ValueResult;
 
 /// Reads the value of a property into the declarations of its longhands.
-pub(crate) type ValueParser = for<'i> fn(&CompiledTokens, &mut Parser<'i>) -> ValueResult<Vec<Declaration>>;
+pub(crate) type ValueParser = for<'i> fn(&ValueContext<'_>, &mut Parser<'i>) -> ValueResult<Vec<Declaration>>;
 
 /// A CSS property the subset supports.
 pub(crate) struct Property {
@@ -25,6 +25,7 @@ pub(crate) fn named(name: &str) -> Option<&'static Property> {
         background::PROPERTIES,
         text::PROPERTIES,
         effect::PROPERTIES,
+        motion::PROPERTIES,
     ]
     .into_iter()
     .flatten()

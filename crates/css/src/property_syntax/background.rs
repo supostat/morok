@@ -26,27 +26,27 @@ pub(crate) const PROPERTIES: &[Property] = &[
     Property {
         name: "background",
         expectation: "`none`, a color, a gradient or both",
-        parse: background,
+        parse: |context, input| background(context.tokens, input),
     },
     Property {
         name: "background-color",
         expectation: COLOR,
-        parse: |tokens, input| Ok(vec![Declaration::BackgroundColor(color::parse(tokens, input)?)]),
+        parse: |context, input| Ok(vec![Declaration::BackgroundColor(color::parse(context.tokens, input)?)]),
     },
     Property {
         name: "background-image",
         expectation: IMAGE,
-        parse: |tokens, input| Ok(vec![Declaration::BackgroundImage(image(tokens, input)?)]),
+        parse: |context, input| Ok(vec![Declaration::BackgroundImage(image(context.tokens, input)?)]),
     },
     Property {
         name: "box-shadow",
         expectation: "`none` or a shadow token",
-        parse: |tokens, input| Ok(vec![Declaration::BoxShadow(box_shadow(tokens, input)?)]),
+        parse: |context, input| Ok(vec![Declaration::BoxShadow(box_shadow(context.tokens, input)?)]),
     },
     Property {
         name: "color",
         expectation: COLOR,
-        parse: |tokens, input| Ok(vec![Declaration::Color(color::parse(tokens, input)?)]),
+        parse: |context, input| Ok(vec![Declaration::Color(color::parse(context.tokens, input)?)]),
     },
     Property {
         name: "object-fit",

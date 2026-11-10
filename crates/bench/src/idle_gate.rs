@@ -17,9 +17,12 @@ pub(crate) fn judge(scenario: &str, observation: &IdleObservation, budget: &Idle
         budget: budget.presented_frames.to_string(),
         holds: observation.presented_frames <= budget.presented_frames,
     }];
-    let notes = vec![format!(
-        "display link callbacks: {}",
-        observation.display_link_callbacks
-    )];
+    let notes = vec![
+        format!(
+            "frames presented while the window settled: {}",
+            observation.settling_frames
+        ),
+        format!("display link callbacks: {}", observation.display_link_callbacks),
+    ];
     Verdict::new(scenario, checks, notes)
 }

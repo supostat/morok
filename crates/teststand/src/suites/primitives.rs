@@ -3,6 +3,7 @@ use morok_css::SourceFile;
 use morok_style::States;
 
 use crate::case::Case;
+use crate::moment::Moment;
 use crate::scene::Scene;
 use crate::suite::Suite;
 
@@ -43,6 +44,7 @@ fn case(name: &'static str, width: f32, height: f32, build: fn(&mut Scene)) -> C
         name,
         viewport: Size { width, height },
         build,
+        moment: Moment::AtRest,
     }
 }
 

@@ -6,8 +6,8 @@ use morok_core::{Rect, Size};
 use morok_css::SourceFile;
 use morok_platform::FrameImage;
 use morok_teststand::{
-    Case, CaseVerdict, ChromeBuild, CompiledSuite, ElementBox, Etalon, EtalonStore, Mismatch, MorokSide, Rendering,
-    Scene, Stand, Suite, SuiteReport, Thresholds, check, compare,
+    Case, CaseVerdict, ChromeBuild, CompiledSuite, ElementBox, Etalon, EtalonStore, Mismatch, Moment, MorokSide,
+    Rendering, Scene, Stand, Suite, SuiteReport, Thresholds, check, compare,
 };
 
 const TESTSTAND: &str = env!("CARGO_BIN_EXE_morok-teststand");
@@ -136,11 +136,13 @@ fn plates(stylesheet: &'static str) -> Suite {
                 name: "one",
                 viewport,
                 build: plate,
+                moment: Moment::AtRest,
             },
             Case {
                 name: "two",
                 viewport,
                 build: two_plates,
+                moment: Moment::AtRest,
             },
         ],
     }

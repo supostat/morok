@@ -15,6 +15,9 @@ impl Dirty {
     pub(crate) const PAINT: Self = Self(1 << 4);
     /// The lines of the text of the element must be laid out.
     pub(crate) const TEXT: Self = Self(1 << 5);
+    /// The element runs a transition or an animation: what it shows must be worked out at the
+    /// time of the frame.
+    pub(crate) const MOTION: Self = Self(1 << 6);
 
     pub(crate) const fn union(self, other: Self) -> Self {
         Self(self.0 | other.0)

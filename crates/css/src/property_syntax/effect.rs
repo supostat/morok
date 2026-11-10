@@ -48,25 +48,30 @@ pub(crate) const PROPERTIES: &[Property] = &[
     Property {
         name: "transform",
         expectation: "`none` or a list of `translate()`, `scale()`, `rotate()` and their one-axis forms",
-        parse: |tokens, input| Ok(vec![Declaration::Transform(transform(tokens, input)?)]),
+        parse: |context, input| Ok(vec![Declaration::Transform(transform(context.tokens, input)?)]),
     },
     Property {
         name: "transform-origin",
         expectation: "one or two lengths, percentages or edge keywords",
-        parse: |tokens, input| {
-            let (horizontal, vertical) = transform_origin(tokens, input)?;
+        parse: |context, input| {
+            let (horizontal, vertical) = transform_origin(context.tokens, input)?;
             Ok(vec![Declaration::TransformOrigin(horizontal, vertical)])
         },
     },
     Property {
         name: "filter",
         expectation: "`none` or a list of `blur()`, `brightness()`, `contrast()`, `grayscale()`, `saturate()` and `opacity()`",
-        parse: |tokens, input| Ok(vec![Declaration::Filter(filter(tokens, input)?)]),
+        parse: |context, input| Ok(vec![Declaration::Filter(filter(context.tokens, input)?)]),
     },
     Property {
         name: "backdrop-filter",
         expectation: "`none` or a list of `blur()`, `brightness()` and `saturate()`",
-        parse: |tokens, input| Ok(vec![Declaration::BackdropFilter(backdrop_filter(tokens, input)?)]),
+        parse: |context, input| {
+            Ok(vec![Declaration::BackdropFilter(backdrop_filter(
+                context.tokens,
+                input,
+            )?)])
+        },
     },
     Property {
         name: "mix-blend-mode",

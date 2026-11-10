@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use morok_core::{ElementId, ElementTree, Rect, Role, Size, TextShaper};
 use morok_style::{States, StyleSheet, Theme};
 
@@ -78,9 +80,21 @@ impl Scene {
         element
     }
 
-    /// Puts the element in the given states for the whole case.
+    /// Puts the element in the given states.
     pub fn set_state(&mut self, element: ElementId, states: States) {
         self.tree.set_state(element, states, true);
+    }
+
+    /// The elements that have the class, in document order.
+    pub fn elements_with_class(&self, class_name: &str) -> Vec<ElementId> {
+        let class = self
+            .style_sheet
+            .class_named(class_name)
+            .unwrap_or_else(|| panic!("the stylesheets of the suite name no class `{class_name}`"));
+        self.elements()
+            .into_iter()
+            .filter(|element| self.tree.classes(*element).contains(&class))
+            .collect()
     }
 
     pub(crate) fn icons(&self) -> &[(ElementId, IconSource)] {
@@ -123,9 +137,10 @@ impl Scene {
             .map(|class| self.style_sheet.class_style(*class).name.as_ref())
     }
 
-    /// Runs the stages of a frame on a surface of `viewport` at the scale of the stand.
-    pub(crate) fn frame(&mut self, viewport: Size, text_shaper: &mut dyn TextShaper) {
-        self.tree.resolve_styles();
+    /// Runs the stages of the frame at `now`, counted from the first frame, on a surface of
+    /// `viewport` at the scale of the stand.
+    pub(crate) fn frame(&mut self, viewport: Size, text_shaper: &mut dyn TextShaper, now: Duration) {
+        self.tree.resolve_styles(now);
         self.tree.compute_layout(viewport, DEVICE_SCALE, text_shaper);
         self.tree.build_display_list();
     }

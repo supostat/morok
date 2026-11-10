@@ -2,14 +2,15 @@ use std::borrow::Cow;
 use std::fmt;
 
 use morok_style::{
-    BackdropFilterFunction, BackgroundImage, BlendMode, BoxShadow, Class, ClassStyle, Color, ColorStop, ColorValue,
-    CompoundSelector, ContentAlignment, Corner, Declaration, Display, Easing, FilterFunction, FlexDirection, FlexWrap,
-    FontFamilies, FontStyle, FontVariantNumeric, FontWeight, FontWeightValue, Gradient, GradientDirection,
-    GridAutoFlow, GridLine, ItemAlignment, Leading, Length, LengthPercentage, LengthPercentageAuto, LineHeight,
-    LineStyle, LinearGradient, Milliseconds, ObjectFit, Overflow, Pixels, Position, RadialExtent, RadialGradient,
-    RadialShape, RepeatCount, Selector, SelfAlignment, Shadow, ShadowLayer, Side, States, StepPosition, StyleRule,
-    StyleSheet, TextAlign, TextDecoration, TextOverflow, Theme, Token, TokenTerm, TrackBreadth, TrackListItem,
-    TrackSize, TransformFunction, WhiteSpace,
+    AnimatableProperties, AnimatableProperty, AnimationDirection, AnimationName, BackdropFilterFunction,
+    BackgroundImage, BlendMode, BoxShadow, Class, ClassStyle, Color, ColorStop, ColorValue, CompoundSelector,
+    ContentAlignment, Corner, Declaration, Display, Easing, EasingValue, FillMode, FilterFunction, FlexDirection,
+    FlexWrap, FontFamilies, FontStyle, FontVariantNumeric, FontWeight, FontWeightValue, Gradient, GradientDirection,
+    GridAutoFlow, GridLine, ItemAlignment, IterationCount, Keyframe, Keyframes, KeyframesRule, Leading, Length,
+    LengthPercentage, LengthPercentageAuto, LineHeight, LineStyle, LinearGradient, Milliseconds, ObjectFit, Overflow,
+    Pixels, Position, RadialExtent, RadialGradient, RadialShape, RepeatCount, Selector, SelfAlignment, Shadow,
+    ShadowLayer, Side, States, StepPosition, StyleRule, StyleSheet, TextAlign, TextDecoration, TextOverflow, Theme,
+    TimeValue, Token, TokenTerm, TrackBreadth, TrackListItem, TrackSize, TransformFunction, WhiteSpace,
 };
 use proc_macro2::{Ident, Literal, TokenStream};
 use quote::{format_ident, quote};
@@ -64,10 +65,12 @@ macro_rules! unit_enum_literals {
 }
 
 unit_enum_literals!(
+    AnimationDirection,
     BlendMode,
     ContentAlignment,
     Corner,
     Display,
+    FillMode,
     FlexDirection,
     FlexWrap,
     FontStyle,
@@ -328,7 +331,97 @@ impl SchemaLiteral for StyleSheet {
     fn literal(&self, schema: &TokenStream) -> TokenStream {
         let rules = self.rules.literal(schema);
         let classes = self.classes.literal(schema);
-        quote!(#schema::StyleSheet { rules: #rules, classes: #classes })
+        let keyframes = self.keyframes.literal(schema);
+        quote!(#schema::StyleSheet { rules: #rules, classes: #classes, keyframes: #keyframes })
+    }
+}
+
+impl SchemaLiteral for Keyframes {
+    fn literal(&self, schema: &TokenStream) -> TokenStream {
+        let index = Literal::usize_unsuffixed(self.index());
+        quote!(#schema::Keyframes::new(#index))
+    }
+}
+
+impl SchemaLiteral for KeyframesRule {
+    fn literal(&self, schema: &TokenStream) -> TokenStream {
+        let name = self.name.literal(schema);
+        let keyframes = self.keyframes.literal(schema);
+        quote!(#schema::KeyframesRule { name: #name, keyframes: #keyframes })
+    }
+}
+
+impl SchemaLiteral for Keyframe {
+    fn literal(&self, schema: &TokenStream) -> TokenStream {
+        let offset = self.offset.literal(schema);
+        let declarations = self.declarations.literal(schema);
+        quote!(#schema::Keyframe { offset: #offset, declarations: #declarations })
+    }
+}
+
+impl SchemaLiteral for AnimatableProperty {
+    fn literal(&self, schema: &TokenStream) -> TokenStream {
+        match self {
+            Self::Margin(side)
+            | Self::Padding(side)
+            | Self::Inset(side)
+            | Self::BorderWidth(side)
+            | Self::BorderColor(side) => variant("AnimatableProperty", self, &one(side), schema),
+            Self::BorderRadius(corner) => variant("AnimatableProperty", self, &one(corner), schema),
+            _ => variant("AnimatableProperty", self, &[], schema),
+        }
+    }
+}
+
+impl SchemaLiteral for AnimatableProperties {
+    fn literal(&self, schema: &TokenStream) -> TokenStream {
+        if *self == Self::ALL {
+            return quote!(#schema::AnimatableProperties::ALL);
+        }
+        let mut properties = self.iter().map(|property| property.literal(schema));
+        let Some(first) = properties.next() else {
+            return quote!(#schema::AnimatableProperties::NONE);
+        };
+        properties.fold(
+            quote!(#schema::AnimatableProperties::of(#first)),
+            |union, property| quote!(#union.union(#schema::AnimatableProperties::of(#property))),
+        )
+    }
+}
+
+impl SchemaLiteral for TimeValue {
+    fn literal(&self, schema: &TokenStream) -> TokenStream {
+        match self {
+            Self::Milliseconds(milliseconds) => variant("TimeValue", self, &one(milliseconds), schema),
+            Self::Token(token) => variant("TimeValue", self, &one(token), schema),
+        }
+    }
+}
+
+impl SchemaLiteral for EasingValue {
+    fn literal(&self, schema: &TokenStream) -> TokenStream {
+        match self {
+            Self::Curve(easing) => variant("EasingValue", self, &one(easing), schema),
+            Self::Token(token) => variant("EasingValue", self, &one(token), schema),
+        }
+    }
+}
+
+impl SchemaLiteral for IterationCount {
+    fn literal(&self, schema: &TokenStream) -> TokenStream {
+        match self {
+            Self::Count(count) => variant("IterationCount", self, &one(count), schema),
+            Self::Infinite => variant("IterationCount", self, &[], schema),
+        }
+    }
+}
+
+impl SchemaLiteral for AnimationName {
+    fn literal(&self, schema: &TokenStream) -> TokenStream {
+        match self {
+            Self::None => variant("AnimationName", self, &[], schema),
+            Self::Keyframes(keyframes) => variant("AnimationName", self, &one(keyframes), schema),
+        }
     }
 }
 
@@ -625,6 +718,16 @@ impl SchemaLiteral for Declaration {
             Self::BackdropFilter(functions) => one(functions),
             Self::MixBlendMode(mode) => one(mode),
             Self::ObjectFit(fit) => one(fit),
+            Self::TransitionProperty(properties) => one(properties),
+            Self::TransitionDuration(times)
+            | Self::TransitionDelay(times)
+            | Self::AnimationDuration(times)
+            | Self::AnimationDelay(times) => one(times),
+            Self::TransitionTimingFunction(easings) | Self::AnimationTimingFunction(easings) => one(easings),
+            Self::AnimationName(names) => one(names),
+            Self::AnimationIterationCount(counts) => one(counts),
+            Self::AnimationDirection(directions) => one(directions),
+            Self::AnimationFillMode(fill_modes) => one(fill_modes),
         };
         variant("Declaration", self, &arguments, schema)
     }

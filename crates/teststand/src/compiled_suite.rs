@@ -7,6 +7,7 @@ use crate::harness_page;
 use crate::manifest::Manifest;
 use crate::marker_classes;
 use crate::markup;
+use crate::moment::Moment;
 use crate::scene::Scene;
 use crate::stand_error::StandError;
 use crate::suite::Suite;
@@ -84,8 +85,16 @@ impl<'a> CompiledSuite<'a> {
         )
     }
 
+    /// The markup of the tree before any change, with the motion of the case for the page to
+    /// play when it has one.
     fn markup(&self, case: &Case) -> String {
-        markup::of(&self.scene(case, ColorScheme::Light))
+        let mut scene = self.scene(case, ColorScheme::Light);
+        let mut markup = markup::of(&scene);
+        if let Moment::InMotion { change, after } = case.moment {
+            change(&mut scene);
+            markup.push_str(&markup::motion_script(&scene, after));
+        }
+        markup
     }
 }
 

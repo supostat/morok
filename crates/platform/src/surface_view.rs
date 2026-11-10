@@ -1,15 +1,19 @@
 use std::cell::{Cell, OnceCell, RefCell};
 use std::rc::Rc;
+use std::time::Duration;
 
 use morok_core::{DisplayList, FrameScheduler, Size};
 use morok_style::ColorScheme;
 use objc2::rc::Retained;
-use objc2::runtime::ProtocolObject;
+use objc2::runtime::{AnyObject, ProtocolObject};
 use objc2::{DefinedClass, MainThreadMarker, MainThreadOnly, define_class, msg_send, sel};
-use objc2_app_kit::{NSAppearanceCustomization, NSResponder, NSView};
+use objc2_app_kit::{
+    NSAppearanceCustomization, NSResponder, NSView, NSWorkspace,
+    NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification,
+};
 use objc2_core_foundation::CGSize;
 use objc2_core_graphics::{CGColorSpace, kCGColorSpaceSRGB};
-use objc2_foundation::{NSRect, NSSize};
+use objc2_foundation::{NSNotification, NSRect, NSSize};
 use objc2_metal::{MTLDrawable, MTLResidencySet};
 use objc2_quartz_core::{CADisplayLink, CALayer, CAMetalDrawable, CAMetalLayer};
 
@@ -23,6 +27,7 @@ use crate::render::renderer::{PIXEL_FORMAT, Renderer};
 use crate::render::screen_target::ScreenTarget;
 use crate::render::target_geometry::TargetGeometry;
 use crate::surface_content::SurfaceContent;
+use crate::surface_settings::SurfaceSettings;
 
 /// A layer hands out three drawables, so three frames may be on their way to the screen.
 const FRAMES_IN_FLIGHT: usize = 3;
@@ -37,6 +42,7 @@ pub(crate) struct SurfaceState {
     /// Set by the window before the view enters it.
     content: OnceCell<Rc<RefCell<dyn SurfaceContent>>>,
     color_scheme: Cell<ColorScheme>,
+    reduces_motion: Cell<bool>,
     /// Whether the screen no longer shows the last display list: the surface was resized,
     /// moved to a display of another scale, or never drawn.
     surface_is_stale: Cell<bool>,
@@ -79,19 +85,25 @@ define_class!(
         }
 
         #[unsafe(method(displayLinkDidFire:))]
-        fn display_link_did_fire(&self, _display_link: &CADisplayLink) {
-            self.run_frame();
+        fn display_link_did_fire(&self, display_link: &CADisplayLink) {
+            self.run_frame(Duration::from_secs_f64(display_link.targetTimestamp()));
+        }
+
+        #[unsafe(method(accessibilityDisplayOptionsDidChange:))]
+        fn accessibility_display_options_did_change(&self, _notification: &NSNotification) {
+            self.motion_setting_changed();
         }
     }
 );
 
 impl SurfaceView {
-    /// A view that shows nothing yet: the window gives it its content before it shows it.
+    /// A view that shows nothing yet: the window gives it its content before it shows it. It
+    /// follows the settings of the system from `settings` on.
     pub(crate) fn new(
         main_thread: MainThreadMarker,
         renderer: &Renderer,
         frame: NSRect,
-        color_scheme: ColorScheme,
+        settings: SurfaceSettings,
     ) -> Retained<Self> {
         let layer = CAMetalLayer::new();
         layer.setDevice(Some(renderer.device()));
@@ -106,7 +118,8 @@ impl SurfaceView {
             layer: layer.clone(),
             frame_loop: OnceCell::new(),
             content: OnceCell::new(),
-            color_scheme: Cell::new(color_scheme),
+            color_scheme: Cell::new(settings.color_scheme),
+            reduces_motion: Cell::new(settings.reduces_motion),
             surface_is_stale: Cell::new(true),
             statistics: Cell::new(FrameStatistics::default()),
         };
@@ -122,6 +135,19 @@ impl SurfaceView {
             .frame_loop
             .set(Rc::new(FrameLoop::new(display_link)))
             .expect("a view gets its frame loop once");
+        let observer: &AnyObject = &view;
+        // SAFETY: the view implements the selector, taking the notification, and it stops
+        // observing when its window closes. The name is a constant of `AppKit`.
+        unsafe {
+            NSWorkspace::sharedWorkspace()
+                .notificationCenter()
+                .addObserver_selector_name_object(
+                    observer,
+                    sel!(accessibilityDisplayOptionsDidChange:),
+                    Some(NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification),
+                    None,
+                );
+        }
         view.surface_changed();
         view
     }
@@ -156,9 +182,17 @@ impl SurfaceView {
         self.ivars().statistics.get()
     }
 
-    /// Ends the frame loop: the display link holds the view until then.
-    pub(crate) fn stop_frames(&self) {
+    /// The window closes: the display link, which holds the view, and the notifications of the
+    /// system let go of it.
+    pub(crate) fn close(&self) {
         self.frame_loop().stop();
+        let observer: &AnyObject = self;
+        // SAFETY: the view was added as an observer when it was created.
+        unsafe {
+            NSWorkspace::sharedWorkspace()
+                .notificationCenter()
+                .removeObserver(observer);
+        }
     }
 
     fn frame_loop(&self) -> &Rc<FrameLoop> {
@@ -208,6 +242,14 @@ impl SurfaceView {
         self.content().borrow_mut().color_scheme_changed(color_scheme);
     }
 
+    fn motion_setting_changed(&self) {
+        let reduces_motion = NSWorkspace::sharedWorkspace().accessibilityDisplayShouldReduceMotion();
+        if self.ivars().reduces_motion.replace(reduces_motion) == reduces_motion {
+            return;
+        }
+        self.content().borrow_mut().reduced_motion_changed(reduces_motion);
+    }
+
     fn content(&self) -> &Rc<RefCell<dyn SurfaceContent>> {
         self.ivars()
             .content
@@ -215,9 +257,9 @@ impl SurfaceView {
             .expect("a view has its content before it enters a window")
     }
 
-    /// One tick of the display link: the content runs its frame, and the frame is drawn when
-    /// it damaged anything or the screen shows a stale surface.
-    fn run_frame(&self) {
+    /// One tick of the display link for the frame shown at `now`: the content runs its frame,
+    /// and the frame is drawn when it damaged anything or the screen shows a stale surface.
+    fn run_frame(&self, now: Duration) {
         let state = self.ivars();
         let frame_loop = self.frame_loop();
         let mut statistics = state.statistics.get();
@@ -226,7 +268,7 @@ impl SurfaceView {
         let geometry = self.target_geometry();
         if !geometry.is_empty() {
             let mut content = self.content().borrow_mut();
-            let tree = content.frame(geometry.viewport, geometry.scale);
+            let tree = content.frame(geometry.viewport, geometry.scale, now);
             if state.surface_is_stale.get() || !tree.damage().is_empty() {
                 if self.present(tree.display_list(), &geometry) {
                     state.surface_is_stale.set(false);

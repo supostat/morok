@@ -3,7 +3,6 @@ use std::fmt::{Debug, Formatter, Result};
 use std::rc::Rc;
 
 use morok_core::{FrameScheduler, Size};
-use morok_style::ColorScheme;
 use objc2::MainThreadOnly;
 use objc2::rc::Retained;
 use objc2_app_kit::{NSBackingStoreType, NSWindow, NSWindowStyleMask};
@@ -13,6 +12,7 @@ use crate::application::Application;
 use crate::canvas::canvas_painter::CanvasPainter;
 use crate::frame_statistics::FrameStatistics;
 use crate::surface_content::SurfaceContent;
+use crate::surface_settings::SurfaceSettings;
 use crate::surface_view::SurfaceView;
 use crate::window_options::WindowOptions;
 
@@ -26,18 +26,18 @@ pub struct Window<Content> {
 
 impl<Content: SurfaceContent + 'static> Window<Content> {
     /// Opens a window on the content `build_content` returns. The content is given the frame
-    /// scheduler of the window, for its tree to ask for frames through, and the color scheme
-    /// the window opens in.
+    /// scheduler of the window, for its tree to ask for frames through, and the settings of the
+    /// system the window opens under.
     pub fn open(
         application: &Application,
         options: &WindowOptions,
-        build_content: impl FnOnce(Box<dyn FrameScheduler>, ColorScheme) -> Content,
+        build_content: impl FnOnce(Box<dyn FrameScheduler>, SurfaceSettings) -> Content,
     ) -> Self {
         let main_thread = application.main_thread();
-        let color_scheme = application.color_scheme();
+        let settings = application.surface_settings();
         let content_rect = NSRect::new(NSPoint::ZERO, ns_size(options.content_size));
-        let view = SurfaceView::new(main_thread, application.renderer(), content_rect, color_scheme);
-        let content = Rc::new(RefCell::new(build_content(view.frame_scheduler(), color_scheme)));
+        let view = SurfaceView::new(main_thread, application.renderer(), content_rect, settings);
+        let content = Rc::new(RefCell::new(build_content(view.frame_scheduler(), settings)));
         view.set_content(Rc::clone(&content) as Rc<RefCell<dyn SurfaceContent>>);
 
         let style = NSWindowStyleMask::Titled
@@ -103,7 +103,7 @@ impl<Content> Debug for Window<Content> {
 
 impl<Content> Drop for Window<Content> {
     fn drop(&mut self) {
-        self.view.stop_frames();
+        self.view.close();
         self.native.close();
     }
 }

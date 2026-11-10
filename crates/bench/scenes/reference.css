@@ -31,3 +31,17 @@
 .label {
   color: var(--color-text-2);
 }
+
+/* A scene that comes on screen fades its boxes in and lets their colors change smoothly. */
+
+.scene.entering > .box {
+  animation: box-enter var(--motion-slow) var(--motion-ease-out);
+  transition: background-color var(--motion-base) var(--motion-ease), border-color var(--motion-base) var(--motion-ease);
+}
+
+@keyframes box-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-1));
+  }
+}

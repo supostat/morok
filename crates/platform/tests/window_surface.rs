@@ -130,9 +130,9 @@ fn main() -> ExitCode {
         content_size: OPENED,
     };
     let mut opened_in = None;
-    let window = Window::open(&application, &options, |frame_scheduler, color_scheme| {
-        opened_in = Some(color_scheme);
-        let mut content = WindowScene::new(PAGE, frame_scheduler, color_scheme);
+    let window = Window::open(&application, &options, |frame_scheduler, settings| {
+        opened_in = Some(settings.color_scheme);
+        let mut content = WindowScene::new(PAGE, frame_scheduler, settings);
         let root = content.scene.root();
         content.scene.add_classes(root, &["page"]);
         content

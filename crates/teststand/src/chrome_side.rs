@@ -21,6 +21,7 @@ use crate::case_rendering::CaseRendering;
 use crate::chrome_build::ChromeBuild;
 use crate::compiled_suite::CompiledSuite;
 use crate::frame_png;
+use crate::markup::MOTION_VARIABLE;
 use crate::rendering::{DEVICE_SCALE, Rendering};
 use crate::scene::Scene;
 use crate::stand_error::StandError;
@@ -43,6 +44,22 @@ const NO_SCALE_OVERRIDE: f64 = 0.0;
 const FONTS_ARE_LOADED: &str = "Promise.all([document.fonts.ready, \
     ...Array.from(document.images, image => image.complete ? Promise.resolve() : \
     new Promise(resolve => { image.onload = resolve; image.onerror = resolve; }))]).then(() => true)";
+/// Plays the motion of a case when its page has one: once the page is styled as it loaded, the
+/// elements take the classes of the change, which starts their transitions, and every animation
+/// is paused at the time the case is drawn at. A frame is let through before the page is read.
+const PLAY_MOTION: &str = "(async () => {\
+    const motion = window.MOTION_VARIABLE;\
+    if (!motion) { return true; }\
+    document.body.getBoundingClientRect();\
+    const elements = Array.from(document.body.querySelectorAll('div, svg, img'));\
+    elements.forEach((element, index) => element.setAttribute('class', motion.classes[index]));\
+    for (const animation of document.getAnimations()) {\
+    animation.pause();\
+    animation.currentTime = motion.milliseconds;\
+    }\
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));\
+    return true;\
+    })()";
 /// The elements of the tree: the `div` of an element, the `svg` of an icon and the `img` of an
 /// image, in document order; what an SVG holds inside is no element of the tree.
 const ELEMENT_BOXES: &str = "Array.from(document.body.querySelectorAll('div, svg, img'), element => {\
@@ -94,13 +111,28 @@ impl ChromeSide {
         })
     }
 
-    /// Draws the case under both color schemes.
+    /// Draws the case under both color schemes, at its moment. Each color scheme gets a page of
+    /// its own, loaded under that scheme: switching a page to another scheme would start the
+    /// transitions of the colors that change with it.
     pub fn render_case(&mut self, suite: &CompiledSuite<'_>, case: &Case) -> Result<CaseRendering, StandError> {
         let scene = suite.scene(case, ColorScheme::Light);
         let document = suite.page(case);
+        Ok(CaseRendering {
+            light: self.render(&scene, &document, case.viewport, ColorScheme::Light)?,
+            dark: self.render(&scene, &document, case.viewport, ColorScheme::Dark)?,
+        })
+    }
+
+    fn render(
+        &mut self,
+        scene: &Scene,
+        document: &str,
+        viewport: Size,
+        color_scheme: ColorScheme,
+    ) -> Result<Rendering, StandError> {
         self.runtime.block_on(async {
             let page = self.browser.new_page(BLANK_PAGE).await.map_err(chrome_error)?;
-            let (width, height) = whole_pixels(case.viewport);
+            let (width, height) = whole_pixels(viewport);
             page.execute(SetDeviceMetricsOverrideParams::new(
                 width,
                 height,
@@ -109,12 +141,15 @@ impl ChromeSide {
             ))
             .await
             .map_err(chrome_error)?;
+            page.emulate_media_features(vec![MediaFeature::new(COLOR_SCHEME_FEATURE, color_scheme.to_string())])
+                .await
+                .map_err(chrome_error)?;
             page.set_content(document).await.map_err(chrome_error)?;
             page.evaluate(FONTS_ARE_LOADED).await.map_err(chrome_error)?;
-            let rendering = CaseRendering {
-                light: render(&page, &scene, case.viewport, ColorScheme::Light).await?,
-                dark: render(&page, &scene, case.viewport, ColorScheme::Dark).await?,
-            };
+            page.evaluate(PLAY_MOTION.replace("MOTION_VARIABLE", MOTION_VARIABLE))
+                .await
+                .map_err(chrome_error)?;
+            let rendering = read_page(&page, scene, viewport).await?;
             page.close().await.map_err(chrome_error)?;
             Ok(rendering)
         })
@@ -177,15 +212,8 @@ fn exact_version(build: &ChromeBuild) -> Result<Version, StandError> {
     }
 }
 
-async fn render(
-    page: &Page,
-    scene: &Scene,
-    viewport: Size,
-    color_scheme: ColorScheme,
-) -> Result<Rendering, StandError> {
-    page.emulate_media_features(vec![MediaFeature::new(COLOR_SCHEME_FEATURE, color_scheme.to_string())])
-        .await
-        .map_err(chrome_error)?;
+/// The picture of the page and the boxes of its elements.
+async fn read_page(page: &Page, scene: &Scene, viewport: Size) -> Result<Rendering, StandError> {
     let screenshot = page
         .screenshot(
             ScreenshotParams::builder()

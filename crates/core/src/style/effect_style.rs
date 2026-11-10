@@ -9,8 +9,8 @@ use crate::style::resolved_length::ResolvedLength;
 pub struct EffectStyle {
     /// From `0.0`, invisible, to `1.0`, opaque.
     pub opacity: f32,
-    /// The transform list; none when it is empty.
-    pub(crate) transform: Option<DeclarationSource>,
+    /// Whether the transform list holds a function; the list lives beside the style.
+    pub(crate) has_transform: bool,
     /// From the left edge of the border box.
     pub transform_origin_x: ResolvedLength,
     /// From the top edge of the border box.
@@ -25,7 +25,7 @@ pub struct EffectStyle {
 impl EffectStyle {
     pub(crate) const INITIAL: Self = Self {
         opacity: 1.0,
-        transform: None,
+        has_transform: false,
         transform_origin_x: ResolvedLength {
             pixels: 0.0,
             fraction: Some(0.5),
@@ -51,6 +51,6 @@ impl EffectStyle {
     /// Whether the element paints as a stacking context of its own: above the flow, with its
     /// positioned descendants inside it.
     pub fn creates_stacking_context(&self) -> bool {
-        self.transform.is_some() || self.needs_offscreen_pass()
+        self.has_transform || self.needs_offscreen_pass()
     }
 }

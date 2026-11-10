@@ -1,21 +1,29 @@
 use std::mem;
 
+use morok_style::Display;
+
 use crate::dirty::Dirty;
 use crate::element_arena::ElementArena;
 use crate::element_id::ElementId;
+use crate::motion::motion_resolver::MotionResolver;
 use crate::role::Role;
 use crate::style::computed_style::ComputedStyle;
 use crate::style::style_outcome::StyleOutcome;
 use crate::style::style_resolver::StyleResolver;
+use crate::style::style_scratch::StyleScratch;
 use crate::style::styled_parent::StyledParent;
 
-/// The style stage of a frame: resolves the style of every element marked for it, parents first.
+/// The style stage of a frame: resolves the style of every element marked for it, parents first,
+/// and works out what every element in motion shows at the time of the frame.
 #[derive(Debug)]
 pub(crate) struct StylePass<'a> {
     pub(crate) elements: &'a mut ElementArena,
     pub(crate) resolver: StyleResolver<'a>,
-    pub(crate) matched_rules: &'a mut Vec<u32>,
+    pub(crate) motion: MotionResolver<'a>,
+    pub(crate) scratch: &'a mut StyleScratch,
     pub(crate) pending: &'a mut Vec<ElementId>,
+    /// Receives the elements whose motion goes on after this frame.
+    pub(crate) moving: &'a mut Vec<ElementId>,
 }
 
 impl StylePass<'_> {
@@ -24,14 +32,19 @@ impl StylePass<'_> {
         self.pending.clear();
         self.pending.push(root);
         while let Some(id) = self.pending.pop() {
-            if self.elements[id].dirty.contains(Dirty::STYLE) {
+            let dirty = self.elements[id].dirty;
+            if dirty.contains(Dirty::STYLE) {
                 self.restyle(id, &mut outcome);
+            } else if dirty.contains(Dirty::MOTION) {
+                self.animate(id, &mut outcome);
             }
             let element = &mut self.elements[id];
             let has_marked_descendants = element.dirty.contains(Dirty::STYLE_BELOW);
-            element.dirty.remove(Dirty::STYLE.union(Dirty::STYLE_BELOW));
+            element
+                .dirty
+                .remove(Dirty::STYLE.union(Dirty::STYLE_BELOW).union(Dirty::MOTION));
             if has_marked_descendants {
-                let marked = Dirty::STYLE.union(Dirty::STYLE_BELOW);
+                let marked = Dirty::STYLE.union(Dirty::STYLE_BELOW).union(Dirty::MOTION);
                 let elements = &*self.elements;
                 self.pending.extend(
                     elements[id]
@@ -45,6 +58,7 @@ impl StylePass<'_> {
         outcome
     }
 
+    /// Cascades the style of the element again and lets its motion follow the change.
     fn restyle(&mut self, id: ElementId, outcome: &mut StyleOutcome) {
         let element = &self.elements[id];
         let parent = element.parent.map(|parent| {
@@ -53,23 +67,72 @@ impl StylePass<'_> {
                 target: parent.selector_target(),
                 color: parent.style.paint.color,
                 text: parent.style.text,
+                is_rendered: parent.is_rendered,
             }
         });
-        let style = self.resolver.resolve(
+        let parent_is_rendered = parent.is_none_or(|parent| parent.is_rendered);
+        let base = self.resolver.resolve(
             element.selector_target(),
             parent,
             &element.inline_style,
-            self.matched_rules,
+            &mut self.scratch.matched_rules,
+            &mut self.scratch.base_lists,
         );
-        let previous = mem::replace(&mut self.elements[id].style, style);
         outcome.resolved_elements += 1;
+        let is_rendered = parent_is_rendered && base.layout.display != Display::None;
+        let element = &mut self.elements[id];
+        self.motion.restart(
+            element,
+            &base,
+            &self.scratch.base_lists,
+            is_rendered,
+            &mut self.scratch.motion,
+        );
+        let was_rendered = mem::replace(&mut element.is_rendered, is_rendered);
+        self.show(id, &base, outcome);
+        if was_rendered != is_rendered {
+            self.mark_children(id);
+        }
+    }
+
+    /// Works out what the element shows at the time of the frame from the style its motion runs on.
+    fn animate(&mut self, id: ElementId, outcome: &mut StyleOutcome) {
+        let Some(motion) = &self.elements[id].motion else {
+            return;
+        };
+        let base = motion.base;
+        self.scratch.base_lists.copy_from(&motion.base_lists);
+        self.show(id, &base, outcome);
+    }
+
+    /// Makes the element show `base`, with the lists in the scratch space, under its motion, and
+    /// marks what the change touches.
+    fn show(&mut self, id: ElementId, base: &ComputedStyle, outcome: &mut StyleOutcome) {
+        let element = &mut self.elements[id];
+        let mut style = *base;
+        let is_moving = self.motion.show(
+            element.motion.as_deref_mut(),
+            base,
+            &self.scratch.base_lists,
+            &mut style,
+            &mut self.scratch.shown_lists,
+            &mut self.scratch.motion,
+        );
+        if is_moving {
+            self.moving.push(id);
+        }
+        let lists_changed = element.lists != self.scratch.shown_lists;
+        if lists_changed {
+            element.lists.copy_from(&self.scratch.shown_lists);
+        }
+        let previous = mem::replace(&mut element.style, style);
         if previous.layout != style.layout {
             self.elements.invalidate_layout(id);
         }
         if changes_paint_order(&previous, &style) {
             outcome.reorders_paint = true;
         }
-        if paints_differently(&previous, &style) {
+        if lists_changed || paints_differently(&previous, &style) {
             self.elements[id].dirty.insert(Dirty::PAINT);
             outcome.repaints = true;
         }
@@ -92,7 +155,8 @@ impl StylePass<'_> {
         }
     }
 
-    /// Children take inherited values from the element, so they are resolved again after it.
+    /// Children take inherited values and whether they are rendered from the element, so they
+    /// are resolved again after it.
     fn mark_children(&mut self, id: ElementId) {
         for position in 0..self.elements[id].children.len() {
             let child = self.elements[id].children[position];

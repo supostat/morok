@@ -1,4 +1,5 @@
 use std::fmt::Write;
+use std::time::Duration;
 
 use morok_core::{ElementId, Role};
 
@@ -29,11 +30,7 @@ fn write_element(scene: &Scene, element: ElementId, markup: &mut String) {
         matches!(role, Role::Element | Role::Text | Role::Icon | Role::Image),
         "the stand has no markup for {role:?}"
     );
-    let classes: Vec<String> = scene
-        .class_names(element)
-        .map(str::to_owned)
-        .chain(marker_classes::of_states(tree.states(element)))
-        .collect();
+    let classes = class_list(scene, element);
     let class_attribute = if classes.is_empty() {
         String::new()
     } else {
@@ -71,6 +68,33 @@ fn write_element(scene: &Scene, element: ElementId, markup: &mut String) {
     }
     markup.push_str("</div>");
 }
+
+/// The classes of the element with the marker classes of its states, as its markup carries them.
+fn class_list(scene: &Scene, element: ElementId) -> Vec<String> {
+    scene
+        .class_names(element)
+        .map(str::to_owned)
+        .chain(marker_classes::of_states(scene.tree().states(element)))
+        .collect()
+}
+
+/// The script that hands the page what the case changes and when it is drawn: the classes of
+/// every element after the change, in document order, and the time to draw at.
+pub(crate) fn motion_script(changed: &Scene, after: Duration) -> String {
+    let classes: Vec<String> = changed
+        .elements()
+        .into_iter()
+        .map(|element| format!("\"{}\"", class_list(changed, element).join(" ")))
+        .collect();
+    format!(
+        "<script>window.{MOTION_VARIABLE} = {{ classes: [{}], milliseconds: {} }};</script>",
+        classes.join(", "),
+        after.as_millis()
+    )
+}
+
+/// The global the motion script of a case leaves for the stand.
+pub(crate) const MOTION_VARIABLE: &str = "morokMotion";
 
 const SVG_TAG: &str = "<svg";
 const BASE64_ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -114,6 +138,7 @@ mod tests {
 
     use crate::case::Case;
     use crate::compiled_suite::CompiledSuite;
+    use crate::moment::Moment;
     use crate::scene::Scene;
     use crate::suite::Suite;
 
@@ -139,6 +164,7 @@ mod tests {
                     height: 40.0,
                 },
                 build: label_in_a_button,
+                moment: Moment::AtRest,
             }],
         };
         let compiled = CompiledSuite::compile(&suite).expect("the stylesheet compiles");

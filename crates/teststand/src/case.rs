@@ -1,5 +1,6 @@
 use morok_core::Size;
 
+use crate::moment::Moment;
 use crate::scene::Scene;
 
 /// One picture a suite compares: a tree on a surface of its own.
@@ -11,4 +12,5 @@ pub struct Case {
     pub viewport: Size,
     /// Adds the elements of the case under the root of the scene.
     pub build: fn(&mut Scene),
+    pub moment: Moment,
 }

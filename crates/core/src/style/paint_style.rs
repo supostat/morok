@@ -1,4 +1,4 @@
-use morok_style::{Color, LineStyle, ObjectFit, Shadow, Token};
+use morok_style::{AnimatableProperties, AnimatableProperty, Color, LineStyle, ObjectFit, Side};
 
 use crate::geometry::corners::Corners;
 use crate::geometry::sides::Sides;
@@ -20,6 +20,14 @@ pub(crate) const INITIAL_COLOR: Color = Color {
     alpha: 1.0,
 };
 
+/// The colors whose initial value is `currentColor`.
+const BORDER_AND_OUTLINE_COLORS: AnimatableProperties =
+    AnimatableProperties::of(AnimatableProperty::BorderColor(Side::Top))
+        .union(AnimatableProperties::of(AnimatableProperty::BorderColor(Side::Right)))
+        .union(AnimatableProperties::of(AnimatableProperty::BorderColor(Side::Bottom)))
+        .union(AnimatableProperties::of(AnimatableProperty::BorderColor(Side::Left)))
+        .union(AnimatableProperties::of(AnimatableProperty::OutlineColor));
+
 /// The part of a computed style that only painting reads; a change here moves no box.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct PaintStyle {
@@ -29,13 +37,14 @@ pub struct PaintStyle {
     pub(crate) background_image: Option<DeclarationSource>,
     pub border_color: Sides<Color>,
     pub border_radius: Corners<f32>,
-    pub box_shadow: Option<Token<Shadow>>,
     /// The declared width; an outline without a style is not drawn, see [`Self::used_outline_width`].
     pub outline_width: f32,
     pub outline_style: LineStyle,
     pub outline_color: Color,
     pub outline_offset: f32,
     pub object_fit: ObjectFit,
+    /// The colors that are `currentColor`: they follow `color` when it animates.
+    pub(crate) follows_color: AnimatableProperties,
 }
 
 impl PaintStyle {
@@ -53,12 +62,12 @@ impl PaintStyle {
                 bottom_right: 0.0,
                 bottom_left: 0.0,
             },
-            box_shadow: None,
             outline_width: MEDIUM_LINE_WIDTH,
             outline_style: LineStyle::None,
             outline_color: color,
             outline_offset: 0.0,
             object_fit: ObjectFit::Fill,
+            follows_color: BORDER_AND_OUTLINE_COLORS,
         }
     }
 

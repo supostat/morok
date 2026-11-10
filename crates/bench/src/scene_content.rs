@@ -1,7 +1,8 @@
 use std::fmt::{self, Debug, Formatter};
+use std::time::Duration;
 
 use morok_core::{ElementTree, FrameScheduler, Size};
-use morok_platform::{CoreTextShaper, SurfaceContent};
+use morok_platform::{CoreTextShaper, SurfaceContent, SurfaceSettings};
 use morok_style::ColorScheme;
 
 use crate::bench_error::BenchError;
@@ -19,9 +20,10 @@ pub struct SceneContent {
 }
 
 impl SceneContent {
-    /// Builds the tree of the scene under the theme of `color_scheme`.
-    pub fn new(mut scene: Box<dyn Scene>, color_scheme: ColorScheme) -> Result<Self, BenchError> {
-        let scene_tree = SceneTree::of(scene.as_mut(), color_scheme)?;
+    /// Builds the tree of the scene under the settings of the system.
+    pub fn new(mut scene: Box<dyn Scene>, settings: SurfaceSettings) -> Result<Self, BenchError> {
+        let mut scene_tree = SceneTree::of(scene.as_mut(), settings.color_scheme)?;
+        scene_tree.tree_mut().set_reduced_motion(settings.reduces_motion);
         Ok(Self {
             scene,
             scene_tree,
@@ -37,9 +39,9 @@ impl SceneContent {
 }
 
 impl SurfaceContent for SceneContent {
-    fn frame(&mut self, viewport: Size, scale: f32) -> &ElementTree {
+    fn frame(&mut self, viewport: Size, scale: f32, now: Duration) -> &ElementTree {
         let tree = self.scene_tree.tree_mut();
-        tree.resolve_styles();
+        tree.resolve_styles(now);
         tree.compute_layout(viewport, scale, &mut self.text_shaper);
         tree.build_display_list();
         self.frames_run += 1;
@@ -49,6 +51,10 @@ impl SurfaceContent for SceneContent {
 
     fn color_scheme_changed(&mut self, color_scheme: ColorScheme) {
         self.scene_tree.set_color_scheme(color_scheme);
+    }
+
+    fn reduced_motion_changed(&mut self, reduces_motion: bool) {
+        self.scene_tree.tree_mut().set_reduced_motion(reduces_motion);
     }
 }
 

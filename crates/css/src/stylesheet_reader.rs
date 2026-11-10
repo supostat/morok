@@ -2,48 +2,81 @@ use cssparser::{ParseError, Parser};
 
 use crate::cascade::SourceRule;
 use crate::class_table::ClassTable;
-use crate::compiled_tokens::CompiledTokens;
-use crate::declaration_reader;
+use crate::declaration_reader::{self, DeclarationBlock};
 use crate::diagnostic::Diagnostic;
+use crate::keyframes_rules::KeyframesRules;
+use crate::keyframes_syntax;
 use crate::rule_prelude::{self, RuleEnd};
 use crate::selector_syntax;
 use crate::source_file::SourceFile;
 use crate::span::Span;
+use crate::value_context::ValueContext;
 
 const AT_RULE_PREFIX: char = '@';
 
-/// Reads the class rules of one component stylesheet, reporting everything outside the subset.
-pub(crate) fn read(
-    source: &SourceFile,
-    tokens: &CompiledTokens,
-    classes: &mut ClassTable,
-    rules: &mut Vec<SourceRule>,
-    diagnostics: &mut Vec<Diagnostic>,
-) {
+/// What the rules of the stylesheets compiled together are read into.
+#[derive(Debug)]
+pub(crate) struct ReadRules<'a> {
+    pub(crate) classes: &'a mut ClassTable,
+    pub(crate) rules: &'a mut Vec<SourceRule>,
+    pub(crate) keyframes: &'a mut KeyframesRules,
+    pub(crate) diagnostics: &'a mut Vec<Diagnostic>,
+}
+
+/// Reads the class rules and the `@keyframes` rules of one component stylesheet, reporting
+/// everything outside the subset.
+pub(crate) fn read(source: &SourceFile, context: &ValueContext<'_>, read_rules: &mut ReadRules<'_>) {
     let text = source.text();
     let mut input = Parser::new(text);
     loop {
         let (prelude, rule_end) = rule_prelude::read(&mut input, text);
         let prelude_text = &text[prelude.start..prelude.end];
-        if prelude_text.starts_with(AT_RULE_PREFIX) {
-            diagnostics.push(at_rule(source, prelude));
+        if let Some(name) = keyframes_syntax::name(text, prelude) {
+            match name {
+                Ok(name) if rule_end == RuleEnd::Block => {
+                    read_keyframes(source, context, &name, &mut input, read_rules);
+                }
+                Ok(name) => read_rules.diagnostics.push(Diagnostic::new(
+                    source,
+                    name.span,
+                    format!("`@keyframes {}` has no block", name.text),
+                    "write its keyframes in braces: `@keyframes fade { from { opacity: 0; } }`",
+                )),
+                Err(problem) => {
+                    read_rules
+                        .diagnostics
+                        .push(Diagnostic::new(source, problem.span, problem.message, problem.hint));
+                }
+            }
+        } else if prelude_text.starts_with(AT_RULE_PREFIX) {
+            read_rules.diagnostics.push(at_rule(source, prelude));
         } else if rule_end == RuleEnd::Block {
-            let selectors = selector_syntax::parse(text, prelude, classes);
+            let selectors = selector_syntax::parse(text, prelude, read_rules.classes);
             let declarations = input
                 .parse_nested_block(|block| {
-                    Ok::<_, ParseError<()>>(declaration_reader::read(source, tokens, block, diagnostics))
+                    Ok::<_, ParseError<()>>(declaration_reader::read(
+                        source,
+                        context,
+                        DeclarationBlock::Rule,
+                        block,
+                        read_rules.diagnostics,
+                    ))
                 })
                 .expect("a rule block is read to its end");
             match selectors {
-                Ok(selectors) => rules.extend(selectors.into_iter().map(|parsed| SourceRule {
+                Ok(selectors) => read_rules.rules.extend(selectors.into_iter().map(|parsed| SourceRule {
                     selector: parsed.selector,
                     specificity: parsed.specificity,
                     declarations: declarations.clone(),
                 })),
-                Err(problem) => diagnostics.push(Diagnostic::new(source, problem.span, problem.message, problem.hint)),
+                Err(problem) => {
+                    read_rules
+                        .diagnostics
+                        .push(Diagnostic::new(source, problem.span, problem.message, problem.hint));
+                }
             }
         } else if !prelude.is_empty() {
-            diagnostics.push(Diagnostic::new(
+            read_rules.diagnostics.push(Diagnostic::new(
                 source,
                 prelude,
                 "expected a rule",
@@ -54,6 +87,77 @@ pub(crate) fn read(
             return;
         }
     }
+}
+
+/// Reads the keyframes in the block of a `@keyframes` rule, which is open.
+fn read_keyframes(
+    source: &SourceFile,
+    context: &ValueContext<'_>,
+    name: &keyframes_syntax::KeyframesName,
+    input: &mut Parser<'_>,
+    read_rules: &mut ReadRules<'_>,
+) {
+    let keyframes = context
+        .keyframes
+        .id(&name.text)
+        .expect("the keyframes table holds every well-formed name");
+    if read_rules.keyframes.is_declared(keyframes) {
+        read_rules.diagnostics.push(Diagnostic::new(
+            source,
+            name.span,
+            format!("`@keyframes {}` is declared twice", name.text),
+            "give one of them another name",
+        ));
+        return;
+    }
+    read_rules.keyframes.declare(keyframes, &name.text);
+    let text = source.text();
+    input
+        .parse_nested_block(|block| {
+            loop {
+                let (prelude, rule_end) = rule_prelude::read(block, text);
+                if rule_end == RuleEnd::Block {
+                    let offsets = keyframes_syntax::offsets(text, prelude);
+                    let declarations = block
+                        .parse_nested_block(|declarations| {
+                            Ok::<_, ParseError<()>>(declaration_reader::read(
+                                source,
+                                context,
+                                DeclarationBlock::Keyframe,
+                                declarations,
+                                read_rules.diagnostics,
+                            ))
+                        })
+                        .expect("a keyframe block is read to its end");
+                    match offsets {
+                        Ok(offsets) => {
+                            for offset in offsets {
+                                read_rules
+                                    .keyframes
+                                    .add_keyframe(keyframes, offset, declarations.clone());
+                            }
+                        }
+                        Err(problem) => read_rules.diagnostics.push(Diagnostic::new(
+                            source,
+                            problem.span,
+                            problem.message,
+                            problem.hint,
+                        )),
+                    }
+                } else if !prelude.is_empty() {
+                    read_rules.diagnostics.push(Diagnostic::new(
+                        source,
+                        prelude,
+                        "expected a keyframe",
+                        "write it as `50% { property: value; }`",
+                    ));
+                }
+                if rule_end == RuleEnd::EndOfInput {
+                    return Ok::<_, ParseError<()>>(());
+                }
+            }
+        })
+        .expect("a keyframes block is read to its end");
 }
 
 fn at_rule(source: &SourceFile, prelude: Span) -> Diagnostic {
@@ -69,6 +173,6 @@ fn at_rule(source: &SourceFile, prelude: Span) -> Diagnostic {
         source,
         keyword,
         format!("`{}` is not supported", &prelude_text[..keyword_length]),
-        "a component stylesheet holds class rules only",
+        "a component stylesheet holds class rules and `@keyframes` rules only",
     )
 }

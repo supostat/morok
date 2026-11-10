@@ -18,6 +18,7 @@ morok-core.workspace = true
 morok-style.workspace = true
 objc2.workspace = true
 objc2-app-kit = { workspace = true, features = [
+  "NSAccessibility",
   "NSAppearance",
   "NSApplication",
   "NSFont",
@@ -27,6 +28,7 @@ objc2-app-kit = { workspace = true, features = [
   "NSRunningApplication",
   "NSView",
   "NSWindow",
+  "NSWorkspace",
   "objc2-core-foundation",
   "objc2-quartz-core",
 ] }
@@ -58,7 +60,15 @@ objc2-core-text = { workspace = true, features = [
   "CTTypesetter",
   "objc2-core-graphics",
 ] }
-objc2-foundation = { workspace = true, features = ["NSArray", "NSDate", "NSError", "NSGeometry", "NSRunLoop", "NSString"] }
+objc2-foundation = { workspace = true, features = [
+  "NSArray",
+  "NSDate",
+  "NSError",
+  "NSGeometry",
+  "NSNotification",
+  "NSRunLoop",
+  "NSString",
+] }
 objc2-image-io = { workspace = true, features = ["CGImageSource", "objc2-core-graphics"] }
 objc2-metal = { workspace = true, features = [
   "MTL4ArgumentTable",

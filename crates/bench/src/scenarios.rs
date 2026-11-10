@@ -34,7 +34,7 @@ fn idle(budgets: &Budgets) -> Result<Verdict, BenchError> {
     let application = Application::new()?;
     idle_scenario::run(
         IDLE,
-        Box::new(ReferenceScene::still()),
+        Box::new(ReferenceScene::settling()),
         &application,
         budgets.idle.duration(),
         &budgets.idle,

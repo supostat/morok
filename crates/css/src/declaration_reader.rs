@@ -1,20 +1,30 @@
 use cssparser::{Delimiter, ParseError, Parser, Token};
 use morok_style::Declaration;
 
-use crate::compiled_tokens::CompiledTokens;
 use crate::diagnostic::Diagnostic;
 use crate::problem::Problem;
 use crate::property;
 use crate::source_file::SourceFile;
 use crate::span::Span;
+use crate::value_context::ValueContext;
 use crate::value_error::ValueError;
 
 const CUSTOM_PROPERTY_PREFIX: &str = "--";
 
-/// Reads the `property: value;` list of a rule block into longhand declarations.
+/// What holds a declaration list, and so which properties it may set.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum DeclarationBlock {
+    /// The block of a class rule: every supported property.
+    Rule,
+    /// The block of a keyframe: the animatable properties only.
+    Keyframe,
+}
+
+/// Reads the `property: value;` list of a block into longhand declarations.
 pub(crate) fn read(
     source: &SourceFile,
-    tokens: &CompiledTokens,
+    context: &ValueContext<'_>,
+    block: DeclarationBlock,
     input: &mut Parser<'_>,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Vec<Declaration> {
@@ -28,7 +38,7 @@ pub(crate) fn read(
         let name_span = Span::between(start, input.position());
         let outcome = match token {
             Token::Semicolon => continue,
-            Token::Ident(name) => declaration(source, tokens, input, &name, name_span),
+            Token::Ident(name) => declaration(source, context, block, input, &name, name_span),
             _ => {
                 skip_to_declaration_end(input);
                 Err(Problem {
@@ -47,7 +57,8 @@ pub(crate) fn read(
 
 fn declaration(
     source: &SourceFile,
-    tokens: &CompiledTokens,
+    context: &ValueContext<'_>,
+    block: DeclarationBlock,
     input: &mut Parser<'_>,
     name: &str,
     name_span: Span,
@@ -62,7 +73,7 @@ fn declaration(
     }
     input
         .parse_until_before(Delimiter::Semicolon, |value_input| {
-            let outcome = value(source, tokens, value_input, name, name_span);
+            let outcome = value(source, context, block, value_input, name, name_span);
             skip_to_end(value_input);
             Ok::<_, ParseError<()>>(outcome)
         })
@@ -71,7 +82,8 @@ fn declaration(
 
 fn value(
     source: &SourceFile,
-    tokens: &CompiledTokens,
+    context: &ValueContext<'_>,
+    block: DeclarationBlock,
     input: &mut Parser<'_>,
     name: &str,
     name_span: Span,
@@ -117,21 +129,32 @@ fn value(
             hint: "remove it or express it through the supported CSS subset".to_owned(),
         });
     };
-    let parsed = (property.parse)(tokens, input).and_then(|longhands| {
+    let parsed = (property.parse)(context, input).and_then(|longhands| {
         if input.is_exhausted() {
             Ok(longhands)
         } else {
             Err(ValueError::Mismatch)
         }
     });
-    parsed.map_err(|error| match error {
+    let longhands = parsed.map_err(|error| match error {
         ValueError::Problem(problem) => problem,
         ValueError::Mismatch => Problem {
             span: value_span,
             message: format!("`{}` does not support this value", property.name),
             hint: format!("it takes {}", property.expectation),
         },
-    })
+    })?;
+    let is_animatable = longhands
+        .iter()
+        .all(|longhand| longhand.animatable_property().is_some());
+    if block == DeclarationBlock::Keyframe && !is_animatable {
+        return Err(Problem {
+            span: name_span,
+            message: format!("`{}` cannot be animated", property.name),
+            hint: "a keyframe sets lengths, colors, `box-shadow`, `opacity` and `transform`".to_owned(),
+        });
+    }
+    Ok(longhands)
 }
 
 fn skip_to_end(input: &mut Parser<'_>) {

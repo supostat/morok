@@ -144,7 +144,7 @@ fn a_change_made_once_a_frame_began_asks_for_the_next_frame() {
     scene.tree.set_state(button, States::HOVER, true);
     requested_frames.set(0);
 
-    scene.tree.resolve_styles();
+    scene.tree.resolve_styles(scene.time);
     scene.tree.set_state(button, States::HOVER, false);
 
     assert_eq!(requested_frames.get(), 1);

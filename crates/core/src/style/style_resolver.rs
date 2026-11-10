@@ -1,18 +1,21 @@
 use morok_style::{
-    BackgroundImage, BoxShadow, Color, ColorValue, Declaration, FontWeightValue, LineHeight, StyleRule, StyleSheet,
-    Theme,
+    AnimatableProperties, AnimatableProperty, BackgroundImage, BoxShadow, Color, ColorValue, Declaration,
+    FontWeightValue, LineHeight, StyleRule, StyleSheet, Theme,
 };
 
+use crate::motion::transform_step::resolve_into;
 use crate::style::computed_style::ComputedStyle;
 use crate::style::declaration_source::DeclarationSource;
 use crate::style::effect_style::EffectStyle;
 use crate::style::inline_style::InlineStyle;
 use crate::style::layout_style::LayoutStyle;
+use crate::style::motion_style::MotionStyle;
 use crate::style::paint_style::{INITIAL_COLOR, PaintStyle, TRANSPARENT};
 use crate::style::positioning::Positioning;
 use crate::style::resolved_length::ResolvedLength;
 use crate::style::resolved_length_or_auto::ResolvedLengthOrAuto;
 use crate::style::selector_target::SelectorTarget;
+use crate::style::style_lists::StyleLists;
 use crate::style::styled_parent::StyledParent;
 use crate::style::text_style::TextStyle;
 
@@ -25,13 +28,15 @@ pub(crate) struct StyleResolver<'a> {
 }
 
 impl<'a> StyleResolver<'a> {
-    /// `matched_rules` is scratch space; it comes back holding the rules that matched, in cascade order.
+    /// `matched_rules` is scratch space; it comes back holding the rules that matched, in cascade
+    /// order. The lists of the style are resolved into `lists`.
     pub(crate) fn resolve(
         self,
         subject: SelectorTarget<'_>,
         parent: Option<StyledParent<'_>>,
         inline_style: &InlineStyle,
         matched_rules: &mut Vec<u32>,
+        lists: &mut StyleLists,
     ) -> ComputedStyle {
         self.collect_matched_rules(subject, parent.map(|parent| parent.target), matched_rules);
         let inherited_color = parent.map_or(INITIAL_COLOR, |parent| parent.color);
@@ -41,14 +46,17 @@ impl<'a> StyleResolver<'a> {
             paint: PaintStyle::initial(color),
             text: parent.map_or(TextStyle::INITIAL, |parent| parent.text.inherited()),
             effects: EffectStyle::INITIAL,
+            motion: MotionStyle::INITIAL,
         };
+        lists.transform.clear();
+        lists.box_shadow.clear();
         for &rule in matched_rules.iter() {
             for (position, declaration) in self.rule(rule).declarations.iter().enumerate() {
                 let source = DeclarationSource::Rule {
                     rule,
                     declaration: position as u32,
                 };
-                self.apply(&mut style, declaration, source);
+                self.apply(&mut style, lists, declaration, source);
             }
         }
         for (position, declaration) in inline_style.declarations().iter().enumerate() {
@@ -56,7 +64,7 @@ impl<'a> StyleResolver<'a> {
                 declaration: position as u32,
                 revision: inline_style.revision(),
             };
-            self.apply(&mut style, declaration, source);
+            self.apply(&mut style, lists, declaration, source);
         }
         style
     }
@@ -133,7 +141,13 @@ impl<'a> StyleResolver<'a> {
         }
     }
 
-    fn apply(self, style: &mut ComputedStyle, declaration: &Declaration, source: DeclarationSource) {
+    fn apply(
+        self,
+        style: &mut ComputedStyle,
+        lists: &mut StyleLists,
+        declaration: &Declaration,
+        source: DeclarationSource,
+    ) {
         let theme = self.theme;
         let current_color = style.paint.color;
         let ComputedStyle {
@@ -141,6 +155,7 @@ impl<'a> StyleResolver<'a> {
             paint,
             text,
             effects,
+            motion,
         } = style;
         match declaration {
             Declaration::Display(display) => layout.display = *display,
@@ -178,33 +193,102 @@ impl<'a> StyleResolver<'a> {
             Declaration::GridColumnEnd(line) => layout.grid_column_end = *line,
             Declaration::GridRowStart(line) => layout.grid_row_start = *line,
             Declaration::GridRowEnd(line) => layout.grid_row_end = *line,
-            Declaration::BackgroundColor(color) => paint.background_color = self.color(*color, current_color),
+            Declaration::BorderWidth(side, width) => {
+                layout.border_width[*side] = ResolvedLength::pixels_of(width, theme);
+            }
+            Declaration::BorderStyle(side, line_style) => layout.border_style[*side] = *line_style,
+            Declaration::BackgroundColor(_)
+            | Declaration::BackgroundImage(_)
+            | Declaration::BorderColor(..)
+            | Declaration::BorderRadius(..)
+            | Declaration::BoxShadow(_)
+            | Declaration::OutlineWidth(_)
+            | Declaration::OutlineStyle(_)
+            | Declaration::OutlineColor(_)
+            | Declaration::OutlineOffset(_)
+            | Declaration::ObjectFit(_) => self.apply_paint(paint, lists, declaration, source, current_color),
+            Declaration::Color(_) => {}
+            Declaration::FontFamily(_)
+            | Declaration::FontSize(_)
+            | Declaration::FontWeight(_)
+            | Declaration::FontStyle(_)
+            | Declaration::LineHeight(_)
+            | Declaration::LetterSpacing(_)
+            | Declaration::TextAlign(_)
+            | Declaration::TextDecoration(_)
+            | Declaration::TextOverflow(_)
+            | Declaration::WhiteSpace(_)
+            | Declaration::FontVariantNumeric(_) => self.apply_text(text, declaration),
+            Declaration::Opacity(_)
+            | Declaration::Transform(_)
+            | Declaration::TransformOrigin(..)
+            | Declaration::Filter(_)
+            | Declaration::BackdropFilter(_)
+            | Declaration::MixBlendMode(_) => self.apply_effect(effects, lists, declaration, source),
+            Declaration::TransitionProperty(_)
+            | Declaration::TransitionDuration(_)
+            | Declaration::TransitionTimingFunction(_)
+            | Declaration::TransitionDelay(_)
+            | Declaration::AnimationName(_)
+            | Declaration::AnimationDuration(_)
+            | Declaration::AnimationTimingFunction(_)
+            | Declaration::AnimationDelay(_)
+            | Declaration::AnimationIterationCount(_)
+            | Declaration::AnimationDirection(_)
+            | Declaration::AnimationFillMode(_) => apply_motion(motion, declaration, source),
+        }
+    }
+
+    /// The properties that only painting reads; `currentColor` is `current_color`.
+    fn apply_paint(
+        self,
+        paint: &mut PaintStyle,
+        lists: &mut StyleLists,
+        declaration: &Declaration,
+        source: DeclarationSource,
+        current_color: Color,
+    ) {
+        let theme = self.theme;
+        match declaration {
+            Declaration::BackgroundColor(color) => {
+                paint.background_color = self.color(*color, current_color);
+                follow_color(paint, AnimatableProperty::BackgroundColor, *color);
+            }
             Declaration::BackgroundImage(image) => {
                 paint.background_image = match image {
                     BackgroundImage::None => None,
                     BackgroundImage::Gradient(_) => Some(source),
                 };
             }
-            Declaration::BorderWidth(side, width) => {
-                layout.border_width[*side] = ResolvedLength::pixels_of(width, theme);
+            Declaration::BorderColor(side, color) => {
+                paint.border_color[*side] = self.color(*color, current_color);
+                follow_color(paint, AnimatableProperty::BorderColor(*side), *color);
             }
-            Declaration::BorderStyle(side, line_style) => layout.border_style[*side] = *line_style,
-            Declaration::BorderColor(side, color) => paint.border_color[*side] = self.color(*color, current_color),
             Declaration::BorderRadius(corner, radius) => {
                 paint.border_radius[*corner] = ResolvedLength::pixels_of(radius, theme);
             }
             Declaration::BoxShadow(shadow) => {
-                paint.box_shadow = match shadow {
-                    BoxShadow::None => None,
-                    BoxShadow::Token(token) => Some(*token),
-                };
+                lists.box_shadow.clear();
+                if let BoxShadow::Token(token) = shadow {
+                    lists.box_shadow.extend_from_slice(&theme.resolve(*token).layers);
+                }
             }
             Declaration::OutlineWidth(width) => paint.outline_width = ResolvedLength::pixels_of(width, theme),
             Declaration::OutlineStyle(line_style) => paint.outline_style = *line_style,
-            Declaration::OutlineColor(color) => paint.outline_color = self.color(*color, current_color),
+            Declaration::OutlineColor(color) => {
+                paint.outline_color = self.color(*color, current_color);
+                follow_color(paint, AnimatableProperty::OutlineColor, *color);
+            }
             Declaration::OutlineOffset(offset) => paint.outline_offset = ResolvedLength::pixels_of(offset, theme),
             Declaration::ObjectFit(fit) => paint.object_fit = *fit,
-            Declaration::Color(_) => {}
+            _ => unreachable!("only the paint properties are applied here"),
+        }
+    }
+
+    /// The properties that set text.
+    fn apply_text(self, text: &mut TextStyle, declaration: &Declaration) {
+        let theme = self.theme;
+        match declaration {
             Declaration::FontFamily(families) => text.font_family = Some(*families),
             Declaration::FontSize(size) => text.font_size = ResolvedLength::pixels_of(size, theme).max(0.0),
             Declaration::FontWeight(weight) => {
@@ -226,22 +310,26 @@ impl<'a> StyleResolver<'a> {
             Declaration::TextOverflow(overflow) => text.text_overflow = *overflow,
             Declaration::WhiteSpace(white_space) => text.white_space = *white_space,
             Declaration::FontVariantNumeric(numeric) => text.font_variant_numeric = *numeric,
-            Declaration::Opacity(_)
-            | Declaration::Transform(_)
-            | Declaration::TransformOrigin(..)
-            | Declaration::Filter(_)
-            | Declaration::BackdropFilter(_)
-            | Declaration::MixBlendMode(_) => self.apply_effect(effects, declaration, source),
+            _ => unreachable!("only the text properties are applied here"),
         }
     }
 
     /// The properties that composite the element and its content as a group. A list stays
     /// where it is declared and is read from there; an empty one is no list at all.
-    fn apply_effect(self, effects: &mut EffectStyle, declaration: &Declaration, source: DeclarationSource) {
+    fn apply_effect(
+        self,
+        effects: &mut EffectStyle,
+        lists: &mut StyleLists,
+        declaration: &Declaration,
+        source: DeclarationSource,
+    ) {
         let theme = self.theme;
         match declaration {
             Declaration::Opacity(opacity) => effects.opacity = opacity.clamp(0.0, 1.0),
-            Declaration::Transform(functions) => effects.transform = (!functions.is_empty()).then_some(source),
+            Declaration::Transform(functions) => {
+                resolve_into(functions, theme, &mut lists.transform);
+                effects.has_transform = !functions.is_empty();
+            }
             Declaration::TransformOrigin(horizontal, vertical) => {
                 effects.transform_origin_x = ResolvedLength::of(horizontal, theme);
                 effects.transform_origin_y = ResolvedLength::of(vertical, theme);
@@ -254,4 +342,34 @@ impl<'a> StyleResolver<'a> {
             _ => unreachable!("only the effect properties are applied here"),
         }
     }
+}
+
+/// The longhands of `transition` and `animation`. Their lists stay where they are declared and
+/// are read from there.
+fn apply_motion(motion: &mut MotionStyle, declaration: &Declaration, source: DeclarationSource) {
+    let slot = match declaration {
+        Declaration::TransitionProperty(_) => &mut motion.transition_property,
+        Declaration::TransitionDuration(_) => &mut motion.transition_duration,
+        Declaration::TransitionTimingFunction(_) => &mut motion.transition_timing_function,
+        Declaration::TransitionDelay(_) => &mut motion.transition_delay,
+        Declaration::AnimationName(_) => &mut motion.animation_name,
+        Declaration::AnimationDuration(_) => &mut motion.animation_duration,
+        Declaration::AnimationTimingFunction(_) => &mut motion.animation_timing_function,
+        Declaration::AnimationDelay(_) => &mut motion.animation_delay,
+        Declaration::AnimationIterationCount(_) => &mut motion.animation_iteration_count,
+        Declaration::AnimationDirection(_) => &mut motion.animation_direction,
+        Declaration::AnimationFillMode(_) => &mut motion.animation_fill_mode,
+        _ => unreachable!("only the motion longhands are applied here"),
+    };
+    *slot = Some(source);
+}
+
+/// Records whether a color property is `currentColor`, so that it follows `color` in motion.
+fn follow_color(paint: &mut PaintStyle, property: AnimatableProperty, color: ColorValue) {
+    let property = AnimatableProperties::of(property);
+    paint.follows_color = if color == ColorValue::CurrentColor {
+        paint.follows_color.union(property)
+    } else {
+        paint.follows_color.difference(property)
+    };
 }

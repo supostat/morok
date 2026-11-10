@@ -900,4 +900,5 @@ pub const STYLE_SHEET: ::morok_style::StyleSheet = ::morok_style::StyleSheet {
             },
         ],
     ),
+    keyframes: ::std::borrow::Cow::Borrowed(&[]),
 };

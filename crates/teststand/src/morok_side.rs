@@ -7,6 +7,7 @@ use morok_style::ColorScheme;
 use crate::case::Case;
 use crate::case_rendering::CaseRendering;
 use crate::compiled_suite::CompiledSuite;
+use crate::moment::Moment;
 use crate::rendering::{DEVICE_SCALE, Rendering};
 use crate::stand_error::StandError;
 
@@ -26,7 +27,7 @@ impl MorokSide {
         })
     }
 
-    /// Draws the case under both color schemes.
+    /// Draws the case under both color schemes, at its moment.
     pub fn render_case(&mut self, suite: &CompiledSuite<'_>, case: &Case) -> CaseRendering {
         CaseRendering {
             light: self.render(suite, case, ColorScheme::Light),
@@ -48,7 +49,12 @@ impl MorokSide {
             let size = self.decoded_size(id);
             scene.tree_mut().set_image(element, id, Some(size));
         }
-        scene.frame(case.viewport, &mut self.text_shaper);
+        scene.frame(case.viewport, &mut self.text_shaper, Duration::ZERO);
+        if let Moment::InMotion { change, after } = case.moment {
+            change(&mut scene);
+            scene.frame(case.viewport, &mut self.text_shaper, Duration::ZERO);
+            scene.frame(case.viewport, &mut self.text_shaper, after);
+        }
         let tree = scene.tree();
         Rendering {
             image: OffscreenTarget::new(&self.renderer, case.viewport, DEVICE_SCALE).render(tree.display_list()),

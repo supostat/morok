@@ -3,12 +3,13 @@ use std::time::Duration;
 use morok_style::ColorScheme;
 use objc2::MainThreadMarker;
 use objc2::rc::Retained;
-use objc2_app_kit::{NSApplication, NSApplicationActivationPolicy};
+use objc2_app_kit::{NSApplication, NSApplicationActivationPolicy, NSWorkspace};
 use objc2_foundation::{NSDate, NSRunLoop};
 
 use crate::appearance::{Appearance, color_scheme_of};
 use crate::render::renderer::Renderer;
 use crate::renderer_error::RendererError;
+use crate::surface_settings::SurfaceSettings;
 
 /// The running application: the event loop of `AppKit` and the GPU resources its windows share.
 #[derive(Debug)]
@@ -46,6 +47,19 @@ impl Application {
     /// The color scheme the application is shown in now.
     pub fn color_scheme(&self) -> ColorScheme {
         color_scheme_of(&self.native.effectiveAppearance())
+    }
+
+    /// Whether "Reduce motion" is on in the accessibility settings of the system now.
+    pub fn reduces_motion(&self) -> bool {
+        NSWorkspace::sharedWorkspace().accessibilityDisplayShouldReduceMotion()
+    }
+
+    /// What a surface the application opens now is to follow.
+    pub fn surface_settings(&self) -> SurfaceSettings {
+        SurfaceSettings {
+            color_scheme: self.color_scheme(),
+            reduces_motion: self.reduces_motion(),
+        }
     }
 
     /// Runs the event loop until the application quits.

@@ -1,0 +1,175 @@
+/* Motion: transitions and keyframe animations drawn at fixed times. */
+
+.stage {
+  padding: var(--space-4);
+  background-color: var(--color-bg);
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-6);
+  padding: var(--space-8) var(--space-4);
+}
+
+/* Transitions: each mover runs one kind of value once it is hovered. */
+.mover {
+  width: 40px;
+  height: 40px;
+  background-color: var(--color-surface);
+  border: 2px solid var(--color-line-strong);
+  border-radius: var(--radius-sm);
+}
+
+.mover.tint {
+  transition: background-color 400ms linear, border-color 400ms linear;
+}
+
+.mover.tint:hover {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent-active);
+}
+
+.mover.fade {
+  background-color: var(--color-accent);
+  transition: opacity 400ms;
+}
+
+.mover.fade:hover {
+  opacity: 0.2;
+}
+
+.mover.slide {
+  transition: transform 400ms var(--motion-ease);
+}
+
+.mover.slide:hover {
+  transform: translateX(32px) translateY(-25%);
+}
+
+.mover.widen {
+  transition: width 400ms steps(4);
+}
+
+.mover.widen:hover {
+  width: 88px;
+}
+
+.mover.lift {
+  transition: box-shadow 400ms linear;
+}
+
+.mover.lift:hover {
+  box-shadow: var(--shadow-float);
+}
+
+.mover.round {
+  transition: border-radius 400ms cubic-bezier(0.3, 0, 0.7, 1);
+}
+
+.mover.round:hover {
+  border-radius: 20px;
+}
+
+.mover.spin {
+  background-color: var(--color-accent);
+  transform: scale(1.2) rotate(0deg);
+  transition: transform 400ms linear;
+}
+
+.mover.spin:hover {
+  transform: rotate(90deg) scale(1);
+}
+
+.mover.wait {
+  transition: background-color 300ms linear 150ms;
+}
+
+.mover.wait:hover {
+  background-color: var(--color-accent);
+}
+
+/* Keyframes: each runner plays one animation from the first frame on. */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(0px);
+  }
+  to {
+    transform: translateY(-24px);
+  }
+}
+
+@keyframes grow {
+  from {
+    width: 16px;
+  }
+  to {
+    width: 72px;
+  }
+}
+
+@keyframes tint {
+  to {
+    background-color: var(--color-accent);
+  }
+}
+
+@keyframes march {
+  to {
+    transform: translateX(48px);
+  }
+}
+
+@keyframes glow {
+  from {
+    box-shadow: var(--shadow-raised);
+  }
+  to {
+    box-shadow: var(--shadow-modal);
+  }
+}
+
+.runner {
+  width: 40px;
+  height: 40px;
+  background-color: var(--color-surface);
+  border: 2px solid var(--color-line-strong);
+  border-radius: var(--radius-sm);
+}
+
+.runner.pulse {
+  background-color: var(--color-accent);
+  animation: pulse 800ms linear infinite;
+}
+
+.runner.rise {
+  animation: rise 600ms cubic-bezier(0.4, 0, 0.6, 1) 2 alternate;
+}
+
+.runner.grow {
+  animation: grow 400ms linear 300ms backwards;
+}
+
+.runner.tint {
+  animation: tint 300ms linear forwards;
+}
+
+.runner.march {
+  animation: march 900ms steps(5) infinite reverse;
+}
+
+.runner.glow {
+  animation: glow 450ms var(--motion-ease-out) infinite alternate-reverse;
+}

@@ -733,7 +733,7 @@ fn building_the_display_list_of_a_tree_that_is_not_laid_out_panics() {
     scene.frame();
 
     scene.add_classes(buttons[0], &["tall"]);
-    scene.tree.resolve_styles();
+    scene.tree.resolve_styles(scene.time);
     scene.tree.build_display_list();
 }
 

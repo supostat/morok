@@ -37,8 +37,8 @@ pub(crate) const PROPERTIES: &[Property] = &[
     Property {
         name: "border",
         expectation: LINE,
-        parse: |tokens, input| {
-            let line = line(tokens, input)?;
+        parse: |context, input| {
+            let line = line(context.tokens, input)?;
             Ok(Side::ALL
                 .into_iter()
                 .flat_map(|side| border_side(side, &line))
@@ -48,28 +48,28 @@ pub(crate) const PROPERTIES: &[Property] = &[
     Property {
         name: "border-top",
         expectation: LINE,
-        parse: |tokens, input| Ok(border_side(Side::Top, &line(tokens, input)?)),
+        parse: |context, input| Ok(border_side(Side::Top, &line(context.tokens, input)?)),
     },
     Property {
         name: "border-right",
         expectation: LINE,
-        parse: |tokens, input| Ok(border_side(Side::Right, &line(tokens, input)?)),
+        parse: |context, input| Ok(border_side(Side::Right, &line(context.tokens, input)?)),
     },
     Property {
         name: "border-bottom",
         expectation: LINE,
-        parse: |tokens, input| Ok(border_side(Side::Bottom, &line(tokens, input)?)),
+        parse: |context, input| Ok(border_side(Side::Bottom, &line(context.tokens, input)?)),
     },
     Property {
         name: "border-left",
         expectation: LINE,
-        parse: |tokens, input| Ok(border_side(Side::Left, &line(tokens, input)?)),
+        parse: |context, input| Ok(border_side(Side::Left, &line(context.tokens, input)?)),
     },
     Property {
         name: "border-width",
         expectation: FOUR_WIDTHS,
-        parse: |tokens, input| {
-            let widths = four_values(input, |value| length::non_negative_length(tokens, value))?;
+        parse: |context, input| {
+            let widths = four_values(input, |value| length::non_negative_length(context.tokens, value))?;
             Ok(on_every_side(widths, Declaration::BorderWidth))
         },
     },
@@ -84,30 +84,30 @@ pub(crate) const PROPERTIES: &[Property] = &[
     Property {
         name: "border-color",
         expectation: FOUR_COLORS,
-        parse: |tokens, input| {
-            let colors = four_values(input, |value| color::parse(tokens, value))?;
+        parse: |context, input| {
+            let colors = four_values(input, |value| color::parse(context.tokens, value))?;
             Ok(on_every_side(colors, Declaration::BorderColor))
         },
     },
     Property {
         name: "border-top-width",
         expectation: WIDTH,
-        parse: |tokens, input| Ok(vec![border_width(Side::Top, tokens, input)?]),
+        parse: |context, input| Ok(vec![border_width(Side::Top, context.tokens, input)?]),
     },
     Property {
         name: "border-right-width",
         expectation: WIDTH,
-        parse: |tokens, input| Ok(vec![border_width(Side::Right, tokens, input)?]),
+        parse: |context, input| Ok(vec![border_width(Side::Right, context.tokens, input)?]),
     },
     Property {
         name: "border-bottom-width",
         expectation: WIDTH,
-        parse: |tokens, input| Ok(vec![border_width(Side::Bottom, tokens, input)?]),
+        parse: |context, input| Ok(vec![border_width(Side::Bottom, context.tokens, input)?]),
     },
     Property {
         name: "border-left-width",
         expectation: WIDTH,
-        parse: |tokens, input| Ok(vec![border_width(Side::Left, tokens, input)?]),
+        parse: |context, input| Ok(vec![border_width(Side::Left, context.tokens, input)?]),
     },
     Property {
         name: "border-top-style",
@@ -147,38 +147,48 @@ pub(crate) const PROPERTIES: &[Property] = &[
     Property {
         name: "border-top-color",
         expectation: COLOR,
-        parse: |tokens, input| Ok(vec![Declaration::BorderColor(Side::Top, color::parse(tokens, input)?)]),
+        parse: |context, input| {
+            Ok(vec![Declaration::BorderColor(
+                Side::Top,
+                color::parse(context.tokens, input)?,
+            )])
+        },
     },
     Property {
         name: "border-right-color",
         expectation: COLOR,
-        parse: |tokens, input| {
+        parse: |context, input| {
             Ok(vec![Declaration::BorderColor(
                 Side::Right,
-                color::parse(tokens, input)?,
+                color::parse(context.tokens, input)?,
             )])
         },
     },
     Property {
         name: "border-bottom-color",
         expectation: COLOR,
-        parse: |tokens, input| {
+        parse: |context, input| {
             Ok(vec![Declaration::BorderColor(
                 Side::Bottom,
-                color::parse(tokens, input)?,
+                color::parse(context.tokens, input)?,
             )])
         },
     },
     Property {
         name: "border-left-color",
         expectation: COLOR,
-        parse: |tokens, input| Ok(vec![Declaration::BorderColor(Side::Left, color::parse(tokens, input)?)]),
+        parse: |context, input| {
+            Ok(vec![Declaration::BorderColor(
+                Side::Left,
+                color::parse(context.tokens, input)?,
+            )])
+        },
     },
     Property {
         name: "border-radius",
         expectation: FOUR_RADII,
-        parse: |tokens, input| {
-            let radii = four_values(input, |value| radius(tokens, value))?;
+        parse: |context, input| {
+            let radii = four_values(input, |value| radius(context.tokens, value))?;
             Ok(Corner::ALL
                 .into_iter()
                 .zip(radii)
@@ -189,43 +199,48 @@ pub(crate) const PROPERTIES: &[Property] = &[
     Property {
         name: "border-top-left-radius",
         expectation: RADIUS,
-        parse: |tokens, input| Ok(vec![Declaration::BorderRadius(Corner::TopLeft, radius(tokens, input)?)]),
+        parse: |context, input| {
+            Ok(vec![Declaration::BorderRadius(
+                Corner::TopLeft,
+                radius(context.tokens, input)?,
+            )])
+        },
     },
     Property {
         name: "border-top-right-radius",
         expectation: RADIUS,
-        parse: |tokens, input| {
+        parse: |context, input| {
             Ok(vec![Declaration::BorderRadius(
                 Corner::TopRight,
-                radius(tokens, input)?,
+                radius(context.tokens, input)?,
             )])
         },
     },
     Property {
         name: "border-bottom-right-radius",
         expectation: RADIUS,
-        parse: |tokens, input| {
+        parse: |context, input| {
             Ok(vec![Declaration::BorderRadius(
                 Corner::BottomRight,
-                radius(tokens, input)?,
+                radius(context.tokens, input)?,
             )])
         },
     },
     Property {
         name: "border-bottom-left-radius",
         expectation: RADIUS,
-        parse: |tokens, input| {
+        parse: |context, input| {
             Ok(vec![Declaration::BorderRadius(
                 Corner::BottomLeft,
-                radius(tokens, input)?,
+                radius(context.tokens, input)?,
             )])
         },
     },
     Property {
         name: "outline",
         expectation: LINE,
-        parse: |tokens, input| {
-            let line = line(tokens, input)?;
+        parse: |context, input| {
+            let line = line(context.tokens, input)?;
             Ok(vec![
                 Declaration::OutlineWidth(line.width),
                 Declaration::OutlineStyle(line.style),
@@ -236,9 +251,10 @@ pub(crate) const PROPERTIES: &[Property] = &[
     Property {
         name: "outline-width",
         expectation: WIDTH,
-        parse: |tokens, input| {
+        parse: |context, input| {
             Ok(vec![Declaration::OutlineWidth(length::non_negative_length(
-                tokens, input,
+                context.tokens,
+                input,
             )?)])
         },
     },
@@ -250,12 +266,12 @@ pub(crate) const PROPERTIES: &[Property] = &[
     Property {
         name: "outline-color",
         expectation: COLOR,
-        parse: |tokens, input| Ok(vec![Declaration::OutlineColor(color::parse(tokens, input)?)]),
+        parse: |context, input| Ok(vec![Declaration::OutlineColor(color::parse(context.tokens, input)?)]),
     },
     Property {
         name: "outline-offset",
         expectation: "a length",
-        parse: |tokens, input| Ok(vec![Declaration::OutlineOffset(length::length(tokens, input)?)]),
+        parse: |context, input| Ok(vec![Declaration::OutlineOffset(length::length(context.tokens, input)?)]),
     },
 ];
 

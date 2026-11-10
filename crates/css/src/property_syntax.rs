@@ -8,6 +8,7 @@ pub(crate) mod gradient;
 pub(crate) mod grid;
 pub(crate) mod layout;
 pub(crate) mod length;
+pub(crate) mod motion;
 pub(crate) mod text;
 pub(crate) mod track;
 
