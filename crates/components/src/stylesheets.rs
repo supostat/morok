@@ -3,7 +3,7 @@ use crate::stylesheet_source::StylesheetSource;
 /// The stylesheets of the components, in the order the build compiles them: the order of
 /// their paths. A host that compiles them first, in this order, and its own stylesheets after
 /// them gets a style sheet in which every class of the kit has the ID the components know it by.
-pub const STYLESHEETS: [StylesheetSource; 13] = [
+pub const STYLESHEETS: [StylesheetSource; 16] = [
     StylesheetSource {
         path: "crates/components/src/button.css",
         text: include_str!("button.css"),
@@ -15,6 +15,10 @@ pub const STYLESHEETS: [StylesheetSource; 13] = [
     StylesheetSource {
         path: "crates/components/src/icon_button.css",
         text: include_str!("icon_button.css"),
+    },
+    StylesheetSource {
+        path: "crates/components/src/list.css",
+        text: include_str!("list.css"),
     },
     StylesheetSource {
         path: "crates/components/src/progress_bar.css",
@@ -49,11 +53,19 @@ pub const STYLESHEETS: [StylesheetSource; 13] = [
         text: include_str!("switch.css"),
     },
     StylesheetSource {
+        path: "crates/components/src/tabs.css",
+        text: include_str!("tabs.css"),
+    },
+    StylesheetSource {
         path: "crates/components/src/text_area.css",
         text: include_str!("text_area.css"),
     },
     StylesheetSource {
         path: "crates/components/src/text_field.css",
         text: include_str!("text_field.css"),
+    },
+    StylesheetSource {
+        path: "crates/components/src/tree.css",
+        text: include_str!("tree.css"),
     },
 ];

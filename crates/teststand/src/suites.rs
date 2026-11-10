@@ -1,6 +1,7 @@
 //! The suites of the stand, by name.
 
 mod button;
+mod collections;
 mod controls;
 mod effects;
 mod icons_images;
@@ -15,7 +16,7 @@ use morok_css::SourceFile;
 use crate::suite::Suite;
 
 /// The names of all suites.
-pub const NAMES: [&str; 8] = [
+pub const NAMES: [&str; 9] = [
     primitives::NAME,
     effects::NAME,
     icons_images::NAME,
@@ -24,6 +25,7 @@ pub const NAMES: [&str; 8] = [
     text_fields::NAME,
     controls::NAME,
     scroll::NAME,
+    collections::NAME,
 ];
 
 pub fn named(name: &str) -> Option<Suite> {
@@ -36,6 +38,7 @@ pub fn named(name: &str) -> Option<Suite> {
         text_fields::NAME => Some(text_fields::suite()),
         controls::NAME => Some(controls::suite()),
         scroll::NAME => Some(scroll::suite()),
+        collections::NAME => Some(collections::suite()),
         _ => None,
     }
 }

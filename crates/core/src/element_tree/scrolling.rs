@@ -97,6 +97,16 @@ impl ElementTree {
         self.request_frame();
     }
 
+    /// The size of the padding box of a `Scroll` element, which its content scrolls in, as the
+    /// last layout found it.
+    ///
+    /// # Panics
+    ///
+    /// When the element is not of the `Scroll` role.
+    pub fn scroll_viewport(&self, element: ElementId) -> Size {
+        self.scroll_state(element).viewport
+    }
+
     /// The overlay scroll bars of a `Scroll` element, if it was given any.
     ///
     /// # Panics

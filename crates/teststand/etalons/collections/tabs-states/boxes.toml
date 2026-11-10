@@ -1,0 +1,419 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 210.0
+
+[[light]]
+node = "#1 .tabs-stage"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 208.0
+
+[[light]]
+node = "#2 .tabs"
+x = 16.0
+y = 16.0
+width = 328.0
+height = 32.0
+
+[[light]]
+node = "#3 .tab"
+x = 16.0
+y = 16.0
+width = 72.07031
+height = 32.0
+
+[[light]]
+node = "#4 text"
+x = 28.0
+y = 23.5
+width = 48.070313
+height = 15.0
+
+[[light]]
+node = "#5 .tab"
+x = 92.07031
+y = 16.0
+width = 72.703125
+height = 32.0
+
+[[light]]
+node = "#6 text"
+x = 104.07031
+y = 23.5
+width = 48.703125
+height = 15.0
+
+[[light]]
+node = "#7 .tab"
+x = 168.77344
+y = 16.0
+width = 76.14844
+height = 32.0
+
+[[light]]
+node = "#8 text"
+x = 180.77344
+y = 23.5
+width = 52.148438
+height = 15.0
+
+[[light]]
+node = "#9 .tabs"
+x = 16.0
+y = 64.0
+width = 328.0
+height = 32.0
+
+[[light]]
+node = "#10 .tab"
+x = 16.0
+y = 64.0
+width = 72.07031
+height = 32.0
+
+[[light]]
+node = "#11 text"
+x = 28.0
+y = 71.5
+width = 48.070313
+height = 15.0
+
+[[light]]
+node = "#12 .tab"
+x = 92.07031
+y = 64.0
+width = 72.703125
+height = 32.0
+
+[[light]]
+node = "#13 text"
+x = 104.07031
+y = 71.5
+width = 48.703125
+height = 15.0
+
+[[light]]
+node = "#14 .tab"
+x = 168.77344
+y = 64.0
+width = 76.14844
+height = 32.0
+
+[[light]]
+node = "#15 text"
+x = 180.77344
+y = 71.5
+width = 52.148438
+height = 15.0
+
+[[light]]
+node = "#16 .tabs"
+x = 16.0
+y = 112.0
+width = 328.0
+height = 32.0
+
+[[light]]
+node = "#17 .tab"
+x = 16.0
+y = 112.0
+width = 72.07031
+height = 32.0
+
+[[light]]
+node = "#18 text"
+x = 28.0
+y = 119.5
+width = 48.070313
+height = 15.0
+
+[[light]]
+node = "#19 .tab"
+x = 92.07031
+y = 112.0
+width = 72.703125
+height = 32.0
+
+[[light]]
+node = "#20 text"
+x = 104.07031
+y = 119.5
+width = 48.703125
+height = 15.0
+
+[[light]]
+node = "#21 .tab"
+x = 168.77344
+y = 112.0
+width = 76.14844
+height = 32.0
+
+[[light]]
+node = "#22 text"
+x = 180.77344
+y = 119.5
+width = 52.148438
+height = 15.0
+
+[[light]]
+node = "#23 .tabs"
+x = 16.0
+y = 160.0
+width = 328.0
+height = 32.0
+
+[[light]]
+node = "#24 .tab"
+x = 16.0
+y = 160.0
+width = 72.07031
+height = 32.0
+
+[[light]]
+node = "#25 text"
+x = 28.0
+y = 167.5
+width = 48.070313
+height = 15.0
+
+[[light]]
+node = "#26 .tab"
+x = 92.07031
+y = 160.0
+width = 72.703125
+height = 32.0
+
+[[light]]
+node = "#27 text"
+x = 104.07031
+y = 167.5
+width = 48.703125
+height = 15.0
+
+[[light]]
+node = "#28 .tab"
+x = 168.77344
+y = 160.0
+width = 76.14844
+height = 32.0
+
+[[light]]
+node = "#29 text"
+x = 180.77344
+y = 167.5
+width = 52.148438
+height = 15.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 210.0
+
+[[dark]]
+node = "#1 .tabs-stage"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 208.0
+
+[[dark]]
+node = "#2 .tabs"
+x = 16.0
+y = 16.0
+width = 328.0
+height = 32.0
+
+[[dark]]
+node = "#3 .tab"
+x = 16.0
+y = 16.0
+width = 72.07031
+height = 32.0
+
+[[dark]]
+node = "#4 text"
+x = 28.0
+y = 23.5
+width = 48.070313
+height = 15.0
+
+[[dark]]
+node = "#5 .tab"
+x = 92.07031
+y = 16.0
+width = 72.703125
+height = 32.0
+
+[[dark]]
+node = "#6 text"
+x = 104.07031
+y = 23.5
+width = 48.703125
+height = 15.0
+
+[[dark]]
+node = "#7 .tab"
+x = 168.77344
+y = 16.0
+width = 76.14844
+height = 32.0
+
+[[dark]]
+node = "#8 text"
+x = 180.77344
+y = 23.5
+width = 52.148438
+height = 15.0
+
+[[dark]]
+node = "#9 .tabs"
+x = 16.0
+y = 64.0
+width = 328.0
+height = 32.0
+
+[[dark]]
+node = "#10 .tab"
+x = 16.0
+y = 64.0
+width = 72.07031
+height = 32.0
+
+[[dark]]
+node = "#11 text"
+x = 28.0
+y = 71.5
+width = 48.070313
+height = 15.0
+
+[[dark]]
+node = "#12 .tab"
+x = 92.07031
+y = 64.0
+width = 72.703125
+height = 32.0
+
+[[dark]]
+node = "#13 text"
+x = 104.07031
+y = 71.5
+width = 48.703125
+height = 15.0
+
+[[dark]]
+node = "#14 .tab"
+x = 168.77344
+y = 64.0
+width = 76.14844
+height = 32.0
+
+[[dark]]
+node = "#15 text"
+x = 180.77344
+y = 71.5
+width = 52.148438
+height = 15.0
+
+[[dark]]
+node = "#16 .tabs"
+x = 16.0
+y = 112.0
+width = 328.0
+height = 32.0
+
+[[dark]]
+node = "#17 .tab"
+x = 16.0
+y = 112.0
+width = 72.07031
+height = 32.0
+
+[[dark]]
+node = "#18 text"
+x = 28.0
+y = 119.5
+width = 48.070313
+height = 15.0
+
+[[dark]]
+node = "#19 .tab"
+x = 92.07031
+y = 112.0
+width = 72.703125
+height = 32.0
+
+[[dark]]
+node = "#20 text"
+x = 104.07031
+y = 119.5
+width = 48.703125
+height = 15.0
+
+[[dark]]
+node = "#21 .tab"
+x = 168.77344
+y = 112.0
+width = 76.14844
+height = 32.0
+
+[[dark]]
+node = "#22 text"
+x = 180.77344
+y = 119.5
+width = 52.148438
+height = 15.0
+
+[[dark]]
+node = "#23 .tabs"
+x = 16.0
+y = 160.0
+width = 328.0
+height = 32.0
+
+[[dark]]
+node = "#24 .tab"
+x = 16.0
+y = 160.0
+width = 72.07031
+height = 32.0
+
+[[dark]]
+node = "#25 text"
+x = 28.0
+y = 167.5
+width = 48.070313
+height = 15.0
+
+[[dark]]
+node = "#26 .tab"
+x = 92.07031
+y = 160.0
+width = 72.703125
+height = 32.0
+
+[[dark]]
+node = "#27 text"
+x = 104.07031
+y = 167.5
+width = 48.703125
+height = 15.0
+
+[[dark]]
+node = "#28 .tab"
+x = 168.77344
+y = 160.0
+width = 76.14844
+height = 32.0
+
+[[dark]]
+node = "#29 text"
+x = 180.77344
+y = 167.5
+width = 52.148438
+height = 15.0

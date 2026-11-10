@@ -1,0 +1,25 @@
+/* The stage of the collection cases: lists and trees in bordered views side by side, and
+   strips of tabs one under another. */
+
+.collections-stage {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background-color: var(--color-bg);
+}
+
+.collections-stage > .scroll-view {
+  flex-shrink: 0;
+  width: 200px;
+  height: 140px;
+  border: 1px solid var(--color-line);
+  background-color: var(--color-surface);
+}
+
+.tabs-stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background-color: var(--color-bg);
+}

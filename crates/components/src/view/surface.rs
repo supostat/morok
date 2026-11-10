@@ -3,13 +3,14 @@ use std::ops::Range;
 
 use morok_core::accesskit::ActionRequest;
 use morok_core::{ElementId, ElementTree, IconId, KeyEvent, PointerInput, ScrollInput, TextCommand};
-use morok_reactive::{Runtime, Scope};
+use morok_reactive::{Runtime, Scope, Signal};
 use morok_style::{StyleSheet, Theme};
 
 use crate::kit_icon::KitIcon;
 use crate::view::child_fragments::ChildFragments;
 use crate::view::event_dispatch::EventDispatch;
 use crate::view::event_handlers::EventHandlers;
+use crate::view::scroll_area::ScrollArea;
 use crate::view::surfaces::Surfaces;
 
 /// One surface as the components see it: its element tree and what they registered for its
@@ -29,6 +30,8 @@ pub struct Surface {
     kit_icon_elements: HashMap<ElementId, KitIcon>,
     /// Scratch space for the elements of a subtree that is removed.
     removed_elements: Vec<ElementId>,
+    /// The `Scroll` elements whose scroll components follow, with the signals they follow it by.
+    scroll_followers: Vec<(ElementId, Signal<ScrollArea>)>,
 }
 
 impl Surface {
@@ -41,6 +44,7 @@ impl Surface {
             kit_icon_ids,
             kit_icon_elements: HashMap::new(),
             removed_elements: Vec::new(),
+            scroll_followers: Vec::new(),
         }
     }
 
@@ -134,6 +138,31 @@ impl Surface {
         self.tree.refresh_hover(&mut dispatch);
     }
 
+    /// Writes how far each followed `Scroll` element is scrolled, and how large its viewport is,
+    /// to the signal that follows it: what the input since the last frame and the last frame
+    /// itself did to them. Called at the start of every frame, before its flush.
+    pub fn follow_scrolls(&mut self, runtime: &mut Runtime<Surfaces>) {
+        for (scroller, area) in &self.scroll_followers {
+            let now = ScrollArea {
+                offset: self.tree.scroll_offset(*scroller),
+                viewport: self.tree.scroll_viewport(*scroller),
+            };
+            if runtime.untracked(|runtime| runtime.get(*area)) != now {
+                runtime.set(*area, now);
+            }
+        }
+    }
+
+    /// Starts to follow the scroll of a `Scroll` element by a signal.
+    pub(crate) fn follow_scroll(&mut self, runtime: &mut Runtime<Surfaces>, scroller: ElementId) -> Signal<ScrollArea> {
+        let area = runtime.signal(ScrollArea {
+            offset: self.tree.scroll_offset(scroller),
+            viewport: self.tree.scroll_viewport(scroller),
+        });
+        self.scroll_followers.push((scroller, area));
+        area
+    }
+
     /// Takes a scroll of the wheel or the trackpad over the surface.
     pub fn scroll_input(&mut self, input: &ScrollInput) {
         self.tree.scroll_input(input);
@@ -175,5 +204,7 @@ impl Surface {
         }
         self.tree.remove(root);
         self.event_handlers.forget_shortcuts_of_removed_elements(&self.tree);
+        let tree = &self.tree;
+        self.scroll_followers.retain(|(scroller, _)| tree.contains(*scroller));
     }
 }

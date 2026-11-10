@@ -1,0 +1,28 @@
+/* A list: rows of text in a view that scrolls, the selected rows marked, in every state. */
+
+.list:focus-visible {
+  outline: 2px solid var(--color-focus);
+}
+
+.list-row {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 var(--space-3);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  white-space: nowrap;
+}
+
+.list-row:hover {
+  background-color: var(--color-surface-2);
+}
+
+.list-row:active {
+  background-color: var(--color-surface-sunken);
+}
+
+.list-row:checked {
+  background-color: var(--color-selection);
+}

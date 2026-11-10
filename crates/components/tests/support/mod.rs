@@ -176,6 +176,9 @@ impl Stage {
 
     /// Runs one frame of the surface: the effects that wait, then style, layout and display list.
     pub(crate) fn frame(&mut self) {
+        self.surfaces
+            .surface_mut(self.surface)
+            .follow_scrolls(&mut self.runtime);
         self.flush();
         self.time += Duration::from_millis(16);
         let tree = self.surfaces.surface_mut(self.surface).tree_mut();

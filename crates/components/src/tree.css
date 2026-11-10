@@ -1,0 +1,46 @@
+/* A tree: items in levels, each with the chevron that opens it, the selected item marked, in
+   every state. A row stands in from the edge by its level. */
+
+.tree:focus-visible {
+  outline: 2px solid var(--color-focus);
+}
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 100%;
+  padding-right: var(--space-3);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  white-space: nowrap;
+}
+
+.tree-row:hover {
+  background-color: var(--color-surface-2);
+}
+
+.tree-row:active {
+  background-color: var(--color-surface-sunken);
+}
+
+.tree-row:checked {
+  background-color: var(--color-selection);
+}
+
+.tree-chevron {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: var(--color-text-3);
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+
+.tree-chevron.expanded {
+  transform: rotate(90deg);
+}
+
+.tree-chevron.leaf {
+  opacity: 0;
+}

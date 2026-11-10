@@ -10,6 +10,7 @@ use morok_style::{Class, Declaration, States, StyleSheet, Theme};
 use crate::accessibility::accessibility_action::AccessibilityAction;
 use crate::accessibility::accessibility_pass::AccessibilityPass;
 use crate::accessibility::accessible_actions::AccessibleActions;
+use crate::accessibility::accessible_item::AccessibleItem;
 use crate::accessibility::accessible_value::AccessibleValue;
 use crate::accessibility::node_identity::element_of;
 use crate::accessibility::semantics::Semantics;
@@ -1061,6 +1062,17 @@ impl ElementTree {
     /// When the element has no accessible role.
     pub fn set_accessible_toggle(&mut self, element: ElementId, is_toggle: bool) {
         let changes = self.semantics_mut(element).set_toggle(is_toggle);
+        self.accessibility_changed(element, changes);
+    }
+
+    /// Says where the node of the element stands among the items of a list, a tree or a strip
+    /// of tabs.
+    ///
+    /// # Panics
+    ///
+    /// When the element has no accessible role.
+    pub fn set_accessible_item(&mut self, element: ElementId, item: AccessibleItem) {
+        let changes = self.semantics_mut(element).set_item(item);
         self.accessibility_changed(element, changes);
     }
 

@@ -22,6 +22,7 @@ mod text;
 
 pub use accessibility::accessibility_action::AccessibilityAction;
 pub use accessibility::accessible_actions::AccessibleActions;
+pub use accessibility::accessible_item::AccessibleItem;
 pub use accessibility::accessible_value::AccessibleValue;
 pub use accessibility::numeric_value::NumericValue;
 pub use accesskit;

@@ -1,9 +1,10 @@
 use morok_core::{ElementId, ElementTree, Role};
-use morok_reactive::{Effect, Runtime, Scope};
+use morok_reactive::{Effect, Runtime, Scope, Signal};
 
 use crate::kit_icon::KitIcon;
 use crate::view::element_builder::ElementBuilder;
 use crate::view::property::Property;
+use crate::view::scroll_area::ScrollArea;
 use crate::view::surface::Surface;
 use crate::view::surface_id::SurfaceId;
 use crate::view::surfaces::Surfaces;
@@ -69,6 +70,11 @@ impl<'a> Mount<'a> {
     pub fn scroll(&mut self) -> ElementBuilder<'_, 'a> {
         let element = self.surface.tree.create(Role::Scroll);
         self.build(element)
+    }
+
+    /// A signal that follows the scroll of a `Scroll` element of the surface from frame to frame.
+    pub fn follow_scroll(&mut self, scroller: ElementId) -> Signal<ScrollArea> {
+        self.surface.follow_scroll(self.runtime, scroller)
     }
 
     /// Creates one line of text the user edits and builds on it.

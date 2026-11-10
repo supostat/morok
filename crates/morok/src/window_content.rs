@@ -36,10 +36,9 @@ impl SurfaceContent for WindowContent {
     /// the accessibility tree after it.
     fn frame(&mut self, viewport: Size, scale: f32, now: Duration, show: &mut dyn FnMut(&ElementTree)) {
         let state = &mut *self.state.borrow_mut();
-        state
-            .surfaces
-            .surface_mut(self.surface)
-            .refresh_hover(&mut state.runtime);
+        let surface = state.surfaces.surface_mut(self.surface);
+        surface.refresh_hover(&mut state.runtime);
+        surface.follow_scrolls(&mut state.runtime);
         state.flush();
         let tree = state.surfaces.surface_mut(self.surface).tree_mut();
         tree.resolve_styles(now);

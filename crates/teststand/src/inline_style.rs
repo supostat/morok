@@ -1,10 +1,10 @@
 use std::fmt::Write;
 
-use morok_style::{Declaration, LengthPercentage, LengthPercentageAuto, Side};
+use morok_style::{Declaration, LengthPercentage, LengthPercentageAuto, Position, Side};
 
 /// The declarations set on an element directly, written as the value of its `style` attribute.
-/// The stand writes the geometry a component places by its state: sizes and insets in pixels
-/// and percentages.
+/// The stand writes the geometry a component places by its state: positions, sizes, insets and
+/// paddings in pixels and percentages.
 ///
 /// # Panics
 ///
@@ -13,15 +13,20 @@ pub(crate) fn style_attribute(declarations: &[Declaration]) -> String {
     let mut style = String::new();
     for declaration in declarations {
         let (property, value) = match declaration {
-            Declaration::Width(value) => ("width", value),
-            Declaration::Height(value) => ("height", value),
-            Declaration::Inset(side, value) => (inset_property(*side), value),
+            Declaration::Width(value) => ("width", css_length(value)),
+            Declaration::Height(value) => ("height", css_length(value)),
+            Declaration::Inset(side, value) => (inset_property(*side), css_length(value)),
+            Declaration::Padding(side, value) => (
+                padding_property(*side),
+                css_length(&LengthPercentageAuto::LengthPercentage(value.clone())),
+            ),
+            Declaration::Position(position) => ("position", String::from(position_keyword(*position))),
             unwritten => panic!("the stand writes no inline CSS for {unwritten:?}"),
         };
         if !style.is_empty() {
             style.push(' ');
         }
-        let _ = write!(style, "{property}: {};", css_length(value));
+        let _ = write!(style, "{property}: {value};");
     }
     style
 }
@@ -32,6 +37,23 @@ const fn inset_property(side: Side) -> &'static str {
         Side::Right => "right",
         Side::Bottom => "bottom",
         Side::Left => "left",
+    }
+}
+
+const fn padding_property(side: Side) -> &'static str {
+    match side {
+        Side::Top => "padding-top",
+        Side::Right => "padding-right",
+        Side::Bottom => "padding-bottom",
+        Side::Left => "padding-left",
+    }
+}
+
+const fn position_keyword(position: Position) -> &'static str {
+    match position {
+        Position::Relative => "relative",
+        Position::Absolute => "absolute",
+        Position::Sticky => "sticky",
     }
 }
 

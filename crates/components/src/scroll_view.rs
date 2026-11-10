@@ -1,9 +1,9 @@
 use std::fmt::{Debug, Formatter, Result};
 
 use morok_core::accesskit::Role as AccessibleRole;
-use morok_core::{ElementId, Focusability, ScrollBars};
+use morok_core::{ElementId, Focusability};
 
-use crate::styles::CLASSES;
+use crate::scroll_frame::ScrollFrame;
 use crate::view::{Mount, Property};
 
 type Content = Box<dyn FnOnce(&mut Mount<'_>) -> ElementId>;
@@ -38,43 +38,13 @@ impl ScrollView {
     pub fn mount(self, mount: &mut Mount<'_>) -> ElementId {
         let Self { content, label } = self;
         let content = content(mount);
-        let viewport = mount
-            .scroll()
-            .class(CLASSES.scroll_viewport)
+        let frame = ScrollFrame::mount(mount, content);
+        mount
+            .build(frame.viewport)
             .focusable(Focusability::Focusable)
             .accessible_role(AccessibleRole::ScrollView)
-            .accessible_name(label)
-            .child(content)
-            .id();
-        let vertical_thumb = mount.element().class(CLASSES.scroll_thumb).id();
-        let vertical_bar = mount
-            .element()
-            .class(CLASSES.scroll_bar)
-            .class(CLASSES.vertical)
-            .child(vertical_thumb)
-            .id();
-        let horizontal_thumb = mount.element().class(CLASSES.scroll_thumb).id();
-        let horizontal_bar = mount
-            .element()
-            .class(CLASSES.scroll_bar)
-            .class(CLASSES.horizontal)
-            .child(horizontal_thumb)
-            .id();
-        mount.tree().set_scroll_bars(
-            viewport,
-            ScrollBars {
-                vertical: Some(vertical_thumb),
-                horizontal: Some(horizontal_thumb),
-                showing: CLASSES.showing,
-            },
-        );
-        mount
-            .element()
-            .class(CLASSES.scroll_view)
-            .child(viewport)
-            .child(vertical_bar)
-            .child(horizontal_bar)
-            .id()
+            .accessible_name(label);
+        frame.view
     }
 }
 

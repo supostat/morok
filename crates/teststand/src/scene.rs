@@ -53,6 +53,9 @@ impl Scene {
     /// it built. Both sides draw the icons of the kit it shows from their SVG.
     pub fn mount(&mut self, parent: ElementId, component: impl FnOnce(&mut Mount<'_>) -> ElementId) -> ElementId {
         let mounted = self.surfaces.mount(&mut self.runtime, self.surface, parent, component);
+        // What the component shows by its signals — rows of a list among them — is built in
+        // the flush.
+        self.flush();
         let surface = self.surfaces.surface(self.surface);
         let mut unvisited = vec![mounted];
         while let Some(element) = unvisited.pop() {
@@ -61,7 +64,6 @@ impl Scene {
             }
             unvisited.extend(surface.tree().children(element));
         }
-        self.flush();
         mounted
     }
 
@@ -203,6 +205,9 @@ impl Scene {
     /// Runs the frame at `now`, counted from the first frame, on a surface of `viewport` at
     /// the scale of the stand: the effects that wait, then the stages of the tree.
     pub(crate) fn frame(&mut self, viewport: Size, text_shaper: &mut dyn TextShaper, now: Duration) {
+        self.surfaces
+            .surface_mut(self.surface)
+            .follow_scrolls(&mut self.runtime);
         self.flush();
         let tree = self.tree_mut();
         tree.resolve_styles(now);

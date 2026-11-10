@@ -1,0 +1,58 @@
+/* A strip of tabs: labels side by side over a line, the selected one underlined in the
+   accent, in every state. */
+
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--color-line);
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  margin-bottom: -1px;
+  padding: 0 var(--space-3);
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-2);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  font-weight: var(--text-weight-medium);
+  transition:
+    color var(--motion-fast),
+    border-color var(--motion-fast);
+}
+
+.tab:hover {
+  color: var(--color-text);
+}
+
+.tab:active {
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text);
+}
+
+.tab:checked {
+  border-bottom-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--color-focus);
+}
+
+.tab:disabled {
+  opacity: 0.45;
+}
+
+/* The tabs of a disabled strip answer neither the pointer over them nor a press. */
+.tab:disabled:hover,
+.tab:disabled:active {
+  background-color: transparent;
+  color: var(--color-text-2);
+}
+
+.tab:checked:disabled:hover,
+.tab:checked:disabled:active {
+  color: var(--color-text);
+}

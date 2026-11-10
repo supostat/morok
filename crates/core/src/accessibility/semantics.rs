@@ -1,6 +1,7 @@
 use accesskit::{Action, Affine, Node, NodeId, Rect, Role, Toggled};
 
 use crate::accessibility::accessible_actions::AccessibleActions;
+use crate::accessibility::accessible_item::AccessibleItem;
 use crate::accessibility::accessible_value::AccessibleValue;
 use crate::accessibility::node_facts::NodeFacts;
 use crate::accessibility::published_node::PublishedNode;
@@ -16,6 +17,7 @@ pub(crate) struct Semantics {
     actions: AccessibleActions,
     /// Whether the node tells if the element is checked although its role does not say so.
     is_toggle: bool,
+    item: AccessibleItem,
     /// How many times any of the above, or the text of the element, was changed.
     revision: u64,
     pub(crate) published: PublishedNode,
@@ -31,6 +33,7 @@ impl Semantics {
             value: StoredValue::None,
             actions: AccessibleActions::NONE,
             is_toggle: false,
+            item: AccessibleItem::default(),
             revision: 0,
             published: PublishedNode::default(),
             children_scratch: Vec::new(),
@@ -79,6 +82,12 @@ impl Semantics {
         self.note(changes)
     }
 
+    pub(crate) fn set_item(&mut self, item: AccessibleItem) -> bool {
+        let changes = self.item != item;
+        self.item = item;
+        self.note(changes)
+    }
+
     pub(crate) fn set_toggle(&mut self, is_toggle: bool) -> bool {
         let changes = self.is_toggle != is_toggle;
         self.is_toggle = is_toggle;
@@ -95,6 +104,12 @@ impl Semantics {
             self.revision += 1;
         }
         changes
+    }
+
+    /// Whether the node tells if the element is selected, by its checked state: an option of a
+    /// list, an item of a tree, a row, a tab.
+    fn is_selectable(&self) -> bool {
+        matches!(self.role, Role::ListBoxOption | Role::TreeItem | Role::Row | Role::Tab)
     }
 
     /// Whether the node tells if the element is checked: the checked state is a part of what
@@ -140,6 +155,21 @@ impl Semantics {
         }
         if self.toggles() {
             node.set_toggled(Toggled::from(facts.is_checked));
+        }
+        if self.is_selectable() {
+            node.set_selected(facts.is_checked);
+        }
+        if let Some(level) = self.item.level {
+            node.set_level(level);
+        }
+        if let Some(expanded) = self.item.expanded {
+            node.set_expanded(expanded);
+        }
+        if let Some(position) = self.item.position_in_set {
+            node.set_position_in_set(position);
+        }
+        if let Some(size) = self.item.size_of_set {
+            node.set_size_of_set(size);
         }
         if facts.takes_focus {
             node.add_action(Action::Focus);

@@ -1,6 +1,7 @@
 pub(crate) mod accessibility_action;
 pub(crate) mod accessibility_pass;
 pub(crate) mod accessible_actions;
+pub(crate) mod accessible_item;
 pub(crate) mod accessible_value;
 pub(crate) mod node_facts;
 pub(crate) mod node_identity;

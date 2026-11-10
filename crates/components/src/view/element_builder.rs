@@ -1,7 +1,7 @@
 use morok_core::accesskit::Role as AccessibleRole;
 use morok_core::{
-    AccessibleActions, AccessibleValue, ElementId, ElementTree, Focusability, KeyChord, NumericValue, Propagation,
-    ShortcutScope,
+    AccessibleActions, AccessibleItem, AccessibleValue, ElementId, ElementTree, Focusability, KeyChord, NumericValue,
+    Propagation, ShortcutScope,
 };
 use morok_reactive::{Runtime, Signal, Source};
 use morok_style::{Class, Declaration, States};
@@ -116,6 +116,18 @@ impl ElementBuilder<'_, '_> {
     pub fn accessible_number(&mut self, number: impl Into<Property<NumericValue>>) -> &mut Self {
         self.bind(number.into(), |tree, element, number| {
             tree.set_accessible_value(element, AccessibleValue::Number(*number));
+        })
+    }
+
+    /// Says where the node of the element stands among the items of a list, a tree or a strip
+    /// of tabs.
+    ///
+    /// # Panics
+    ///
+    /// When the element has no accessible role.
+    pub fn accessible_item(&mut self, item: impl Into<Property<AccessibleItem>>) -> &mut Self {
+        self.bind(item.into(), |tree, element, item| {
+            tree.set_accessible_item(element, *item);
         })
     }
 
