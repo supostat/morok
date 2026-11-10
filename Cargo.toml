@@ -3,6 +3,7 @@ resolver = "3"
 members = [
     "crates/style",
     "crates/css",
+    "crates/reactive",
     "crates/core",
     "crates/platform",
     "crates/teststand",
@@ -20,6 +21,7 @@ repository = "https://github.com/supostat/morok"
 [workspace.dependencies]
 morok-style = { path = "crates/style", version = "=0.1.0" }
 morok-css = { path = "crates/css", version = "=0.1.0" }
+morok-reactive = { path = "crates/reactive", version = "=0.1.0" }
 morok-core = { path = "crates/core", version = "=0.1.0" }
 morok-platform = { path = "crates/platform", version = "=0.1.0" }
 bytemuck = { version = "=1.25.2", features = ["derive"] }
