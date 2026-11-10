@@ -40,14 +40,14 @@ impl SceneContent {
 }
 
 impl SurfaceContent for SceneContent {
-    fn frame(&mut self, viewport: Size, scale: f32, now: Duration) -> &ElementTree {
+    fn frame(&mut self, viewport: Size, scale: f32, now: Duration, show: &mut dyn FnMut(&ElementTree)) {
         let tree = self.scene_tree.tree_mut();
         tree.resolve_styles(now);
         tree.compute_layout(viewport, scale, &mut self.text_shaper);
         tree.build_display_list();
+        show(tree);
         self.frames_run += 1;
         self.scene.change(self.frames_run, tree);
-        self.scene_tree.tree()
     }
 
     fn color_scheme_changed(&mut self, color_scheme: ColorScheme) {

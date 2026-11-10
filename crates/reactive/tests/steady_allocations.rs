@@ -46,7 +46,7 @@ const EFFECTS: i64 = 64;
 /// A diamond over one signal read by many effects, a branch that switches its source every
 /// round, and an effect whose write wakes another effect in the same flush.
 fn main() {
-    let mut runtime = Runtime::new();
+    let mut runtime: Runtime = Runtime::new();
     let total = Rc::new(Cell::new(0_i64));
     let base = runtime.signal(0_i64);
     let other = runtime.signal(0_i64);
@@ -56,14 +56,14 @@ fn main() {
     let sum = runtime.memo(move |runtime| runtime.get(next) + runtime.get(doubled));
     for _ in 0..EFFECTS {
         let total = Rc::clone(&total);
-        runtime.effect(move |runtime| total.set(total.get() + runtime.get(sum)));
+        runtime.effect(move |runtime, ()| total.set(total.get() + runtime.get(sum)));
     }
     let branch_total = Rc::clone(&total);
-    runtime.effect(move |runtime| {
+    runtime.effect(move |runtime, ()| {
         let chosen = if runtime.get(base) % 2 == 0 { other } else { mirror };
         branch_total.set(branch_total.get() + runtime.get(chosen));
     });
-    runtime.effect(move |runtime| {
+    runtime.effect(move |runtime, ()| {
         let value = runtime.get(base);
         runtime.set(mirror, value);
     });
@@ -71,7 +71,7 @@ fn main() {
     let round = |runtime: &mut Runtime, value: i64| {
         runtime.set(base, value);
         runtime.set(other, -value);
-        runtime.flush().expect("the graph has no cycle");
+        runtime.flush(&mut ()).expect("the graph has no cycle");
     };
     for value in 0..WARM_UP_ROUNDS {
         round(&mut runtime, value);

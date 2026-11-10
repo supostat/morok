@@ -6,6 +6,8 @@ members = [
     "crates/reactive",
     "crates/core",
     "crates/platform",
+    "crates/components",
+    "crates/morok",
     "crates/teststand",
     "crates/bench",
     "crates/xtask",
@@ -24,6 +26,8 @@ morok-css = { path = "crates/css", version = "=0.1.0" }
 morok-reactive = { path = "crates/reactive", version = "=0.1.0" }
 morok-core = { path = "crates/core", version = "=0.1.0" }
 morok-platform = { path = "crates/platform", version = "=0.1.0" }
+morok-components = { path = "crates/components", version = "=0.1.0" }
+morok = { path = "crates/morok", version = "=0.1.0" }
 accesskit = "=0.25.2"
 accesskit_macos = "=0.27.2"
 bytemuck = { version = "=1.25.2", features = ["derive"] }

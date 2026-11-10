@@ -4,8 +4,8 @@ use crate::node_id::NodeId;
 use crate::node_state::NodeState;
 
 #[derive(Debug)]
-pub(crate) struct Node {
-    pub(crate) content: NodeContent,
+pub(crate) struct Node<World> {
+    pub(crate) content: NodeContent<World>,
     pub(crate) state: NodeState,
     pub(crate) owner: Option<NodeId>,
     pub(crate) first_child: Option<NodeId>,
@@ -22,8 +22,8 @@ pub(crate) struct Node {
     pub(crate) runs_in_flush: u32,
 }
 
-impl Node {
-    pub(crate) fn new(content: NodeContent, state: NodeState) -> Self {
+impl<World> Node<World> {
+    pub(crate) fn new(content: NodeContent<World>, state: NodeState) -> Self {
         Self {
             content,
             state,

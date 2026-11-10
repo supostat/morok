@@ -1,0 +1,12 @@
+/* The stage of the button cases: a padded surface with the buttons of a case in a row. */
+
+.button-stage {
+  padding: var(--space-4);
+  background-color: var(--color-bg);
+}
+
+.button-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}

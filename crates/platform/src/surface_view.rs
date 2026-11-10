@@ -3,7 +3,7 @@ use std::ffi::c_void;
 use std::rc::Rc;
 use std::time::Duration;
 
-use morok_core::{DisplayList, FrameScheduler, KeyPhase, PointerButton, PointerInputKind, Size};
+use morok_core::{DisplayList, ElementTree, FrameScheduler, KeyPhase, PointerButton, PointerInputKind, Size};
 use morok_style::ColorScheme;
 use objc2::rc::Retained;
 use objc2::runtime::{AnyObject, ProtocolObject};
@@ -468,9 +468,10 @@ impl SurfaceView {
         frame_loop.begin_frame();
         let geometry = self.target_geometry();
         if !geometry.is_empty() {
-            let mut content = self.content().borrow_mut();
-            let tree = content.frame(geometry.viewport, geometry.scale, now);
-            if state.surface_is_stale.get() || !tree.damage().is_empty() {
+            let mut show = |tree: &ElementTree| {
+                if !state.surface_is_stale.get() && tree.damage().is_empty() {
+                    return;
+                }
                 if self.present(tree.display_list(), &geometry) {
                     state.surface_is_stale.set(false);
                     statistics.presented_frames += 1;
@@ -478,7 +479,10 @@ impl SurfaceView {
                     state.surface_is_stale.set(true);
                     frame_loop.request_frame();
                 }
-            }
+            };
+            self.content()
+                .borrow_mut()
+                .frame(geometry.viewport, geometry.scale, now, &mut show);
         }
         state.statistics.set(statistics);
         frame_loop.end_frame();

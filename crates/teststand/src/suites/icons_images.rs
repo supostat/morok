@@ -50,6 +50,7 @@ const OBJECT_FITS: [&str; 5] = ["fill", "contain", "cover", "none", "scale-down"
 pub(crate) fn suite() -> Suite {
     Suite {
         name: NAME,
+        component_stylesheets: Vec::new(),
         stylesheets: vec![SourceFile::new(STYLESHEET_PATH, STYLESHEET)],
         cases: vec![case("icons", 420.0, 200.0, icons), case("images", 580.0, 260.0, images)],
     }

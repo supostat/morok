@@ -9,9 +9,9 @@ use morok_style::ColorScheme;
 pub trait SurfaceContent {
     /// Runs the stages of a frame for a surface of `viewport` shown with `scale` device pixels
     /// to a CSS pixel at `now`, the time the frame reaches the screen on the clock of the
-    /// display, and returns the tree they ran on. The window draws the display list of the tree
-    /// when the frame damaged anything.
-    fn frame(&mut self, viewport: Size, scale: f32, now: Duration) -> &ElementTree;
+    /// display, and hands the tree they ran on to `show`, once. The window draws the display
+    /// list of the tree when the frame damaged anything.
+    fn frame(&mut self, viewport: Size, scale: f32, now: Duration, show: &mut dyn FnMut(&ElementTree));
 
     /// The system or the application switched the appearance the surface is shown in.
     fn color_scheme_changed(&mut self, color_scheme: ColorScheme);

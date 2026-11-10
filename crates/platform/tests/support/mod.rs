@@ -135,13 +135,13 @@ impl WindowScene {
 }
 
 impl SurfaceContent for WindowScene {
-    fn frame(&mut self, viewport: Size, scale: f32, now: Duration) -> &ElementTree {
+    fn frame(&mut self, viewport: Size, scale: f32, now: Duration, show: &mut dyn FnMut(&ElementTree)) {
         self.frame_viewports.push(viewport);
         self.scene.viewport = viewport;
         self.scene.scale = scale;
         self.scene.time = now;
         self.scene.frame();
-        &self.scene.tree
+        show(&self.scene.tree);
     }
 
     fn color_scheme_changed(&mut self, color_scheme: ColorScheme) {

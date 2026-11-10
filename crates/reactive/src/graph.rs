@@ -7,13 +7,21 @@ const RETIRED_HANDLE: &str = "a handle is not used after the scope that owns it 
 
 /// The structure of the signal graph: the nodes, the dependencies between readers and
 /// sources, and the ownership tree along which nodes are disposed.
-#[derive(Debug, Default)]
-pub(crate) struct Graph {
-    nodes: Arena,
+#[derive(Debug)]
+pub(crate) struct Graph<World> {
+    nodes: Arena<World>,
 }
 
-impl Graph {
-    pub(crate) fn insert(&mut self, mut node: Node, owner: Option<NodeId>) -> NodeId {
+impl<World> Default for Graph<World> {
+    fn default() -> Self {
+        Self {
+            nodes: Arena::default(),
+        }
+    }
+}
+
+impl<World> Graph<World> {
+    pub(crate) fn insert(&mut self, mut node: Node<World>, owner: Option<NodeId>) -> NodeId {
         let first_sibling = owner.and_then(|owner| self.node(owner).first_child);
         node.owner = owner;
         node.next_sibling = first_sibling;
@@ -31,21 +39,21 @@ impl Graph {
         self.nodes.get(id).is_some()
     }
 
-    pub(crate) fn find_mut(&mut self, id: NodeId) -> Option<&mut Node> {
+    pub(crate) fn find_mut(&mut self, id: NodeId) -> Option<&mut Node<World>> {
         self.nodes.get_mut(id)
     }
 
     /// # Panics
     ///
     /// When the node was disposed.
-    pub(crate) fn node(&self, id: NodeId) -> &Node {
+    pub(crate) fn node(&self, id: NodeId) -> &Node<World> {
         self.nodes.get(id).expect(RETIRED_HANDLE)
     }
 
     /// # Panics
     ///
     /// When the node was disposed.
-    pub(crate) fn node_mut(&mut self, id: NodeId) -> &mut Node {
+    pub(crate) fn node_mut(&mut self, id: NodeId) -> &mut Node<World> {
         self.nodes.get_mut(id).expect(RETIRED_HANDLE)
     }
 

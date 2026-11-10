@@ -153,6 +153,7 @@ mod tests {
     fn every_element_is_a_div_with_its_classes_the_markers_of_its_states_and_its_text() {
         let suite = Suite {
             name: "markup",
+            component_stylesheets: Vec::new(),
             stylesheets: vec![SourceFile::new(
                 "markup.css",
                 ".button { height: 28px; } .button.primary:hover { height: 30px; } .label { height: 12px; }",

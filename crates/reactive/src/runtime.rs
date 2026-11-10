@@ -10,7 +10,6 @@ use crate::node::Node;
 use crate::node_content::NodeContent;
 use crate::node_id::NodeId;
 use crate::node_state::NodeState;
-use crate::running_computation::RunningComputation;
 use crate::scope::Scope;
 use crate::signal::Signal;
 use crate::source::Source;
@@ -26,12 +25,15 @@ const VALUE_TYPE: &str = "a handle reads the type its node was created with";
 /// runs the queue. Memos are computed when they are read. A memo or an effect depends on
 /// exactly what its last run read, and owns what that run created: the next run disposes it.
 ///
+/// `World` is what the effects act on besides the graph: [`flush`] hands it to every effect it
+/// runs. A graph whose effects touch nothing but signals has the world `()`.
+///
 /// A handle that outlived the scope that owns its node panics when it is used.
 ///
 /// [`flush`]: Runtime::flush
-#[derive(Debug, Default)]
-pub struct Runtime {
-    graph: Graph,
+#[derive(Debug)]
+pub struct Runtime<World = ()> {
+    graph: Graph<World>,
     tracking: Tracking,
     runs_started: u64,
     flushes_started: u64,
@@ -41,7 +43,21 @@ pub struct Runtime {
     newly_stale: Vec<NodeId>,
 }
 
-impl Runtime {
+impl<World> Default for Runtime<World> {
+    fn default() -> Self {
+        Self {
+            graph: Graph::default(),
+            tracking: Tracking::default(),
+            runs_started: 0,
+            flushes_started: 0,
+            is_flushing: false,
+            queued_effects: VecDeque::new(),
+            newly_stale: Vec::new(),
+        }
+    }
+}
+
+impl<World> Runtime<World> {
     pub fn new() -> Self {
         Self::default()
     }
@@ -74,21 +90,24 @@ impl Runtime {
     }
 
     /// A function that runs in the next flush, and again in the flush after a value it read
-    /// changed.
-    pub fn effect(&mut self, run: impl FnMut(&mut Self) + 'static) -> Effect {
+    /// changed. Every run is given the world of the flush that runs it.
+    pub fn effect(&mut self, run: impl FnMut(&mut Self, &mut World) + 'static) -> Effect {
         let id = self.insert(NodeContent::Effect(Some(Box::new(run))), NodeState::Dirty);
         self.graph.node_mut(id).is_queued = true;
         self.queued_effects.push_back(id);
         Effect { id }
     }
 
-    /// A scope that owns everything `build` creates.
+    /// A scope that owns everything `build` creates. It belongs to the memo, effect or scope
+    /// that runs right now, and is disposed with it.
     pub fn scope(&mut self, build: impl FnOnce(&mut Self)) -> Scope {
-        let id = self.insert(NodeContent::Scope, NodeState::Clean);
-        let outer_owner = self.tracking.owner.replace(id);
-        build(self);
-        self.tracking.owner = outer_owner;
-        Scope { id }
+        self.scope_owned_by(self.tracking.owner, build)
+    }
+
+    /// A scope that owns everything `build` creates and belongs to `owner`, whatever runs right
+    /// now: an effect creates with it what is to outlive its own run.
+    pub fn scope_in(&mut self, owner: Scope, build: impl FnOnce(&mut Self)) -> Scope {
+        self.scope_owned_by(Some(owner.id), build)
     }
 
     /// # Panics
@@ -111,7 +130,7 @@ impl Runtime {
         let id = source.into().id;
         // The reader subscribes after the source is up to date: a memo that computes a new
         // value for this read wakes the readers of its old value, not this one.
-        self.refresh(id);
+        self.refresh_source(id);
         self.track(id);
         read(
             self.graph
@@ -144,9 +163,15 @@ impl Runtime {
         result
     }
 
-    /// Runs the stale effects until none is left. However many signals were written since the
-    /// last flush, an effect runs once and sees only values that agree with each other. An
-    /// effect that an effect of this flush wakes or creates runs in this flush too.
+    /// Whether a flush has an effect to run: one that was created, or woken by a write, since
+    /// the last flush.
+    pub fn has_queued_effects(&self) -> bool {
+        !self.queued_effects.is_empty()
+    }
+
+    /// Runs the stale effects on `world` until none is left. However many signals were written
+    /// since the last flush, an effect runs once and sees only values that agree with each
+    /// other. An effect that an effect of this flush wakes or creates runs in this flush too.
     ///
     /// # Errors
     ///
@@ -156,16 +181,16 @@ impl Runtime {
     /// # Panics
     ///
     /// When called from inside an effect.
-    pub fn flush(&mut self) -> Result<(), FlushCycle> {
+    pub fn flush(&mut self, world: &mut World) -> Result<(), FlushCycle> {
         assert!(!self.is_flushing, "flush is not called from inside an effect");
         self.is_flushing = true;
         self.flushes_started += 1;
-        let outcome = self.run_queued_effects();
+        let outcome = self.run_queued_effects(world);
         self.is_flushing = false;
         outcome
     }
 
-    fn run_queued_effects(&mut self) -> Result<(), FlushCycle> {
+    fn run_queued_effects(&mut self, world: &mut World) -> Result<(), FlushCycle> {
         while let Some(id) = self.queued_effects.pop_front() {
             let flush = self.flushes_started;
             let Some(effect) = self.graph.find_mut(id) else {
@@ -180,13 +205,23 @@ impl Runtime {
                 return Err(FlushCycle { effect: Effect { id } });
             }
             effect.runs_in_flush += 1;
-            self.refresh_owners_first(id);
+            self.refresh_owners_first(id, world);
         }
         Ok(())
     }
 
-    fn insert(&mut self, content: NodeContent, state: NodeState) -> NodeId {
+    fn insert(&mut self, content: NodeContent<World>, state: NodeState) -> NodeId {
         self.graph.insert(Node::new(content, state), self.tracking.owner)
+    }
+
+    fn scope_owned_by(&mut self, owner: Option<NodeId>, build: impl FnOnce(&mut Self)) -> Scope {
+        let id = self
+            .graph
+            .insert(Node::new(NodeContent::Scope, NodeState::Clean), owner);
+        let outer_owner = self.tracking.owner.replace(id);
+        build(self);
+        self.tracking.owner = outer_owner;
+        Scope { id }
     }
 
     fn track(&mut self, source: NodeId) {
@@ -203,26 +238,46 @@ impl Runtime {
 
     /// A stale owner disposes what it owns when it runs, so the owners of a node are brought
     /// up to date before the node itself, the outermost first.
-    fn refresh_owners_first(&mut self, id: NodeId) {
+    fn refresh_owners_first(&mut self, id: NodeId, world: &mut World) {
         if let Some(owner) = self.graph.node(id).owner {
-            self.refresh_owners_first(owner);
+            self.refresh_owners_first(owner, world);
         }
         if self.graph.contains(id) {
-            self.refresh(id);
+            self.refresh_in_flush(id, world);
         }
     }
 
-    /// Brings a memo or an effect up to date with its sources; a signal or a scope is always
-    /// up to date.
-    fn refresh(&mut self, id: NodeId) {
+    /// Brings a memo or an effect up to date with its sources; a scope is always up to date.
+    fn refresh_in_flush(&mut self, id: NodeId, world: &mut World) {
+        if !self.is_behind_its_sources(id) {
+            return;
+        }
+        if self.graph.node(id).content.is_effect() {
+            self.run_effect(id, world);
+        } else {
+            self.run_memo(id);
+        }
+    }
+
+    /// Brings a memo up to date with its sources; a signal is always up to date.
+    fn refresh_source(&mut self, id: NodeId) {
+        if self.is_behind_its_sources(id) {
+            self.run_memo(id);
+        }
+    }
+
+    /// Whether the node has to run again. A node that only had to check its sources, and found
+    /// none of them changed, is clean from here on.
+    fn is_behind_its_sources(&mut self, id: NodeId) -> bool {
         if self.graph.node(id).state == NodeState::Check {
             self.refresh_sources_until_dirty(id);
         }
-        if self.graph.node(id).state == NodeState::Dirty {
-            self.run(id);
-        } else {
-            self.graph.node_mut(id).state = NodeState::Clean;
+        let node = self.graph.node_mut(id);
+        if node.state == NodeState::Dirty {
+            return true;
         }
+        node.state = NodeState::Clean;
+        false
     }
 
     /// A source that computes a new value marks the node dirty; the remaining sources are
@@ -230,7 +285,7 @@ impl Runtime {
     fn refresh_sources_until_dirty(&mut self, id: NodeId) {
         let mut position = 0;
         while let Some(edge) = self.graph.node(id).sources.get(position).copied() {
-            self.refresh(edge.node);
+            self.refresh_source(edge.node);
             let node = self.graph.node(id);
             if node.state == NodeState::Dirty {
                 return;
@@ -242,7 +297,31 @@ impl Runtime {
         }
     }
 
-    fn run(&mut self, id: NodeId) {
+    fn run_memo(&mut self, id: NodeId) {
+        let outer_tracking = self.begin_run(id);
+        let (mut compute, mut value) = self.graph.node_mut(id).content.take_memo();
+        let value_changed = compute(self, &mut value);
+        let content = NodeContent::Memo {
+            value,
+            compute: Some(compute),
+        };
+        self.end_run(id, content, outer_tracking);
+        if value_changed {
+            self.mark_subscribers(id);
+        }
+    }
+
+    fn run_effect(&mut self, id: NodeId, world: &mut World) {
+        let outer_tracking = self.begin_run(id);
+        let mut run = self.graph.node_mut(id).content.take_effect();
+        run(self, world);
+        self.end_run(id, NodeContent::Effect(Some(run)), outer_tracking);
+    }
+
+    /// Disposes what the last run of the node created and forgets what it read: from here to
+    /// the end of the run, what is read and created is accounted to the node. Returns what the
+    /// code around the run is accounted to.
+    fn begin_run(&mut self, id: NodeId) -> Tracking {
         self.graph.dispose_children(id);
         self.graph.unlink_sources(id);
         self.runs_started += 1;
@@ -250,36 +329,21 @@ impl Runtime {
         // Clean before the run: a write of the run that wakes the node itself is not lost.
         node.state = NodeState::Clean;
         node.is_running = true;
-        let running = node.content.start_running();
-        let outer_tracking = mem::replace(
+        mem::replace(
             &mut self.tracking,
             Tracking {
                 observer: Some(id),
                 owner: Some(id),
                 run: self.runs_started,
             },
-        );
-        let (content, value_changed) = match running {
-            RunningComputation::Memo { mut compute, mut value } => {
-                let value_changed = compute(self, &mut value);
-                let content = NodeContent::Memo {
-                    value,
-                    compute: Some(compute),
-                };
-                (content, value_changed)
-            }
-            RunningComputation::Effect(mut run) => {
-                run(self);
-                (NodeContent::Effect(Some(run)), false)
-            }
-        };
+        )
+    }
+
+    fn end_run(&mut self, id: NodeId, content: NodeContent<World>, outer_tracking: Tracking) {
         self.tracking = outer_tracking;
         let node = self.graph.node_mut(id);
         node.content = content;
         node.is_running = false;
-        if value_changed {
-            self.mark_subscribers(id);
-        }
     }
 
     /// The value of `source` changed: what reads it is dirty, and everything further down has

@@ -1,0 +1,34 @@
+[package]
+name = "morok"
+description = "A macOS UI kit that renders the whole interface through Metal: components driven by signals, styled by compiled CSS"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+morok-components.workspace = true
+morok-core.workspace = true
+morok-platform.workspace = true
+morok-reactive.workspace = true
+morok-style.workspace = true
+
+[dev-dependencies]
+objc2.workspace = true
+objc2-app-kit = { workspace = true, features = [
+  "NSApplication",
+  "NSEvent",
+  "NSGraphicsContext",
+  "NSResponder",
+  "NSView",
+  "NSWindow",
+] }
+objc2-foundation = { workspace = true, features = ["NSArray", "NSGeometry", "NSString"] }
+
+[[test]]
+name = "button_interaction"
+harness = false

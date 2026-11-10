@@ -4,6 +4,7 @@ use std::path::Path;
 use serde::Deserialize;
 
 use crate::bench_error::BenchError;
+use crate::cold_start_budget::ColdStartBudget;
 use crate::frame_budget::FrameBudget;
 use crate::idle_budget::IdleBudget;
 use crate::stage_budgets::StageBudgets;
@@ -17,6 +18,7 @@ pub struct Budgets {
     pub stages: StageBudgets,
     pub frame: FrameBudget,
     pub idle: IdleBudget,
+    pub cold_start: ColdStartBudget,
 }
 
 impl Budgets {

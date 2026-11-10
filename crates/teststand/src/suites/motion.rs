@@ -19,6 +19,7 @@ const STYLESHEET: &str = include_str!("../../suites/motion.css");
 pub(crate) fn suite() -> Suite {
     Suite {
         name: NAME,
+        component_stylesheets: Vec::new(),
         stylesheets: vec![SourceFile::new(STYLESHEET_PATH, STYLESHEET)],
         cases: vec![
             transitions("transitions-early", 130),

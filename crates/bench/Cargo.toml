@@ -11,6 +11,7 @@ publish = false
 workspace = true
 
 [dependencies]
+morok.workspace = true
 morok-core.workspace = true
 morok-css.workspace = true
 morok-platform.workspace = true

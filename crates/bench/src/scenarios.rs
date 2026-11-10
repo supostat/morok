@@ -4,13 +4,14 @@ use crate::bench_error::BenchError;
 use crate::budgets::Budgets;
 use crate::reference_scene::ReferenceScene;
 use crate::verdict::Verdict;
-use crate::{frame_scenario, idle_scenario};
+use crate::{cold_start_scenario, frame_scenario, idle_scenario};
 
 const FRAME: &str = "frame";
 const IDLE: &str = "idle";
+const COLD_START: &str = "cold-start";
 
 /// The scenarios the harness runs by name.
-pub const NAMES: [&str; 2] = [FRAME, IDLE];
+pub const NAMES: [&str; 3] = [FRAME, IDLE, COLD_START];
 
 /// Runs the scenario of one of [`NAMES`] against the budgets.
 ///
@@ -21,6 +22,7 @@ pub fn run(name: &str, budgets: &Budgets) -> Result<Verdict, BenchError> {
     match name {
         FRAME => frame(budgets),
         IDLE => idle(budgets),
+        COLD_START => cold_start_scenario::run(COLD_START, &budgets.cold_start),
         _ => panic!("no scenario is named `{name}`"),
     }
 }

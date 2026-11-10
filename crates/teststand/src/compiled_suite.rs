@@ -1,3 +1,4 @@
+use morok_components::{STYLESHEETS, StylesheetSource};
 use morok_css::{CompiledTokens, SourceFile, compile_stylesheets, compile_tokens};
 use morok_style::{ColorScheme, StyleSheet};
 
@@ -29,17 +30,13 @@ pub struct CompiledSuite<'a> {
 
 impl<'a> CompiledSuite<'a> {
     pub fn compile(suite: &'a Suite) -> Result<Self, StandError> {
-        if let Some(unembeddable) = suite
-            .stylesheets
-            .iter()
-            .find(|stylesheet| closes_style_element(stylesheet))
-        {
+        if let Some(unembeddable) = page_stylesheets(suite).find(|stylesheet| closes_style_element(stylesheet)) {
             return Err(StandError::Unembeddable {
                 path: unembeddable.path().to_path_buf(),
             });
         }
         let tokens = compile_tokens(&SourceFile::new(TOKENS_PATH, TOKENS)).map_err(StandError::Rejected)?;
-        let style_sheet = compile_stylesheets(&suite.stylesheets, &tokens).map_err(StandError::Rejected)?;
+        let style_sheet = compile_stylesheets(&tree_stylesheets(suite), &tokens).map_err(StandError::Rejected)?;
         Ok(Self {
             suite,
             tokens,
@@ -59,16 +56,14 @@ impl<'a> CompiledSuite<'a> {
         };
         let mut scene = Scene::new(self.style_sheet.clone(), theme);
         (case.build)(&mut scene);
+        scene.flush();
         scene
     }
 
     /// The page Chrome renders the case from. The tree of a case is the same under both
     /// themes, and so is its page: Chrome picks the tokens of a scheme itself.
     pub(crate) fn page(&self, case: &Case) -> String {
-        let stylesheets: Vec<String> = self
-            .suite
-            .stylesheets
-            .iter()
+        let stylesheets: Vec<String> = page_stylesheets(self.suite)
             .map(|stylesheet| marker_classes::in_place_of_states(stylesheet.text()))
             .collect();
         harness_page::document(TOKENS, &stylesheets, &self.markup(case))
@@ -76,7 +71,7 @@ impl<'a> CompiledSuite<'a> {
 
     /// What an etalon of the case rendered now by `chrome_build` would be made of.
     pub fn manifest(&self, case: &Case, chrome_build: &ChromeBuild) -> Manifest {
-        let stylesheets: Vec<&str> = self.suite.stylesheets.iter().map(SourceFile::text).collect();
+        let stylesheets: Vec<&str> = page_stylesheets(self.suite).map(SourceFile::text).collect();
         Manifest::of(
             &stylesheets,
             &harness_page::document("", &[], &self.markup(case)),
@@ -96,6 +91,27 @@ impl<'a> CompiledSuite<'a> {
         }
         markup
     }
+}
+
+/// The stylesheets Chrome is given for the cases of the suite, in the order of the cascade:
+/// those of the components the cases mount, then those of the suite.
+fn page_stylesheets(suite: &Suite) -> impl Iterator<Item = &SourceFile> {
+    suite.component_stylesheets.iter().chain(&suite.stylesheets)
+}
+
+/// The stylesheets the tree of a case is styled by. A suite of components compiles every
+/// stylesheet of the kit before its own, as an application does: only then have the classes of
+/// the kit the IDs its components know them by. The rules of the components a case does not
+/// mount match nothing in it.
+fn tree_stylesheets(suite: &Suite) -> Vec<SourceFile> {
+    if suite.component_stylesheets.is_empty() {
+        return suite.stylesheets.clone();
+    }
+    STYLESHEETS
+        .iter()
+        .map(|StylesheetSource { path, text }| SourceFile::new(*path, *text))
+        .chain(suite.stylesheets.iter().cloned())
+        .collect()
 }
 
 /// Whether the text of the stylesheet would end the `style` element that embeds it.

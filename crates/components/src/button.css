@@ -1,0 +1,69 @@
+/* A push button: the default look and the primary variant, in every state. */
+
+.button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 28px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  font-weight: var(--text-weight-medium);
+  line-height: var(--text-leading);
+  box-shadow: var(--shadow-raised);
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast),
+    transform var(--motion-fast);
+}
+
+.button:hover {
+  background-color: var(--color-surface-2);
+}
+
+.button:active {
+  background-color: var(--color-surface-sunken);
+  transform: translateY(0.5px);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.button.primary {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-text-on-accent);
+}
+
+.button.primary:hover {
+  background-color: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+.button.primary:active {
+  background-color: var(--color-accent-active);
+}
+
+.button:disabled {
+  opacity: 0.45;
+  box-shadow: none;
+}
+
+/* A disabled button answers neither the pointer over it nor a press. */
+.button:disabled:hover,
+.button:disabled:active {
+  background-color: var(--color-surface);
+  transform: none;
+}
+
+.button.primary:disabled:hover,
+.button.primary:disabled:active {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+}

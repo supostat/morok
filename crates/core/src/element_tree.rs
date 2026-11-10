@@ -908,7 +908,10 @@ impl ElementTree {
         }
     }
 
-    fn request_frame(&mut self) {
+    /// Asks the host for a frame although nothing of the tree changed yet: for what the host
+    /// does at the start of a frame, before the stages of the tree, and what may change the tree
+    /// there.
+    pub fn request_frame(&mut self) {
         self.frame_requests.request();
     }
 

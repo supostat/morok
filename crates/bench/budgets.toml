@@ -25,3 +25,11 @@ measured_frames = 300
 seconds = 10.0
 # Frames that may be presented in that time.
 presented_frames = 0
+
+[cold_start]
+# The 95th percentile of the time from the start of a process to its first presented frame
+# with content, in milliseconds.
+first_frame = 150.0
+# Launches made before the measurement begins: the system caches the binary and its shaders.
+warm_up_launches = 2
+measured_launches = 20

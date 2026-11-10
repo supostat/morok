@@ -70,6 +70,25 @@ fn changes_before_a_frame_ask_for_it_once() {
 }
 
 #[test]
+fn a_host_asks_for_a_frame_of_a_tree_that_did_not_change_and_gets_it_once() {
+    let (mut scene, requested_frames) = hosted_scene();
+    scene.frame();
+    requested_frames.set(0);
+
+    scene.tree.request_frame();
+    scene.tree.request_frame();
+    assert_eq!(requested_frames.get(), 1);
+
+    scene.frame();
+    scene.tree.request_frame();
+    assert_eq!(
+        requested_frames.get(),
+        2,
+        "the frame that ran served the request before it"
+    );
+}
+
+#[test]
 fn a_frame_that_ran_leaves_nothing_to_ask_for() {
     let (mut scene, requested_frames) = hosted_scene();
     scene.add(scene.root(), Role::Element, &["button"]);

@@ -1,0 +1,22 @@
+[package]
+name = "morok-components"
+description = "Component model and components of the morok UI kit: signal-bound element builders and the kit's controls with their stylesheets"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+morok-core.workspace = true
+morok-reactive.workspace = true
+morok-style.workspace = true
+
+[build-dependencies]
+morok-css.workspace = true
+
+[dev-dependencies]
+morok-css.workspace = true

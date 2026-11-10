@@ -20,6 +20,8 @@ pub enum BenchError {
     Renderer(RendererError),
     /// A window opened on a scene presented nothing in the time given to it.
     NoFirstFrame { waited: Duration },
+    /// The process whose start is measured could not be started or followed.
+    NoLaunch { executable: PathBuf, error: io::Error },
 }
 
 impl Display for BenchError {
@@ -34,6 +36,9 @@ impl Display for BenchError {
                 "the window presented no frame within {:.1} s of opening",
                 waited.as_secs_f64()
             ),
+            Self::NoLaunch { executable, error } => {
+                write!(formatter, "could not launch {}: {error}", executable.display())
+            }
         }
     }
 }

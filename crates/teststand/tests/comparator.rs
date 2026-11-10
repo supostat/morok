@@ -130,6 +130,7 @@ fn plates(stylesheet: &'static str) -> Suite {
     };
     Suite {
         name: "plates",
+        component_stylesheets: Vec::new(),
         stylesheets: vec![SourceFile::new("plates.css", stylesheet)],
         cases: vec![
             Case {

@@ -76,9 +76,9 @@ struct InputScene {
 }
 
 impl SurfaceContent for InputScene {
-    fn frame(&mut self, viewport: Size, scale: f32, now: Duration) -> &ElementTree {
+    fn frame(&mut self, viewport: Size, scale: f32, now: Duration, show: &mut dyn FnMut(&ElementTree)) {
         self.window_scene.scene.tree.refresh_hover(&mut self.heard);
-        self.window_scene.frame(viewport, scale, now)
+        self.window_scene.frame(viewport, scale, now, show);
     }
 
     fn color_scheme_changed(&mut self, color_scheme: ColorScheme) {

@@ -60,8 +60,8 @@ struct AccessibleScene {
 }
 
 impl SurfaceContent for AccessibleScene {
-    fn frame(&mut self, viewport: Size, scale: f32, now: Duration) -> &ElementTree {
-        self.window_scene.frame(viewport, scale, now)
+    fn frame(&mut self, viewport: Size, scale: f32, now: Duration, show: &mut dyn FnMut(&ElementTree)) {
+        self.window_scene.frame(viewport, scale, now, show);
     }
 
     fn color_scheme_changed(&mut self, color_scheme: ColorScheme) {

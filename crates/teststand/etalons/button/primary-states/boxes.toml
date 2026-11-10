@@ -1,0 +1,209 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 608.0
+height = 76.0
+
+[[light]]
+node = "#1 .button-stage"
+x = 0.0
+y = 0.0
+width = 608.0
+height = 60.0
+
+[[light]]
+node = "#2 .button-row"
+x = 16.0
+y = 16.0
+width = 576.0
+height = 28.0
+
+[[light]]
+node = "#3 .button.primary"
+x = 16.0
+y = 16.0
+width = 53.59375
+height = 28.0
+
+[[light]]
+node = "#4 text"
+x = 29.0
+y = 20.578125
+width = 27.59375
+height = 18.84375
+
+[[light]]
+node = "#5 .button.primary"
+x = 81.59375
+y = 16.0
+width = 62.6875
+height = 28.0
+
+[[light]]
+node = "#6 text"
+x = 94.59375
+y = 20.578125
+width = 36.6875
+height = 18.84375
+
+[[light]]
+node = "#7 .button.primary"
+x = 156.28125
+y = 16.5
+width = 76.0
+height = 28.0
+
+[[light]]
+node = "#8 text"
+x = 169.28125
+y = 21.078125
+width = 50.0
+height = 18.84375
+
+[[light]]
+node = "#9 .button.primary"
+x = 244.28125
+y = 16.0
+width = 63.140625
+height = 28.0
+
+[[light]]
+node = "#10 text"
+x = 257.28125
+y = 20.578125
+width = 37.140625
+height = 18.84375
+
+[[light]]
+node = "#11 .button.primary"
+x = 319.42188
+y = 16.0
+width = 79.953125
+height = 28.0
+
+[[light]]
+node = "#12 text"
+x = 332.42188
+y = 20.578125
+width = 53.953125
+height = 18.84375
+
+[[light]]
+node = "#13 .button.primary"
+x = 411.375
+y = 16.0
+width = 137.10156
+height = 28.0
+
+[[light]]
+node = "#14 text"
+x = 424.375
+y = 20.578125
+width = 111.10156
+height = 18.84375
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 608.0
+height = 76.0
+
+[[dark]]
+node = "#1 .button-stage"
+x = 0.0
+y = 0.0
+width = 608.0
+height = 60.0
+
+[[dark]]
+node = "#2 .button-row"
+x = 16.0
+y = 16.0
+width = 576.0
+height = 28.0
+
+[[dark]]
+node = "#3 .button.primary"
+x = 16.0
+y = 16.0
+width = 53.59375
+height = 28.0
+
+[[dark]]
+node = "#4 text"
+x = 29.0
+y = 20.578125
+width = 27.59375
+height = 18.84375
+
+[[dark]]
+node = "#5 .button.primary"
+x = 81.59375
+y = 16.0
+width = 62.6875
+height = 28.0
+
+[[dark]]
+node = "#6 text"
+x = 94.59375
+y = 20.578125
+width = 36.6875
+height = 18.84375
+
+[[dark]]
+node = "#7 .button.primary"
+x = 156.28125
+y = 16.5
+width = 76.0
+height = 28.0
+
+[[dark]]
+node = "#8 text"
+x = 169.28125
+y = 21.078125
+width = 50.0
+height = 18.84375
+
+[[dark]]
+node = "#9 .button.primary"
+x = 244.28125
+y = 16.0
+width = 63.140625
+height = 28.0
+
+[[dark]]
+node = "#10 text"
+x = 257.28125
+y = 20.578125
+width = 37.140625
+height = 18.84375
+
+[[dark]]
+node = "#11 .button.primary"
+x = 319.42188
+y = 16.0
+width = 79.953125
+height = 28.0
+
+[[dark]]
+node = "#12 text"
+x = 332.42188
+y = 20.578125
+width = 53.953125
+height = 18.84375
+
+[[dark]]
+node = "#13 .button.primary"
+x = 411.375
+y = 16.0
+width = 137.10156
+height = 28.0
+
+[[dark]]
+node = "#14 text"
+x = 424.375
+y = 20.578125
+width = 111.10156
+height = 18.84375

@@ -19,6 +19,7 @@ const PARAGRAPH: &str = "Morok draws every glyph itself, so each line has to bre
 pub(crate) fn suite() -> Suite {
     Suite {
         name: NAME,
+        component_stylesheets: Vec::new(),
         stylesheets: vec![SourceFile::new(STYLESHEET_PATH, STYLESHEET)],
         cases: vec![
             case("boxes", 392.0, 224.0, boxes),

@@ -15,6 +15,7 @@ const STYLESHEET: &str = include_str!("../../suites/effects.css");
 pub(crate) fn suite() -> Suite {
     Suite {
         name: NAME,
+        component_stylesheets: Vec::new(),
         stylesheets: vec![SourceFile::new(STYLESHEET_PATH, STYLESHEET)],
         cases: vec![
             case("transforms", 640.0, 160.0, transforms),
