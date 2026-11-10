@@ -2,6 +2,7 @@ mod support;
 
 use std::cell::Cell;
 use std::rc::Rc;
+use std::time::Duration;
 
 use morok_core::{FrameScheduler, Role};
 use morok_style::States;
@@ -21,6 +22,9 @@ impl FrameScheduler for CountingScheduler {
     fn request_frame(&self) {
         self.requested_frames.set(self.requested_frames.get() + 1);
     }
+
+    /// A frame asked for later is no frame asked for now.
+    fn request_frame_after(&self, _delay: Duration) {}
 }
 
 /// A change of a scene, made through its tree.

@@ -1,8 +1,12 @@
+use std::collections::HashMap;
+use std::ops::Range;
+
 use morok_core::accesskit::ActionRequest;
-use morok_core::{ElementId, ElementTree, KeyEvent, PointerInput};
+use morok_core::{ElementId, ElementTree, IconId, KeyEvent, PointerInput, TextCommand};
 use morok_reactive::{Runtime, Scope};
 use morok_style::{StyleSheet, Theme};
 
+use crate::kit_icon::KitIcon;
 use crate::view::child_fragments::ChildFragments;
 use crate::view::event_dispatch::EventDispatch;
 use crate::view::event_handlers::EventHandlers;
@@ -18,19 +22,88 @@ pub struct Surface {
     pub(crate) scope: Scope,
     pub(crate) event_handlers: EventHandlers,
     pub(crate) child_fragments: ChildFragments,
+    /// The IDs the host registered the icons of the kit under, by [`KitIcon`]; empty when it
+    /// registered none.
+    pub(crate) kit_icon_ids: Vec<IconId>,
+    /// The elements that show an icon of the kit.
+    kit_icon_elements: HashMap<ElementId, KitIcon>,
     /// Scratch space for the elements of a subtree that is removed.
     removed_elements: Vec<ElementId>,
 }
 
 impl Surface {
-    pub(crate) fn new(style_sheet: StyleSheet, theme: Theme, scope: Scope) -> Self {
+    pub(crate) fn new(style_sheet: StyleSheet, theme: Theme, scope: Scope, kit_icon_ids: Vec<IconId>) -> Self {
         Self {
             tree: ElementTree::new(style_sheet, theme),
             scope,
             event_handlers: EventHandlers::default(),
             child_fragments: ChildFragments::default(),
+            kit_icon_ids,
+            kit_icon_elements: HashMap::new(),
             removed_elements: Vec::new(),
         }
+    }
+
+    /// The icon of the kit the element shows, for a host that draws it from its SVG.
+    pub fn kit_icon_of(&self, element: ElementId) -> Option<KitIcon> {
+        self.kit_icon_elements.get(&element).copied()
+    }
+
+    /// Notes that the element shows an icon of the kit, and shows it when the host
+    /// registered the icons.
+    pub(crate) fn show_kit_icon(&mut self, element: ElementId, icon: KitIcon) {
+        self.kit_icon_elements.insert(element, icon);
+        if let Some(id) = self.kit_icon_ids.get(icon.index()) {
+            self.tree.set_icon(element, *id);
+        }
+    }
+
+    /// Inserts what was typed, dictated or settled on by an input method into the text the
+    /// focused element edits; with no such focus it does nothing.
+    pub fn insert_text(&mut self, runtime: &mut Runtime<Surfaces>, text: &str, replacement: Option<Range<usize>>) {
+        let Some(focused) = self.tree.focused_text_input() else {
+            return;
+        };
+        let mut dispatch = EventDispatch {
+            handlers: &mut self.event_handlers,
+            runtime,
+        };
+        self.tree.insert_text(focused, text, replacement, &mut dispatch);
+    }
+
+    /// Shows what an input method composes in the text the focused element edits.
+    pub fn set_marked_text(
+        &mut self,
+        runtime: &mut Runtime<Surfaces>,
+        text: &str,
+        selected: Range<usize>,
+        replacement: Option<Range<usize>>,
+    ) {
+        let Some(focused) = self.tree.focused_text_input() else {
+            return;
+        };
+        let mut dispatch = EventDispatch {
+            handlers: &mut self.event_handlers,
+            runtime,
+        };
+        self.tree
+            .set_marked_text(focused, text, selected, replacement, &mut dispatch);
+    }
+
+    /// Settles the text an input method composes in the focused text as it stands.
+    pub fn unmark_text(&mut self) {
+        if let Some(focused) = self.tree.focused_text_input() {
+            self.tree.unmark_text(focused);
+        }
+    }
+
+    /// Does a command of the Edit menu to the focused text. Returns whether a text took it.
+    pub fn text_command(&mut self, runtime: &mut Runtime<Surfaces>, command: TextCommand) -> bool {
+        let mut dispatch = EventDispatch {
+            handlers: &mut self.event_handlers,
+            runtime,
+        };
+        self.tree.perform_text_command(command, &mut dispatch)
     }
 
     pub fn tree(&self) -> &ElementTree {
@@ -93,6 +166,7 @@ impl Surface {
         for element in &self.removed_elements {
             self.event_handlers.forget_element(*element);
             self.child_fragments.forget_parent(*element);
+            self.kit_icon_elements.remove(element);
         }
         self.tree.remove(root);
         self.event_handlers.forget_shortcuts_of_removed_elements(&self.tree);

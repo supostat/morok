@@ -15,6 +15,7 @@ mod linear;
 mod problem;
 mod property;
 mod property_syntax;
+mod pseudo_element;
 mod rule_prelude;
 mod schema_literal;
 mod schema_path;

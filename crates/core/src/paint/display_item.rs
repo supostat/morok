@@ -58,6 +58,11 @@ pub enum DisplayItem {
         rect: Rect,
         color: Color,
     },
+    /// A rectangle of one color: the highlight of selected text, a caret.
+    Fill {
+        rect: Rect,
+        color: Color,
+    },
     /// Clips the items up to the matching [`DisplayItem::PopClip`] to the padding box of the frame.
     PushClip {
         frame: BoxFrame,

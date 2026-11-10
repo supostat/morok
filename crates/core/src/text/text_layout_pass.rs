@@ -3,10 +3,10 @@ use std::mem;
 use morok_style::{Overflow, TextAlign, TextOverflow, Theme};
 
 use crate::dirty::Dirty;
+use crate::editing::editable_layout_pass;
 use crate::element_arena::ElementArena;
 use crate::element_id::ElementId;
 use crate::geometry::rect::Rect;
-use crate::role::Role;
 use crate::text::line_box::LineBox;
 use crate::text::line_metrics::LineMetrics;
 use crate::text::text_request::TextRequest;
@@ -15,7 +15,8 @@ use crate::text::white_space_processing::processed;
 use crate::text::width_constraint::WidthConstraint;
 
 /// The end of the layout stage for text: every text element whose text, style or width changed
-/// has its lines shaped in the width layout gave it and placed as CSS places line boxes.
+/// has its lines shaped in the width layout gave it and placed as CSS places line boxes. The
+/// lines of an edited text are laid out here too, inside the box layout gave its element.
 pub(crate) struct TextLayoutPass<'a> {
     pub(crate) elements: &'a mut ElementArena,
     pub(crate) theme: &'a Theme,
@@ -40,7 +41,11 @@ impl TextLayoutPass<'_> {
             }
             self.elements[id].dirty.remove(Dirty::TEXT);
             if self.shows_text(id) {
-                self.lay_out(id);
+                if self.elements[id].editable.is_some() {
+                    self.lay_out_edited(id);
+                } else {
+                    self.lay_out(id);
+                }
                 self.elements[id].dirty.insert(Dirty::PAINT);
                 laid_out = true;
             }
@@ -53,7 +58,17 @@ impl TextLayoutPass<'_> {
     /// changes then.
     fn shows_text(&self, id: ElementId) -> bool {
         let element = &self.elements[id];
-        element.role == Role::Text && element.is_attached && element.style.layout.generates_box()
+        element.role.sets_lines() && element.is_attached && element.style.layout.generates_box()
+    }
+
+    /// The lines of an edited text are what an assistive technology reads of it: the node of
+    /// the element tells of them again.
+    fn lay_out_edited(&mut self, id: ElementId) {
+        let element = &mut self.elements[id];
+        editable_layout_pass::lay_out(element, self.theme, self.text_shaper, self.scale);
+        if let Some(semantics) = &mut element.semantics {
+            semantics.text_changed();
+        }
     }
 
     /// A line that does not fit is cut with an ellipsis when the parent asks for one and clips
@@ -110,7 +125,7 @@ impl TextLayoutPass<'_> {
 /// How far a line starts from the left edge of the content box. The kit lays text out left to
 /// right, so `start` is the left. A line wider than the box starts at its edge whatever the
 /// alignment: CSS never pushes the start of a line out of reach.
-fn aligned_offset(text_align: TextAlign, content_width: f32, line_width: f32) -> f32 {
+pub(crate) fn aligned_offset(text_align: TextAlign, content_width: f32, line_width: f32) -> f32 {
     let free_space = (content_width - line_width).max(0.0);
     match text_align {
         TextAlign::Start | TextAlign::Left => 0.0,

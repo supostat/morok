@@ -1,6 +1,7 @@
 use morok_core::{ElementId, ElementTree, Role};
 use morok_reactive::{Effect, Runtime, Scope};
 
+use crate::kit_icon::KitIcon;
 use crate::view::element_builder::ElementBuilder;
 use crate::view::property::Property;
 use crate::view::surface::Surface;
@@ -62,6 +63,25 @@ impl<'a> Mount<'a> {
         let mut builder = self.build(element);
         builder.bind(text.into(), |tree, element, text| tree.set_text(element, text));
         builder
+    }
+
+    /// Creates one line of text the user edits and builds on it.
+    pub fn text_input(&mut self) -> ElementBuilder<'_, 'a> {
+        let element = self.surface.tree.create(Role::TextInput);
+        self.build(element)
+    }
+
+    /// Creates text the user edits in lines and builds on it.
+    pub fn text_area(&mut self) -> ElementBuilder<'_, 'a> {
+        let element = self.surface.tree.create(Role::TextArea);
+        self.build(element)
+    }
+
+    /// Creates an icon of the kit and builds on it.
+    pub fn kit_icon(&mut self, icon: KitIcon) -> ElementBuilder<'_, 'a> {
+        let element = self.surface.tree.create(Role::Icon);
+        self.surface.show_kit_icon(element, icon);
+        self.build(element)
     }
 
     /// Builds on the root of the surface: what a component gives the root holds for the whole

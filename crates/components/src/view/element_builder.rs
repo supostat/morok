@@ -1,6 +1,6 @@
 use morok_core::accesskit::Role as AccessibleRole;
 use morok_core::{AccessibleActions, ElementId, ElementTree, Focusability, KeyChord, Propagation, ShortcutScope};
-use morok_reactive::{Runtime, Source};
+use morok_reactive::{Runtime, Signal, Source};
 use morok_style::{Class, Declaration, States};
 
 use crate::view::element_event::ElementEvent;
@@ -54,6 +54,30 @@ impl ElementBuilder<'_, '_> {
     pub fn inline(&mut self, declaration: impl Into<Property<Declaration>>) -> &mut Self {
         self.bind(declaration.into(), |tree, element, declaration| {
             tree.set_inline(element, declaration.clone());
+        })
+    }
+
+    /// The text an element that edits text shows while it holds none.
+    ///
+    /// # Panics
+    ///
+    /// When the element edits no text.
+    pub fn placeholder(&mut self, placeholder: impl Into<Property<String>>) -> &mut Self {
+        self.bind(placeholder.into(), |tree, element, placeholder| {
+            tree.set_placeholder(element, placeholder);
+        })
+    }
+
+    /// Makes the text an element edits follow `value`. What the user makes of the text reaches
+    /// the handler of the element, which writes it back to `value`; the text then equals the
+    /// value and is left as it is, its caret and its history with it.
+    ///
+    /// # Panics
+    ///
+    /// When the element edits no text.
+    pub(crate) fn edits(&mut self, value: Signal<String>) -> &mut Self {
+        self.bind(Property::from(value), |tree, element, text: &String| {
+            tree.set_text(element, text);
         })
     }
 

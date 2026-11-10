@@ -206,7 +206,17 @@ impl<'a> StyleResolver<'a> {
             | Declaration::OutlineStyle(_)
             | Declaration::OutlineColor(_)
             | Declaration::OutlineOffset(_)
-            | Declaration::ObjectFit(_) => self.apply_paint(paint, lists, declaration, source, current_color),
+            | Declaration::ObjectFit(_)
+            | Declaration::PlaceholderColor(_)
+            | Declaration::SelectionBackgroundColor(_) => {
+                self.apply_paint(paint, lists, declaration, source, current_color);
+            }
+            Declaration::CaretColor(color) => {
+                text.caret_color = match color {
+                    ColorValue::CurrentColor => None,
+                    ColorValue::Token(_) | ColorValue::Transparent => Some(self.color(*color, current_color)),
+                };
+            }
             Declaration::Color(_) => {}
             Declaration::FontFamily(_)
             | Declaration::FontSize(_)
@@ -281,6 +291,10 @@ impl<'a> StyleResolver<'a> {
             }
             Declaration::OutlineOffset(offset) => paint.outline_offset = ResolvedLength::pixels_of(offset, theme),
             Declaration::ObjectFit(fit) => paint.object_fit = *fit,
+            Declaration::PlaceholderColor(color) => paint.placeholder_color = Some(self.color(*color, current_color)),
+            Declaration::SelectionBackgroundColor(color) => {
+                paint.selection_background = Some(self.color(*color, current_color));
+            }
             _ => unreachable!("only the paint properties are applied here"),
         }
     }

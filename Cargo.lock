@@ -1198,6 +1198,8 @@ dependencies = [
  "morok-platform",
  "morok-style",
  "objc2 0.6.5",
+ "objc2-app-kit 0.3.2",
+ "objc2-foundation 0.3.2",
  "serde",
  "toml",
 ]
@@ -1220,6 +1222,7 @@ dependencies = [
  "morok-css",
  "morok-style",
  "taffy",
+ "unicode-segmentation",
 ]
 
 [[package]]
@@ -1241,8 +1244,10 @@ dependencies = [
  "accesskit_macos",
  "bytemuck",
  "dispatch2",
+ "morok-components",
  "morok-core",
  "morok-css",
+ "morok-reactive",
  "morok-style",
  "objc2 0.6.5",
  "objc2-app-kit 0.3.2",
@@ -1254,6 +1259,7 @@ dependencies = [
  "objc2-metal 0.3.2",
  "objc2-quartz-core 0.3.2",
  "resvg",
+ "unicode-segmentation",
 ]
 
 [[package]]
@@ -2546,6 +2552,12 @@ name = "unicode-ident"
 version = "1.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563"
+
+[[package]]
+name = "unicode-segmentation"
+version = "1.13.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c6f5d3c3b1bf09027a88a6bc961fc00497d651009560b5463668dc81b0fa87a8"
 
 [[package]]
 name = "untrusted"

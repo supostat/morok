@@ -6,7 +6,9 @@ use std::process;
 
 use chromiumoxide::Page;
 use chromiumoxide::browser::{Browser, BrowserConfig};
-use chromiumoxide::cdp::browser_protocol::emulation::{MediaFeature, SetDeviceMetricsOverrideParams};
+use chromiumoxide::cdp::browser_protocol::emulation::{
+    MediaFeature, SetDeviceMetricsOverrideParams, SetFocusEmulationEnabledParams,
+};
 use chromiumoxide::cdp::browser_protocol::page::Viewport;
 use chromiumoxide::fetcher::{BrowserFetcher, BrowserFetcherOptions, BrowserKind, Version};
 use chromiumoxide::page::ScreenshotParams;
@@ -142,6 +144,10 @@ impl ChromeSide {
             .await
             .map_err(chrome_error)?;
             page.emulate_media_features(vec![MediaFeature::new(COLOR_SCHEME_FEATURE, color_scheme.to_string())])
+                .await
+                .map_err(chrome_error)?;
+            // A page without focus draws a selection in the colors of an inactive one.
+            page.execute(SetFocusEmulationEnabledParams::new(true))
                 .await
                 .map_err(chrome_error)?;
             page.set_content(document).await.map_err(chrome_error)?;

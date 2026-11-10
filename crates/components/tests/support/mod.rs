@@ -7,9 +7,9 @@ use morok_components::tokens::LIGHT;
 use morok_components::view::{Mount, SurfaceId, Surfaces};
 use morok_core::accesskit::{Action, ActionRequest, Node, NodeId, TreeId, TreeUpdate};
 use morok_core::{
-    ElementId, ElementTree, FontId, FontMetrics, FontRequest, ItemRange, Key, KeyEvent, KeyPhase, Modifiers, Point,
-    PointerButton, PointerInput, PointerInputKind, ShapedGlyph, ShapedLine, ShapedRun, ShapedText, Size, TextExtent,
-    TextRequest, TextShaper,
+    CaretLine, CaretLines, CaretStop, ElementId, ElementTree, FontId, FontMetrics, FontRequest, ItemRange, Key,
+    KeyEvent, KeyPhase, Modifiers, Point, PointerButton, PointerInput, PointerInputKind, ShapedGlyph, ShapedLine,
+    ShapedRun, ShapedText, Size, TextExtent, TextRequest, TextShaper,
 };
 use morok_reactive::Runtime;
 
@@ -76,6 +76,36 @@ impl TextShaper for OneLineShaper {
         shaped.lines.push(ShapedLine {
             width: Self::width(request),
             runs: ItemRange { start: 0, end: 1 },
+        });
+    }
+
+    /// An edited text is one line too, a stop before every character and one after the last.
+    fn shape_editable(&mut self, request: &TextRequest<'_>, shaped: &mut ShapedText, carets: &mut CaretLines) {
+        self.shape(request, None, shaped);
+        carets.clear();
+        if request.text.is_empty() {
+            return;
+        }
+        let advance = request.font.size * ADVANCE_PER_FONT_SIZE;
+        let offsets = request.text.char_indices().map(|(offset, _)| offset);
+        carets.stops.extend(
+            offsets
+                .chain([request.text.len()])
+                .enumerate()
+                .map(|(position, offset)| CaretStop {
+                    offset: offset as u32,
+                    x: position as f32 * advance,
+                }),
+        );
+        carets.lines.push(CaretLine {
+            text: ItemRange {
+                start: 0,
+                end: request.text.len() as u32,
+            },
+            stops: ItemRange {
+                start: 0,
+                end: carets.stops.len() as u32,
+            },
         });
     }
 }

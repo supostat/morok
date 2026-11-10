@@ -3,6 +3,8 @@ use taffy::{Cache, DetailedLayoutInfo, Layout};
 
 use crate::accessibility::semantics::Semantics;
 use crate::dirty::Dirty;
+use crate::editing::editable_text::EditableText;
+use crate::editing::line_mode::LineMode;
 use crate::element_id::ElementId;
 use crate::geometry::rect::Rect;
 use crate::input::focusability::Focusability;
@@ -55,6 +57,8 @@ pub(crate) struct Element {
     pub(crate) painted: PaintedElement,
     /// The lines of the text; empty unless the element is a text.
     pub(crate) text_layout: TextLayout,
+    /// The text the user edits in an element of an editable role; none for the others.
+    pub(crate) editable: Option<Box<EditableText>>,
 }
 
 impl Element {
@@ -83,6 +87,7 @@ impl Element {
             border_box: Rect::ZERO,
             painted: PaintedElement::default(),
             text_layout: TextLayout::default(),
+            editable: LineMode::of(role).map(|line_mode| Box::new(EditableText::new(line_mode))),
         }
     }
 

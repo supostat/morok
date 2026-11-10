@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use morok_components::view::{Mount, SurfaceId, Surfaces};
-use morok_core::{ElementId, ElementTree, Rect, Role, Size, TextShaper};
+use morok_core::{ElementId, ElementTree, Rect, Role, Size, TextSelection, TextShaper};
 use morok_reactive::Runtime;
 use morok_style::{States, StyleSheet, Theme};
 
@@ -47,9 +47,26 @@ impl Scene {
     }
 
     /// Mounts a component of the kit as the last child of `parent` and returns the element
-    /// it built.
+    /// it built. Both sides draw the icons of the kit it shows from their SVG.
     pub fn mount(&mut self, parent: ElementId, component: impl FnOnce(&mut Mount<'_>) -> ElementId) -> ElementId {
-        self.surfaces.mount(&mut self.runtime, self.surface, parent, component)
+        let mounted = self.surfaces.mount(&mut self.runtime, self.surface, parent, component);
+        let surface = self.surfaces.surface(self.surface);
+        let mut unvisited = vec![mounted];
+        while let Some(element) = unvisited.pop() {
+            if let Some(icon) = surface.kit_icon_of(element) {
+                self.icons.push((element, IconSource { svg: icon.svg() }));
+            }
+            unvisited.extend(surface.tree().children(element));
+        }
+        self.flush();
+        mounted
+    }
+
+    /// Selects the bytes of an edited text from `anchor` to `head`; with both at one place
+    /// it puts the caret there.
+    pub fn select_text(&mut self, element: ElementId, anchor: usize, head: usize) {
+        self.tree_mut()
+            .set_text_selection(element, TextSelection { anchor, head });
     }
 
     /// Adds a box with the given classes as the last child of `parent`.

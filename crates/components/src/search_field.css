@@ -1,0 +1,18 @@
+/* A search field: a rounded, sunken field with a magnifier before its line. */
+
+.field.search {
+  border-color: transparent;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-sunken);
+}
+
+.field.search:focus-within {
+  border-color: var(--color-focus);
+}
+
+.field-icon {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: var(--color-text-3);
+}

@@ -1,12 +1,13 @@
 use std::ptr::{self, NonNull};
 
 use morok_core::{
-    FontId, FontMetrics, FontRequest, ItemRange, ShapedGlyph, ShapedLine, ShapedRun, ShapedText, TextExtent,
-    TextRequest, TextShaper, WidthConstraint,
+    CaretLine, CaretLines, CaretStop, FontId, FontMetrics, FontRequest, ItemRange, ShapedGlyph, ShapedLine, ShapedRun,
+    ShapedText, TextExtent, TextRequest, TextShaper, WidthConstraint,
 };
-use objc2_core_foundation::{CFArray, CFDictionary, CFRange, CFRetained, CFString, CGPoint, Type};
+use objc2_core_foundation::{CFArray, CFDictionary, CFIndex, CFRange, CFRetained, CFString, CGPoint, Type};
 use objc2_core_graphics::CGGlyph;
 use objc2_core_text::{CTFont, CTLine, CTLineTruncationType, CTRun, kCTFontAttributeName};
+use unicode_segmentation::UnicodeSegmentation;
 
 use crate::text::font_library::font_library;
 use crate::text::measure_cache::{MeasureCache, MeasureKey};
@@ -155,6 +156,76 @@ impl TextShaper for CoreTextShaper {
             self.append_line(cut.as_deref().unwrap_or(line), shaped);
         });
     }
+
+    fn shape_editable(&mut self, request: &TextRequest<'_>, shaped: &mut ShapedText, carets: &mut CaretLines) {
+        shaped.clear();
+        carets.clear();
+        if request.text.is_empty() {
+            return;
+        }
+        let (_, font) = resolved(&request.font);
+        let typeset = TypesetText::new(request.text, &font, request.letter_spacing);
+        let mut line_start = 0;
+        typeset.for_each_line(request.width, |line| {
+            // SAFETY: the line is valid.
+            let utf16_length = unsafe { line.string_range() }.length as usize;
+            let line_end = byte_after_utf16(request.text, line_start, utf16_length);
+            append_caret_line(line, request.text, line_start..line_end, carets);
+            self.append_line(line, shaped);
+            line_start = line_end;
+        });
+    }
+}
+
+/// Appends the stops of a line that holds the bytes `range` of the text: before every grapheme
+/// cluster of the line that is no line break, and after the last of them, where Core Text
+/// puts the caret.
+fn append_caret_line(line: &CTLine, text: &str, range: std::ops::Range<usize>, carets: &mut CaretLines) {
+    let stops_start = carets.stops.len();
+    let characters = text[range.clone()].trim_end_matches(['\n', '\r']);
+    let line_text_start = utf16_length(&text[..range.start]);
+    let mut utf16_offset = 0;
+    let mut push_stop = |byte: usize, utf16_offset: usize| {
+        let index =
+            CFIndex::try_from(line_text_start + utf16_offset).expect("a text is shorter than the largest index");
+        // SAFETY: the index lies inside the string of the line; no secondary offset is asked for.
+        let x = unsafe { line.offset_for_string_index(index, ptr::null_mut()) };
+        carets.stops.push(CaretStop {
+            offset: byte as u32,
+            x: x as f32,
+        });
+    };
+    for (start, cluster) in characters.grapheme_indices(true) {
+        push_stop(range.start + start, utf16_offset);
+        utf16_offset += utf16_length(cluster);
+    }
+    push_stop(range.start + characters.len(), utf16_offset);
+    carets.lines.push(CaretLine {
+        text: ItemRange {
+            start: range.start as u32,
+            end: range.end as u32,
+        },
+        stops: ItemRange {
+            start: stops_start as u32,
+            end: carets.stops.len() as u32,
+        },
+    });
+}
+
+fn utf16_length(text: &str) -> usize {
+    text.chars().map(char::len_utf16).sum()
+}
+
+/// The byte of the text `utf16_count` UTF-16 code units after the byte `start`.
+fn byte_after_utf16(text: &str, start: usize, utf16_count: usize) -> usize {
+    let mut counted = 0;
+    for (position, character) in text[start..].char_indices() {
+        if counted >= utf16_count {
+            return start + position;
+        }
+        counted += character.len_utf16();
+    }
+    text.len()
 }
 
 /// The font of a request and its name in the font library.

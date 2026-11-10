@@ -5,6 +5,7 @@ use morok_style::States;
 
 use crate::accessibility::node_facts::NodeFacts;
 use crate::accessibility::semantics::Semantics;
+use crate::editing::text_runs::TextRuns;
 use crate::element::Element;
 use crate::element_arena::ElementArena;
 use crate::element_id::ElementId;
@@ -73,9 +74,21 @@ impl AccessibilityPass<'_> {
         let is_as_published =
             published.update + 1 == self.update && published.facts == facts && published.children == children;
         if self.holds_whole_tree || !is_as_published {
-            let text = (element.role == Role::Text).then_some(element.text.as_str());
-            self.nodes
-                .push((NodeId::from(id), semantics.node(&facts, text, &children)));
+            let text = match element.editable.as_deref() {
+                Some(editable) => Some(editable.editor.text()),
+                None => (element.role == Role::Text).then_some(element.text.as_str()),
+            };
+            let mut node = semantics.node(&facts, text, &children);
+            if let Some(editable) = element.editable.as_deref().filter(|_| is_shown) {
+                let runs = TextRuns {
+                    element: id,
+                    editable,
+                    border_box: element.border_box,
+                    on_surface: &on_surface,
+                };
+                runs.describe(&mut node, &mut self.nodes);
+            }
+            self.nodes.push((NodeId::from(id), node));
         }
         let update = self.update;
         let semantics = self.semantics_mut(id);

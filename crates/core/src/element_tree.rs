@@ -1,3 +1,5 @@
+mod text_editing;
+
 use std::mem;
 use std::time::Duration;
 
@@ -11,6 +13,7 @@ use crate::accessibility::accessible_value::AccessibleValue;
 use crate::accessibility::node_identity::element_of;
 use crate::accessibility::semantics::Semantics;
 use crate::dirty::Dirty;
+use crate::editing::clipboard::Clipboard;
 use crate::element::Element;
 use crate::element_arena::ElementArena;
 use crate::element_id::ElementId;
@@ -78,6 +81,9 @@ use crate::text::text_shaper::TextShaper;
 /// The tree drives the `hover`, `active` and focus states of its elements from the input it is
 /// given, and routes that input to the elements through an [`InputHandler`].
 ///
+/// An element of an editable role holds a text the tree edits itself, from the keys that reach
+/// the element while it has focus, from the pointer and from the input methods of the system.
+///
 /// An element with an accessible role has a node in the accessibility tree; the root always
 /// has one. After the stages of a frame [`accessibility_update`](Self::accessibility_update)
 /// tells what the frame changed of that tree.
@@ -114,6 +120,10 @@ pub struct ElementTree {
     /// The number of the last accessibility update worked out.
     accessibility_updates: u64,
     frame_requests: FrameRequests,
+    /// The clipboard edited texts copy to and paste from; none until the host names one.
+    clipboard: Option<Box<dyn Clipboard>>,
+    /// The element whose edited text the last frame showed with its caret and its selection.
+    text_focus: Option<ElementId>,
 }
 
 impl ElementTree {
@@ -149,6 +159,8 @@ impl ElementTree {
             input: InputState::default(),
             accessibility_updates: 0,
             frame_requests: FrameRequests::awaiting_first_frame(),
+            clipboard: None,
+            text_focus: None,
         }
     }
 
@@ -324,16 +336,29 @@ impl ElementTree {
         self.mark_style(element);
     }
 
+    /// The text of a text element, or the text an element of an editable role holds now.
     pub fn text(&self, element: ElementId) -> &str {
-        &self.elements[element].text
+        let held = &self.elements[element];
+        held.editable
+            .as_deref()
+            .map_or(held.text.as_str(), |editable| editable.editor.text())
     }
 
+    /// Sets the text of a text element, or replaces the text of an element of an editable
+    /// role: its caret goes to the end and its history starts over. A text equal to the one
+    /// held changes nothing.
+    ///
     /// # Panics
     ///
-    /// When the element is not a [`Role::Text`].
+    /// When the element is neither a [`Role::Text`] nor of an editable role.
     pub fn set_text(&mut self, element: ElementId, text: &str) {
         let held = &mut self.elements[element];
-        assert!(held.role == Role::Text, "{:?} holds no text", held.role);
+        assert!(held.role.sets_lines(), "{:?} holds no text", held.role);
+        if let Some(editable) = held.editable.as_deref_mut() {
+            let change = editable.set_text(text);
+            self.text_edited(element, change);
+            return;
+        }
         if held.text == text {
             return;
         }
@@ -438,6 +463,13 @@ impl ElementTree {
                 .intersects(Dirty::STYLE.union(Dirty::STYLE_BELOW)),
             "styles are resolved before boxes are read"
         );
+        self.surface_transform(element)
+            .bounds_of(&self.elements[element].border_box)
+    }
+
+    /// What takes a point of the element to the surface: the transforms of the element and
+    /// of its ancestors.
+    fn surface_transform(&self, element: ElementId) -> Transform {
         let mut on_surface = Transform::IDENTITY;
         let mut current = Some(element);
         while let Some(id) = current {
@@ -445,7 +477,7 @@ impl ElementTree {
             on_surface = on_surface.then(&local_transform(transformed));
             current = transformed.parent;
         }
-        on_surface.bounds_of(&self.elements[element].border_box)
+        on_surface
     }
 
     /// The line boxes of a text element as the last layout stage placed them, top to bottom.
@@ -502,6 +534,7 @@ impl ElementTree {
         self.paint_order_is_stale |= outcome.reorders_paint;
         self.has_unpainted_changes |= outcome.repaints || outcome.reorders_paint;
         self.advance_springs();
+        self.advance_caret();
         if !self.moving_elements.is_empty() || self.springs.iter().any(|spring| !spring.is_settled) {
             self.request_frame();
         }
@@ -713,6 +746,9 @@ impl ElementTree {
     ///
     /// From a press of the primary button to its release the pointer belongs to the pressed
     /// element: it hears of every move and of the release, and nothing outside it is hovered.
+    ///
+    /// A press on an edited text that takes focus puts its caret there, and the pointer
+    /// selects in it until the button is released.
     pub fn pointer_input(&mut self, input: &PointerInput, handler: &mut dyn InputHandler) {
         let is_on_surface = input.kind != PointerInputKind::Exited;
         let hit = if is_on_surface {
@@ -731,6 +767,7 @@ impl ElementTree {
         if matches!(input.kind, PointerInputKind::Pressed { .. }) {
             self.focus_manager().pointer_pressed(hit);
         }
+        self.select_text_with_pointer(input, hit);
     }
 
     /// Works out again what a resting pointer is over when the last frame may have moved the
@@ -760,16 +797,29 @@ impl ElementTree {
     /// element around it, tries the shortcuts on the way and those of the surface last, and
     /// moves focus on Tab and Shift-Tab when nothing used the key. Returns whether the key
     /// was used.
+    ///
+    /// A focused element that edits text and does not use the key itself has its text take
+    /// the key, by the key bindings of the system, before its shortcuts and the elements
+    /// around it are tried.
     pub fn key_input(&mut self, event: &KeyEvent, handler: &mut dyn InputHandler) -> bool {
         if event.shows_keyboard_use() {
             self.focus_manager().set_modality(InputModality::Keyboard);
+        }
+        let innermost = self.input.focused.unwrap_or(self.root);
+        let mut router = KeyRouter {
+            elements: &self.elements,
+            shortcuts: &self.input.shortcuts,
+            handler: &mut *handler,
+        };
+        if router.offer(innermost, event) || self.edit_text_by_key(innermost, event, handler) {
+            return true;
         }
         let router = KeyRouter {
             elements: &self.elements,
             shortcuts: &self.input.shortcuts,
             handler,
         };
-        if router.route(self.input.focused.unwrap_or(self.root), event) {
+        if router.route_past(innermost, event) {
             return true;
         }
         event
@@ -999,7 +1049,8 @@ impl ElementTree {
     /// Takes what an assistive technology asks of a node: gives focus to the element when
     /// asked to, as the keyboard would, and tells the element through `handler` of an action
     /// it offers. A request the element does not offer, or one for a node that is no longer
-    /// in the tree, does nothing.
+    /// in the tree, does nothing. An edited text moves its selection and changes its text as
+    /// it is asked to.
     pub fn accessibility_action(&mut self, request: &ActionRequest, handler: &mut dyn InputHandler) {
         let target = element_of(request.target_node);
         if !self.elements.contains(target) {
@@ -1013,6 +1064,9 @@ impl ElementTree {
             return;
         }
         let offered = semantics.actions();
+        if self.edit_text_by_request(target, request, handler) {
+            return;
+        }
         let action = match (request.action, &request.data) {
             (Action::Focus, _) => {
                 let mut focus = self.focus_manager();

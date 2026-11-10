@@ -105,6 +105,7 @@ fn presses(event: &ElementEvent<'_>) -> bool {
         ElementEvent::Pointer(pointer) => matches!(pointer.kind, PointerEventKind::Clicked { .. }),
         ElementEvent::Key(key) => is_press_of_an_activation_key(key),
         ElementEvent::Accessibility(action) => *action == AccessibilityAction::Click,
+        ElementEvent::TextChanged(_) => false,
     }
 }
 

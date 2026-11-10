@@ -1,0 +1,12 @@
+/* A text area: a field whose lines wrap and scroll inside a box of a few lines. */
+
+.field.area {
+  height: auto;
+  align-items: stretch;
+  padding: var(--space-2);
+}
+
+.field.area > .field-input {
+  height: 64px;
+  line-height: var(--text-leading);
+}

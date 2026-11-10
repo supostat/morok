@@ -23,4 +23,7 @@ pub trait InputHandler {
 
     /// An assistive technology asks the element for one of the actions the element offers.
     fn accessibility_action(&mut self, element: ElementId, action: &AccessibilityAction<'_>);
+
+    /// The user changed the text the element edits: `text` is what it holds now.
+    fn text_changed(&mut self, element: ElementId, text: &str);
 }

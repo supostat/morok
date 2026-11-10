@@ -1,11 +1,12 @@
 use std::cell::RefCell;
+use std::ops::Range;
 use std::rc::Rc;
 use std::time::Duration;
 
 use morok_components::view::SurfaceId;
 use morok_core::accesskit::{ActionRequest, TreeUpdate};
-use morok_core::{ElementTree, KeyEvent, PointerInput, Size};
-use morok_platform::SurfaceContent;
+use morok_core::{ElementTree, KeyEvent, Point, PointerInput, Rect, Size, TextCommand};
+use morok_platform::{FocusedText, SurfaceContent};
 use morok_style::ColorScheme;
 
 use crate::application_state::ApplicationState;
@@ -106,6 +107,63 @@ impl SurfaceContent for WindowContent {
             .surface_mut(self.surface)
             .accessibility_action(&mut state.runtime, request);
         Self::request_frame_for_queued_effects(state, self.surface);
+    }
+
+    fn focused_text(&mut self) -> Option<FocusedText> {
+        let state = self.state.borrow();
+        let tree = state.surfaces.surface(self.surface).tree();
+        let focused = tree.focused_text_input()?;
+        Some(FocusedText {
+            text: tree.text(focused).to_owned(),
+            selection: tree.text_selection(focused),
+            marked: tree.marked_text(focused),
+        })
+    }
+
+    fn insert_text(&mut self, text: &str, replacement: Option<Range<usize>>) {
+        let state = &mut *self.state.borrow_mut();
+        state
+            .surfaces
+            .surface_mut(self.surface)
+            .insert_text(&mut state.runtime, text, replacement);
+        Self::request_frame_for_queued_effects(state, self.surface);
+    }
+
+    fn set_marked_text(&mut self, text: &str, selected: Range<usize>, replacement: Option<Range<usize>>) {
+        let state = &mut *self.state.borrow_mut();
+        state
+            .surfaces
+            .surface_mut(self.surface)
+            .set_marked_text(&mut state.runtime, text, selected, replacement);
+        Self::request_frame_for_queued_effects(state, self.surface);
+    }
+
+    fn unmark_text(&mut self) {
+        self.state.borrow_mut().surfaces.surface_mut(self.surface).unmark_text();
+    }
+
+    fn text_command(&mut self, command: TextCommand) -> bool {
+        let state = &mut *self.state.borrow_mut();
+        let was_taken = state
+            .surfaces
+            .surface_mut(self.surface)
+            .text_command(&mut state.runtime, command);
+        Self::request_frame_for_queued_effects(state, self.surface);
+        was_taken
+    }
+
+    fn text_range_box(&mut self, range: Range<usize>) -> Option<Rect> {
+        let state = self.state.borrow();
+        let tree = state.surfaces.surface(self.surface).tree();
+        let focused = tree.focused_text_input()?;
+        Some(tree.text_range_box(focused, range))
+    }
+
+    fn text_offset_at(&mut self, point: Point) -> Option<usize> {
+        let state = self.state.borrow();
+        let tree = state.surfaces.surface(self.surface).tree();
+        let focused = tree.focused_text_input()?;
+        Some(tree.text_offset_at(focused, point))
     }
 }
 

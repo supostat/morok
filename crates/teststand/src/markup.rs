@@ -2,17 +2,28 @@ use std::fmt::Write;
 use std::time::Duration;
 
 use morok_core::{ElementId, Role};
+use morok_style::States;
 
-use crate::marker_classes;
+use crate::marker_classes::{self, PLACEHOLDER_MARKER};
 use crate::scene::Scene;
 
 /// Marks the element of a text; the harness page finds the texts by it.
 pub(crate) const TEXT_ATTRIBUTE: &str = "data-text";
+/// Marks the element of a text the user edits, `line` or `lines`; the harness page finds the
+/// edited texts by it.
+pub(crate) const EDITED_ATTRIBUTE: &str = "data-edited";
+/// Where the caret of a focused edited text stands, and where its selection begins and ends,
+/// in UTF-16 code units of the text, as the page counts them.
+pub(crate) const CARET_ATTRIBUTE: &str = "data-caret";
+pub(crate) const SELECTION_START_ATTRIBUTE: &str = "data-selection-start";
+pub(crate) const SELECTION_END_ATTRIBUTE: &str = "data-selection-end";
 
 /// The markup Chrome lays the tree of the scene out from: one `div` per element, in document
 /// order, with the classes of the element and the marker classes of its states. A text holds
 /// its characters; an icon is its SVG inline, so that `currentColor` is the color of the
-/// element; an image is an `img` with its file as a data URL.
+/// element; an image is an `img` with its file as a data URL. An edited text holds its
+/// characters, or while it is empty its placeholder; a focused one tells the page where its
+/// caret or its selection is.
 ///
 /// # Panics
 ///
@@ -27,10 +38,17 @@ fn write_element(scene: &Scene, element: ElementId, markup: &mut String) {
     let tree = scene.tree();
     let role = tree.role(element);
     assert!(
-        matches!(role, Role::Element | Role::Text | Role::Icon | Role::Image),
+        matches!(
+            role,
+            Role::Element | Role::Text | Role::Icon | Role::Image | Role::TextInput | Role::TextArea
+        ),
         "the stand has no markup for {role:?}"
     );
-    let classes = class_list(scene, element);
+    let shows_placeholder = role.is_editable_text() && tree.text(element).is_empty();
+    let mut classes = class_list(scene, element);
+    if shows_placeholder {
+        classes.push(PLACEHOLDER_MARKER.to_owned());
+    }
     let class_attribute = if classes.is_empty() {
         String::new()
     } else {
@@ -52,21 +70,59 @@ fn write_element(scene: &Scene, element: ElementId, markup: &mut String) {
             );
             return;
         }
-        Role::Element | Role::Text => {}
+        Role::Element | Role::Text | Role::TextInput | Role::TextArea => {}
         Role::Canvas | Role::Scroll => unreachable!("the roles were checked above"),
     }
     markup.push_str("<div");
     markup.push_str(&class_attribute);
-    if role == Role::Text {
-        markup.push(' ');
-        markup.push_str(TEXT_ATTRIBUTE);
+    match role {
+        Role::Text => {
+            markup.push(' ');
+            markup.push_str(TEXT_ATTRIBUTE);
+        }
+        Role::TextInput | Role::TextArea => write_edited_attributes(scene, element, shows_placeholder, markup),
+        Role::Element | Role::Image | Role::Icon | Role::Canvas | Role::Scroll => {}
     }
     markup.push('>');
-    write_escaped(tree.text(element), markup);
+    if shows_placeholder {
+        write_escaped(tree.placeholder(element), markup);
+    } else {
+        write_escaped(tree.text(element), markup);
+    }
     for child in tree.children(element) {
         write_element(scene, *child, markup);
     }
     markup.push_str("</div>");
+}
+
+/// Whether the edited text is one line or lines, and for a text shown focused where its caret
+/// or its selection is. A placeholder is shown with the caret before it.
+fn write_edited_attributes(scene: &Scene, element: ElementId, shows_placeholder: bool, markup: &mut String) {
+    let tree = scene.tree();
+    let lines = if tree.role(element) == Role::TextArea {
+        "lines"
+    } else {
+        "line"
+    };
+    let _ = write!(markup, " {EDITED_ATTRIBUTE}=\"{lines}\"");
+    if !tree.states(element).contains(States::FOCUS) {
+        return;
+    }
+    let text = tree.text(element);
+    let utf16 = |byte: usize| text[..byte].encode_utf16().count();
+    let selection = tree.text_selection(element);
+    if selection.is_caret() {
+        let caret = if shows_placeholder { 0 } else { utf16(selection.head) };
+        let _ = write!(markup, " {CARET_ATTRIBUTE}=\"{caret}\"");
+    } else {
+        let range = selection.range();
+        let _ = write!(
+            markup,
+            " {SELECTION_START_ATTRIBUTE}=\"{}\" {SELECTION_END_ATTRIBUTE}=\"{}\"",
+            utf16(range.start),
+            utf16(range.end)
+        );
+    }
 }
 
 /// The classes of the element with the marker classes of its states, as its markup carries them.
@@ -91,6 +147,58 @@ pub(crate) fn motion_script(changed: &Scene, after: Duration) -> String {
         classes.join(", "),
         after.as_millis()
     )
+}
+
+/// An edited text of the kit keeps its white space as it was typed and shows what fits in its
+/// box: one line runs on past the box, lines wrap at its width.
+const EDITED_TEXT_STYLE: &str = "[EDITED_ATTRIBUTE] { overflow: hidden; }\n\
+                           [EDITED_ATTRIBUTE=\"line\"] { white-space: pre; }\n\
+                           [EDITED_ATTRIBUTE=\"lines\"] { white-space: pre-wrap; }";
+
+/// Shows the selection and the caret of a focused edited text. The selection is the page's
+/// own, colored by `::selection`. The caret Chrome draws blinks, so the page draws one of its
+/// own instead: one CSS pixel wide, where a collapsed range at the caret lies and as high as
+/// the range, its edges on device pixels, in the `caret-color` of the text.
+const EDITED_TEXT_SCRIPT: &str = "for (const edited of document.querySelectorAll('[EDITED_ATTRIBUTE]')) {\n\
+    const text = edited.firstChild;\n\
+    if (edited.hasAttribute('SELECTION_START_ATTRIBUTE')) {\n\
+    getSelection().setBaseAndExtent(text, Number(edited.getAttribute('SELECTION_START_ATTRIBUTE')), \
+    text, Number(edited.getAttribute('SELECTION_END_ATTRIBUTE')));\n\
+    }\n\
+    if (edited.hasAttribute('CARET_ATTRIBUTE')) {\n\
+    const range = document.createRange();\n\
+    range.setStart(text, Number(edited.getAttribute('CARET_ATTRIBUTE')));\n\
+    range.collapse(true);\n\
+    const box = range.getClientRects()[0];\n\
+    const snapped = length => Math.round(length * devicePixelRatio) / devicePixelRatio;\n\
+    const style = getComputedStyle(edited);\n\
+    const color = style.caretColor === 'auto' ? style.color : style.caretColor;\n\
+    const caret = document.createElement('span');\n\
+    const top = snapped(box.top);\n\
+    caret.style.cssText = `position: fixed; left: ${snapped(box.left)}px; top: ${top}px; width: 1px; \
+    height: ${snapped(box.bottom) - top}px; background: ${color};`;\n\
+    document.body.appendChild(caret);\n\
+    }\n\
+    }";
+
+/// What the page needs to show the edited texts of the scene as the kit shows them; none for
+/// a scene without one, whose page stays as it was before the kit edited text.
+pub(crate) fn edited_text_support(scene: &Scene) -> Option<String> {
+    let tree = scene.tree();
+    let holds_edited_text = scene
+        .elements()
+        .into_iter()
+        .any(|element| tree.role(element).is_editable_text());
+    if !holds_edited_text {
+        return None;
+    }
+    let script = EDITED_TEXT_SCRIPT
+        .replace("EDITED_ATTRIBUTE", EDITED_ATTRIBUTE)
+        .replace("SELECTION_START_ATTRIBUTE", SELECTION_START_ATTRIBUTE)
+        .replace("SELECTION_END_ATTRIBUTE", SELECTION_END_ATTRIBUTE)
+        .replace("CARET_ATTRIBUTE", CARET_ATTRIBUTE);
+    let style = EDITED_TEXT_STYLE.replace("EDITED_ATTRIBUTE", EDITED_ATTRIBUTE);
+    Some(format!("<style>\n{style}\n</style><script>\n{script}\n</script>"))
 }
 
 /// The global the motion script of a case leaves for the stand.

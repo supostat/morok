@@ -33,3 +33,11 @@ first_frame = 150.0
 # Launches made before the measurement begins: the system caches the binary and its shaders.
 warm_up_launches = 2
 measured_launches = 20
+
+[input_latency]
+# Frames presented after a keypress before the first that shows its glyph: the 95th percentile
+# over the measured keypresses. None: the glyph is in the frame of its event.
+late_frames = 0
+# Keypresses made before the measurement begins: the glyphs of the font reach the atlas.
+warm_up_keypresses = 5
+measured_keypresses = 40

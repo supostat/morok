@@ -4,7 +4,7 @@ use std::process::ExitCode;
 
 use morok_bench::{Budgets, cold_start_application, scenarios};
 
-const USAGE: &str = "usage: morok-bench <frame | idle | cold-start>";
+const USAGE: &str = "usage: morok-bench <frame | idle | cold-start | input-latency>";
 /// The command names no scenario, or the harness could not do its work.
 const COULD_NOT_RUN: u8 = 2;
 

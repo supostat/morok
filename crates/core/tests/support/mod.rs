@@ -1,12 +1,13 @@
 #![allow(dead_code)]
 
+use std::ops::Range;
 use std::time::Duration;
 
 use morok_core::{
-    AccessibilityAction, ElementId, ElementTree, FontId, FontMetrics, FontRequest, InputHandler, ItemRange, Key,
-    KeyEvent, KeyPhase, Modifiers, Point, PointerButton, PointerEvent, PointerEventKind, PointerInput,
-    PointerInputKind, Propagation, Rect, Role, ShapedGlyph, ShapedLine, ShapedRun, ShapedText, ShortcutId, Size,
-    TextExtent, TextRequest, TextShaper, WidthConstraint,
+    AccessibilityAction, CaretLine, CaretLines, CaretStop, ElementId, ElementTree, FontId, FontMetrics, FontRequest,
+    InputHandler, ItemRange, Key, KeyEvent, KeyPhase, Modifiers, Point, PointerButton, PointerEvent, PointerEventKind,
+    PointerInput, PointerInputKind, Propagation, Rect, Role, ShapedGlyph, ShapedLine, ShapedRun, ShapedText,
+    ShortcutId, Size, TextExtent, TextRequest, TextShaper, WidthConstraint,
 };
 use morok_css::{CompiledTokens, SourceFile, TokenId, compile_stylesheets, compile_tokens};
 use morok_style::{Class, Color, FontStyle, FontVariantNumeric, FontWeight, StyleSheet, Theme};
@@ -84,6 +85,35 @@ impl MonospaceShaper {
         lines
     }
 
+    /// The lines of an edited text as ranges of its bytes: a line ends behind a line break,
+    /// and under a definite width before the word that no longer fits. The spaces a wrapped
+    /// line ends with stay on it, and a text that ends with a line break has no line after it.
+    fn editable_lines(request: &TextRequest<'_>) -> Vec<Range<usize>> {
+        let advance = Self::advance(request);
+        let fits = |characters: usize| match request.width {
+            WidthConstraint::MaxContent => true,
+            WidthConstraint::MinContent => false,
+            WidthConstraint::Definite(width) => characters as f32 * advance <= width,
+        };
+        let mut lines = Vec::new();
+        let mut paragraph_start = 0;
+        for paragraph in request.text.split_inclusive('\n') {
+            let mut line_start = paragraph_start;
+            let mut word_start = paragraph_start;
+            for word in paragraph.split_inclusive(' ') {
+                let line_with_word = request.text[line_start..word_start + word.len()].trim_end();
+                if word_start > line_start && !fits(line_with_word.chars().count()) {
+                    lines.push(line_start..word_start);
+                    line_start = word_start;
+                }
+                word_start += word.len();
+            }
+            lines.push(line_start..paragraph_start + paragraph.len());
+            paragraph_start += paragraph.len();
+        }
+        lines
+    }
+
     fn remember_font(&mut self, font: &FontRequest<'_>) {
         self.last_font = Some(RequestedFont {
             families: font.families.iter().map(ToString::to_string).collect(),
@@ -153,6 +183,59 @@ impl TextShaper for MonospaceShaper {
                 runs: ItemRange {
                     start: runs_start,
                     end: shaped.runs.len() as u32,
+                },
+            });
+        }
+    }
+
+    fn shape_editable(&mut self, request: &TextRequest<'_>, shaped: &mut ShapedText, carets: &mut CaretLines) {
+        self.shaped_texts.push(request.text.to_owned());
+        self.remember_font(&request.font);
+        let advance = Self::advance(request);
+        shaped.clear();
+        carets.clear();
+        for line in Self::editable_lines(request) {
+            let characters = request.text[line.clone()].trim_end_matches('\n');
+            let glyphs_start = shaped.glyphs.len() as u32;
+            let stops_start = carets.stops.len() as u32;
+            for (position, (start, character)) in characters.char_indices().enumerate() {
+                shaped.glyphs.push(ShapedGlyph {
+                    glyph: character as u16,
+                    x: position as f32 * advance,
+                    y: 0.0,
+                });
+                carets.stops.push(CaretStop {
+                    offset: (line.start + start) as u32,
+                    x: position as f32 * advance,
+                });
+            }
+            carets.stops.push(CaretStop {
+                offset: (line.start + characters.len()) as u32,
+                x: characters.chars().count() as f32 * advance,
+            });
+            let runs_start = shaped.runs.len() as u32;
+            shaped.runs.push(ShapedRun {
+                font: FontId(0),
+                glyphs: ItemRange {
+                    start: glyphs_start,
+                    end: shaped.glyphs.len() as u32,
+                },
+            });
+            shaped.lines.push(ShapedLine {
+                width: characters.trim_end().chars().count() as f32 * advance,
+                runs: ItemRange {
+                    start: runs_start,
+                    end: shaped.runs.len() as u32,
+                },
+            });
+            carets.lines.push(CaretLine {
+                text: ItemRange {
+                    start: line.start as u32,
+                    end: line.end as u32,
+                },
+                stops: ItemRange {
+                    start: stops_start,
+                    end: carets.stops.len() as u32,
                 },
             });
         }
@@ -333,6 +416,8 @@ pub(crate) struct InputLog {
     pub(crate) shortcuts: Vec<ShortcutId>,
     /// What an assistive technology asked of which element, as the debug form of the action.
     pub(crate) accessibility_actions: Vec<(ElementId, String)>,
+    /// The texts the elements were told the user changed theirs to.
+    pub(crate) text_changes: Vec<(ElementId, String)>,
     /// The elements that use every event routed to them.
     pub(crate) consumers: Vec<ElementId>,
 }
@@ -378,5 +463,9 @@ impl InputHandler for InputLog {
 
     fn accessibility_action(&mut self, element: ElementId, action: &AccessibilityAction<'_>) {
         self.accessibility_actions.push((element, format!("{action:?}")));
+    }
+
+    fn text_changed(&mut self, element: ElementId, text: &str) {
+        self.text_changes.push((element, text.to_owned()));
     }
 }

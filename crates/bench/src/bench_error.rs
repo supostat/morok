@@ -22,6 +22,10 @@ pub enum BenchError {
     NoFirstFrame { waited: Duration },
     /// The process whose start is measured could not be started or followed.
     NoLaunch { executable: PathBuf, error: io::Error },
+    /// The window drew no glyph of a keypress in the time given to it.
+    NoGlyph { waited: Duration },
+    /// The window ran no frame in the time given to it, though one was asked for.
+    NoFrame { waited: Duration },
 }
 
 impl Display for BenchError {
@@ -39,6 +43,16 @@ impl Display for BenchError {
             Self::NoLaunch { executable, error } => {
                 write!(formatter, "could not launch {}: {error}", executable.display())
             }
+            Self::NoGlyph { waited } => write!(
+                formatter,
+                "the window drew no glyph of a keypress within {:.1} s of it",
+                waited.as_secs_f64()
+            ),
+            Self::NoFrame { waited } => write!(
+                formatter,
+                "the window ran no frame within {:.1} s of asking for one",
+                waited.as_secs_f64()
+            ),
         }
     }
 }

@@ -1,0 +1,12 @@
+/* The stage of the field cases: a padded surface with the fields of a case in three columns. */
+
+.fields-stage {
+  padding: var(--space-4);
+  background-color: var(--color-bg);
+}
+
+.fields-grid {
+  display: grid;
+  grid-template-columns: 220px 220px 220px;
+  gap: var(--space-3);
+}

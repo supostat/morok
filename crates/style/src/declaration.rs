@@ -95,6 +95,12 @@ pub enum Declaration {
     OutlineColor(ColorValue),
     OutlineOffset(Length),
     Color(ColorValue),
+    /// The color of the caret of an edited text; `auto` is `currentColor`.
+    CaretColor(ColorValue),
+    /// The `color` of the `::placeholder` of the element.
+    PlaceholderColor(ColorValue),
+    /// The `background-color` of the `::selection` of the element.
+    SelectionBackgroundColor(ColorValue),
     FontFamily(Token<FontFamilies>),
     FontSize(Length),
     FontWeight(FontWeightValue),

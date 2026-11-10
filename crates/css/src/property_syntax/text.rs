@@ -1,19 +1,20 @@
 use cssparser::{Parser, Token};
 use morok_style::{
-    Declaration, FontStyle, FontVariantNumeric, FontWeight, FontWeightValue, Length, LineHeight, Pixels, TextAlign,
-    TextDecoration, TextOverflow, WhiteSpace,
+    ColorValue, Declaration, FontStyle, FontVariantNumeric, FontWeight, FontWeightValue, Length, LineHeight, Pixels,
+    TextAlign, TextDecoration, TextOverflow, WhiteSpace,
 };
 use std::borrow::Cow;
 
 use crate::compiled_tokens::CompiledTokens;
 use crate::problem::Problem;
 use crate::property::Property;
-use crate::property_syntax::{accepts_keyword, keyword, length, peek};
+use crate::property_syntax::{accepts_keyword, color, keyword, length, peek};
 use crate::span::Span;
 use crate::token_reference;
 use crate::value_error::{ValueError, ValueResult};
 
 const NORMAL: &str = "normal";
+const AUTO: &str = "auto";
 
 const FONT_WEIGHT_KEYWORDS: [(&str, FontWeight); 2] = [("normal", FontWeight(400)), ("bold", FontWeight(700))];
 const FONT_STYLES: [(&str, FontStyle); 2] = [("normal", FontStyle::Normal), ("italic", FontStyle::Italic)];
@@ -42,6 +43,11 @@ const NUMERIC_VARIANTS: [(&str, FontVariantNumeric); 2] = [
 ];
 
 pub(crate) const PROPERTIES: &[Property] = &[
+    Property {
+        name: "caret-color",
+        expectation: "`auto`, a color token, `transparent` or `currentColor`",
+        parse: |context, input| Ok(vec![Declaration::CaretColor(caret_color(context.tokens, input)?)]),
+    },
     Property {
         name: "font-family",
         expectation: "a `font-` token",
@@ -116,6 +122,14 @@ fn raw_typography(input: &mut Parser<'_>, what: &str, token_family: &str) -> Val
         hint: format!("it comes from a `{token_family}` token: `var(--{token_family}…)`"),
     }
     .into()
+}
+
+/// `auto` gives the caret the color of the text, which is what `currentColor` gives it.
+fn caret_color(tokens: &CompiledTokens, input: &mut Parser<'_>) -> ValueResult<ColorValue> {
+    if accepts_keyword(input, AUTO) {
+        return Ok(ColorValue::CurrentColor);
+    }
+    color::parse(tokens, input)
 }
 
 fn font_family(

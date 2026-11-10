@@ -690,7 +690,12 @@ impl SchemaLiteral for Declaration {
             | Self::GridColumnEnd(line)
             | Self::GridRowStart(line)
             | Self::GridRowEnd(line) => one(line),
-            Self::BackgroundColor(color) | Self::OutlineColor(color) | Self::Color(color) => one(color),
+            Self::BackgroundColor(color)
+            | Self::OutlineColor(color)
+            | Self::Color(color)
+            | Self::CaretColor(color)
+            | Self::PlaceholderColor(color)
+            | Self::SelectionBackgroundColor(color) => one(color),
             Self::BackgroundImage(image) => one(image),
             Self::BorderWidth(side, width) => two(side, width),
             Self::BorderStyle(side, style) => two(side, style),

@@ -1,21 +1,29 @@
+mod key_routing;
+mod text_input;
+
 use std::cell::{Cell, OnceCell, RefCell};
 use std::ffi::c_void;
 use std::rc::Rc;
 use std::time::Duration;
 
-use morok_core::{DisplayList, ElementTree, FrameScheduler, KeyPhase, PointerButton, PointerInputKind, Size};
+use morok_core::{
+    DisplayList, ElementTree, FrameScheduler, KeyPhase, PointerButton, PointerInputKind, Size, TextCommand,
+};
 use morok_style::ColorScheme;
 use objc2::rc::Retained;
-use objc2::runtime::{AnyObject, ProtocolObject};
+use objc2::runtime::{AnyObject, NSObjectProtocol, ProtocolObject, Sel};
 use objc2::{AnyThread, DefinedClass, MainThreadMarker, MainThreadOnly, define_class, msg_send, sel};
 use objc2_app_kit::{
-    NSAppearanceCustomization, NSEvent, NSResponder, NSTrackingArea, NSTrackingAreaOptions, NSView,
+    NSAppearanceCustomization, NSEvent, NSResponder, NSTextInputClient, NSTrackingArea, NSTrackingAreaOptions, NSView,
     NSWindowDidBecomeKeyNotification, NSWindowDidResignKeyNotification, NSWorkspace,
     NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification,
 };
 use objc2_core_foundation::CGSize;
 use objc2_core_graphics::{CGColorSpace, kCGColorSpaceSRGB};
-use objc2_foundation::{NSNotification, NSNotificationCenter, NSPoint, NSRect, NSSize};
+use objc2_foundation::{
+    NSArray, NSAttributedString, NSAttributedStringKey, NSNotification, NSNotificationCenter, NSPoint, NSRange, NSRect,
+    NSSize, NSUInteger,
+};
 use objc2_metal::{MTLDrawable, MTLResidencySet};
 use objc2_quartz_core::{CADisplayLink, CALayer, CAMetalDrawable, CAMetalLayer};
 
@@ -32,6 +40,7 @@ use crate::render::screen_target::ScreenTarget;
 use crate::render::target_geometry::TargetGeometry;
 use crate::surface_content::SurfaceContent;
 use crate::surface_settings::SurfaceSettings;
+use key_routing::KeyRouting;
 
 /// A layer hands out three drawables, so three frames may be on their way to the screen.
 const FRAMES_IN_FLIGHT: usize = 3;
@@ -53,6 +62,9 @@ pub(crate) struct SurfaceState {
     /// moved to a display of another scale, or never drawn.
     surface_is_stale: Cell<bool>,
     statistics: Cell<FrameStatistics>,
+    /// The key being handed to the input methods.
+    key_in_flight: RefCell<Option<Retained<NSEvent>>>,
+    key_routing: Cell<KeyRouting>,
 }
 
 define_class!(
@@ -199,9 +211,17 @@ define_class!(
             self.pointer_input(event, PointerInputKind::Exited);
         }
 
+        /// While the content edits text, a key goes through the input methods of the system
+        /// first: they type, compose and dictate, and hand back the keys that are commands.
         #[unsafe(method(keyDown:))]
         fn key_down(&self, event: &NSEvent) {
-            if !self.key_input(event, KeyPhase::Pressed) {
+            let edits_text = self.content().borrow_mut().focused_text().is_some();
+            let was_used = if edits_text {
+                self.interpret_key(event)
+            } else {
+                self.key_input(event, KeyPhase::Pressed)
+            };
+            if !was_used {
                 // SAFETY: the superclass implements the method with this signature; it hands
                 // the key on along the responder chain.
                 let (): () = unsafe { msg_send![super(self), keyDown: event] };
@@ -215,6 +235,104 @@ define_class!(
                 // the key on along the responder chain.
                 let (): () = unsafe { msg_send![super(self), keyUp: event] };
             }
+        }
+
+        #[unsafe(method(copy:))]
+        fn copy_text(&self, _sender: Option<&AnyObject>) {
+            self.input_text_command(TextCommand::Copy);
+        }
+
+        #[unsafe(method(cut:))]
+        fn cut_text(&self, _sender: Option<&AnyObject>) {
+            self.input_text_command(TextCommand::Cut);
+        }
+
+        #[unsafe(method(paste:))]
+        fn paste_text(&self, _sender: Option<&AnyObject>) {
+            self.input_text_command(TextCommand::Paste);
+        }
+
+        #[unsafe(method(selectAll:))]
+        fn select_all_text(&self, _sender: Option<&AnyObject>) {
+            self.input_text_command(TextCommand::SelectAll);
+        }
+
+        #[unsafe(method(undo:))]
+        fn undo_text(&self, _sender: Option<&AnyObject>) {
+            self.input_text_command(TextCommand::Undo);
+        }
+
+        #[unsafe(method(redo:))]
+        fn redo_text(&self, _sender: Option<&AnyObject>) {
+            self.input_text_command(TextCommand::Redo);
+        }
+    }
+
+    unsafe impl NSObjectProtocol for SurfaceView {}
+
+    unsafe impl NSTextInputClient for SurfaceView {
+        #[unsafe(method(insertText:replacementRange:))]
+        fn insert_text_replacement_range(&self, string: &AnyObject, replacement_range: NSRange) {
+            self.input_insert(string, replacement_range);
+        }
+
+        #[unsafe(method(doCommandBySelector:))]
+        fn do_command_by_selector(&self, _selector: Sel) {
+            self.input_command();
+        }
+
+        #[unsafe(method(setMarkedText:selectedRange:replacementRange:))]
+        fn set_marked_text_selected_range_replacement_range(
+            &self,
+            string: &AnyObject,
+            selected_range: NSRange,
+            replacement_range: NSRange,
+        ) {
+            self.input_set_marked(string, selected_range, replacement_range);
+        }
+
+        #[unsafe(method(unmarkText))]
+        fn unmark_text(&self) {
+            self.input_unmark();
+        }
+
+        #[unsafe(method(selectedRange))]
+        fn selected_range(&self) -> NSRange {
+            self.input_selected_range()
+        }
+
+        #[unsafe(method(markedRange))]
+        fn marked_range(&self) -> NSRange {
+            self.input_marked_range()
+        }
+
+        #[unsafe(method(hasMarkedText))]
+        fn has_marked_text(&self) -> bool {
+            self.input_has_marked_text()
+        }
+
+        #[unsafe(method_id(attributedSubstringForProposedRange:actualRange:))]
+        fn attributed_substring_for_proposed_range(
+            &self,
+            range: NSRange,
+            actual_range: *mut NSRange,
+        ) -> Option<Retained<NSAttributedString>> {
+            self.input_substring(range, actual_range)
+        }
+
+        #[unsafe(method_id(validAttributesForMarkedText))]
+        fn valid_attributes_for_marked_text(&self) -> Retained<NSArray<NSAttributedStringKey>> {
+            Self::input_valid_attributes()
+        }
+
+        #[unsafe(method(firstRectForCharacterRange:actualRange:))]
+        fn first_rect_for_character_range(&self, range: NSRange, actual_range: *mut NSRange) -> NSRect {
+            self.input_first_rect(range, actual_range)
+        }
+
+        #[unsafe(method(characterIndexForPoint:))]
+        fn character_index_for_point(&self, point: NSPoint) -> NSUInteger {
+            self.input_character_index(point)
         }
     }
 );
@@ -246,6 +364,8 @@ impl SurfaceView {
             reduces_motion: Cell::new(settings.reduces_motion),
             surface_is_stale: Cell::new(true),
             statistics: Cell::new(FrameStatistics::default()),
+            key_in_flight: RefCell::new(None),
+            key_routing: Cell::new(KeyRouting::Waiting),
         };
         let view = Self::alloc(main_thread).set_ivars(state);
         // SAFETY: the superclass initializes a view with a frame.

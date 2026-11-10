@@ -2,6 +2,7 @@
 
 mod accessibility;
 mod dirty;
+mod editing;
 mod element;
 mod element_arena;
 mod element_id;
@@ -23,6 +24,9 @@ pub use accessibility::accessible_actions::AccessibleActions;
 pub use accessibility::accessible_value::AccessibleValue;
 pub use accessibility::numeric_value::NumericValue;
 pub use accesskit;
+pub use editing::clipboard::Clipboard;
+pub use editing::text_command::TextCommand;
+pub use editing::text_selection::TextSelection;
 pub use element_id::ElementId;
 pub use element_tree::ElementTree;
 pub use frame_scheduler::FrameScheduler;
@@ -72,6 +76,9 @@ pub use style::positioning::Positioning;
 pub use style::resolved_length::ResolvedLength;
 pub use style::resolved_length_or_auto::ResolvedLengthOrAuto;
 pub use style::text_style::TextStyle;
+pub use text::caret_line::CaretLine;
+pub use text::caret_lines::CaretLines;
+pub use text::caret_stop::CaretStop;
 pub use text::font_id::FontId;
 pub use text::font_metrics::FontMetrics;
 pub use text::font_request::FontRequest;

@@ -43,6 +43,12 @@ pub struct PaintStyle {
     pub outline_color: Color,
     pub outline_offset: f32,
     pub object_fit: ObjectFit,
+    /// The color `::placeholder` gives the placeholder of an edited text; none leaves it the
+    /// gray browsers show a placeholder in.
+    pub placeholder_color: Option<Color>,
+    /// The background `::selection` gives the selected part of an edited text, drawn under
+    /// the text; none leaves it the highlight of the kit.
+    pub selection_background: Option<Color>,
     /// The colors that are `currentColor`: they follow `color` when it animates.
     pub(crate) follows_color: AnimatableProperties,
 }
@@ -67,6 +73,8 @@ impl PaintStyle {
             outline_color: color,
             outline_offset: 0.0,
             object_fit: ObjectFit::Fill,
+            placeholder_color: None,
+            selection_background: None,
             follows_color: BORDER_AND_OUTLINE_COLORS,
         }
     }

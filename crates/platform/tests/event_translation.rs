@@ -64,6 +64,8 @@ impl InputHandler for Heard {
     }
 
     fn accessibility_action(&mut self, _element: ElementId, _action: &AccessibilityAction<'_>) {}
+
+    fn text_changed(&mut self, _element: ElementId, _text: &str) {}
 }
 
 /// A scene in a window that gives the input of the window to its tree and remembers both what

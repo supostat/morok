@@ -1,3 +1,4 @@
+use crate::text::caret_lines::CaretLines;
 use crate::text::font_metrics::FontMetrics;
 use crate::text::font_request::FontRequest;
 use crate::text::shaped_text::ShapedText;
@@ -20,4 +21,11 @@ pub trait TextShaper {
     /// Replaces what `shaped` holds with the lines of the text. A line wider than
     /// `ellipsis_width` is cut to fit it and ends with an ellipsis.
     fn shape(&mut self, request: &TextRequest<'_>, ellipsis_width: Option<f32>, shaped: &mut ShapedText);
+
+    /// Replaces what `shaped` holds with the lines of a text that is edited, set as
+    /// [`shape`](Self::shape) sets them with no line cut, and what `carets` holds with the same
+    /// lines as a caret moves through them: its lines go one for one with the shaped ones.
+    /// A text that ends with a line break gets no line after the break, and a text without
+    /// characters gets none.
+    fn shape_editable(&mut self, request: &TextRequest<'_>, shaped: &mut ShapedText, carets: &mut CaretLines);
 }

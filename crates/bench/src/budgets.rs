@@ -7,6 +7,7 @@ use crate::bench_error::BenchError;
 use crate::cold_start_budget::ColdStartBudget;
 use crate::frame_budget::FrameBudget;
 use crate::idle_budget::IdleBudget;
+use crate::input_latency_budget::InputLatencyBudget;
 use crate::stage_budgets::StageBudgets;
 
 const BUDGETS_FILE: &str = "budgets.toml";
@@ -19,6 +20,7 @@ pub struct Budgets {
     pub frame: FrameBudget,
     pub idle: IdleBudget,
     pub cold_start: ColdStartBudget,
+    pub input_latency: InputLatencyBudget,
 }
 
 impl Budgets {

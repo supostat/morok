@@ -51,6 +51,8 @@ impl InputHandler for Asked {
     fn accessibility_action(&mut self, element: ElementId, action: &AccessibilityAction<'_>) {
         self.actions.push((element, format!("{action:?}")));
     }
+
+    fn text_changed(&mut self, _element: ElementId, _text: &str) {}
 }
 
 /// A scene in a window that answers for the accessibility of its tree.

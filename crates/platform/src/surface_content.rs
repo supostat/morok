@@ -1,8 +1,11 @@
+use std::ops::Range;
 use std::time::Duration;
 
 use morok_core::accesskit::{ActionRequest, TreeUpdate};
-use morok_core::{ElementTree, KeyEvent, PointerInput, Size};
+use morok_core::{ElementTree, KeyEvent, Point, PointerInput, Rect, Size, TextCommand};
 use morok_style::ColorScheme;
+
+use crate::focused_text::FocusedText;
 
 /// What a window shows. The window asks its content for a frame whenever the tree of the
 /// content, or the window itself, asked the frame loop for one.
@@ -36,4 +39,37 @@ pub trait SurfaceContent {
 
     /// An assistive technology asks a node of the accessibility tree for an action.
     fn accessibility_action(&mut self, request: &ActionRequest);
+
+    /// The text the focused element edits; none while focus is on no edited text. A content
+    /// that edits no text keeps this.
+    fn focused_text(&mut self) -> Option<FocusedText> {
+        None
+    }
+
+    /// Inserts what was typed, dictated or settled on by an input method into the focused
+    /// text: in place of the text being composed, else of `replacement`, else of the
+    /// selection. Places are bytes of the text.
+    fn insert_text(&mut self, _text: &str, _replacement: Option<Range<usize>>) {}
+
+    /// Shows what an input method composes in the focused text, with the bytes `selected` of
+    /// it selected; an empty text gives the composition up.
+    fn set_marked_text(&mut self, _text: &str, _selected: Range<usize>, _replacement: Option<Range<usize>>) {}
+
+    /// Settles the text an input method composes as it stands.
+    fn unmark_text(&mut self) {}
+
+    /// Does a command of the Edit menu to the focused text. Returns whether a text took it.
+    fn text_command(&mut self, _command: TextCommand) -> bool {
+        false
+    }
+
+    /// The box of the first line of a range of the focused text, in CSS pixels of the surface.
+    fn text_range_box(&mut self, _range: Range<usize>) -> Option<Rect> {
+        None
+    }
+
+    /// The place of the focused text nearest to a point of the surface.
+    fn text_offset_at(&mut self, _point: Point) -> Option<usize> {
+        None
+    }
 }

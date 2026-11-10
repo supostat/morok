@@ -1,3 +1,6 @@
+pub(crate) mod caret_line;
+pub(crate) mod caret_lines;
+pub(crate) mod caret_stop;
 pub(crate) mod font_id;
 pub(crate) mod font_metrics;
 pub(crate) mod font_request;

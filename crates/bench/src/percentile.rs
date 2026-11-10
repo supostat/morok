@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 const PERCENTILE: f64 = 0.95;
 
 /// The value at the 95th percentile by the nearest-rank method: the smallest value that is at
@@ -8,7 +6,7 @@ const PERCENTILE: f64 = 0.95;
 /// # Panics
 ///
 /// When there is no value: a percentile of nothing names none.
-pub(crate) fn percentile_95(mut values: Vec<Duration>) -> Duration {
+pub(crate) fn percentile_95<Value: Ord + Copy>(mut values: Vec<Value>) -> Value {
     values.sort_unstable();
     let rank = (PERCENTILE * values.len() as f64).ceil() as usize;
     values[rank.max(1) - 1]

@@ -1,0 +1,209 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 716.0
+height = 100.0
+
+[[light]]
+node = "#1 .fields-stage"
+x = 0.0
+y = 0.0
+width = 716.0
+height = 100.0
+
+[[light]]
+node = "#2 .fields-grid"
+x = 16.0
+y = 16.0
+width = 684.0
+height = 68.0
+
+[[light]]
+node = "#3 .field"
+x = 16.0
+y = 16.0
+width = 220.0
+height = 28.0
+
+[[light]]
+node = "#4 .field-input"
+x = 25.0
+y = 22.5
+width = 202.0
+height = 15.0
+
+[[light]]
+node = "#5 .field"
+x = 248.0
+y = 16.0
+width = 220.0
+height = 28.0
+
+[[light]]
+node = "#6 .field-input"
+x = 257.0
+y = 22.5
+width = 202.0
+height = 15.0
+
+[[light]]
+node = "#7 .field"
+x = 480.0
+y = 16.0
+width = 220.0
+height = 28.0
+
+[[light]]
+node = "#8 .field-input"
+x = 489.0
+y = 22.5
+width = 202.0
+height = 15.0
+
+[[light]]
+node = "#9 .field"
+x = 16.0
+y = 56.0
+width = 220.0
+height = 28.0
+
+[[light]]
+node = "#10 .field-input"
+x = 25.0
+y = 62.5
+width = 202.0
+height = 15.0
+
+[[light]]
+node = "#11 .field.invalid"
+x = 248.0
+y = 56.0
+width = 220.0
+height = 28.0
+
+[[light]]
+node = "#12 .field-input"
+x = 257.0
+y = 62.5
+width = 202.0
+height = 15.0
+
+[[light]]
+node = "#13 .field"
+x = 480.0
+y = 56.0
+width = 220.0
+height = 28.0
+
+[[light]]
+node = "#14 .field-input"
+x = 489.0
+y = 62.5
+width = 202.0
+height = 15.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 716.0
+height = 100.0
+
+[[dark]]
+node = "#1 .fields-stage"
+x = 0.0
+y = 0.0
+width = 716.0
+height = 100.0
+
+[[dark]]
+node = "#2 .fields-grid"
+x = 16.0
+y = 16.0
+width = 684.0
+height = 68.0
+
+[[dark]]
+node = "#3 .field"
+x = 16.0
+y = 16.0
+width = 220.0
+height = 28.0
+
+[[dark]]
+node = "#4 .field-input"
+x = 25.0
+y = 22.5
+width = 202.0
+height = 15.0
+
+[[dark]]
+node = "#5 .field"
+x = 248.0
+y = 16.0
+width = 220.0
+height = 28.0
+
+[[dark]]
+node = "#6 .field-input"
+x = 257.0
+y = 22.5
+width = 202.0
+height = 15.0
+
+[[dark]]
+node = "#7 .field"
+x = 480.0
+y = 16.0
+width = 220.0
+height = 28.0
+
+[[dark]]
+node = "#8 .field-input"
+x = 489.0
+y = 22.5
+width = 202.0
+height = 15.0
+
+[[dark]]
+node = "#9 .field"
+x = 16.0
+y = 56.0
+width = 220.0
+height = 28.0
+
+[[dark]]
+node = "#10 .field-input"
+x = 25.0
+y = 62.5
+width = 202.0
+height = 15.0
+
+[[dark]]
+node = "#11 .field.invalid"
+x = 248.0
+y = 56.0
+width = 220.0
+height = 28.0
+
+[[dark]]
+node = "#12 .field-input"
+x = 257.0
+y = 62.5
+width = 202.0
+height = 15.0
+
+[[dark]]
+node = "#13 .field"
+x = 480.0
+y = 56.0
+width = 220.0
+height = 28.0
+
+[[dark]]
+node = "#14 .field-input"
+x = 489.0
+y = 62.5
+width = 202.0
+height = 15.0

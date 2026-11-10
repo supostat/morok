@@ -1,0 +1,47 @@
+/* A field of the kit: a box around one line or lines of text the user edits, in every state. */
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 28px;
+  min-width: 220px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  transition: border-color var(--motion-fast);
+}
+
+.field-input {
+  flex-grow: 1;
+  min-width: 0;
+  caret-color: var(--color-accent);
+}
+
+.field-input::placeholder {
+  color: var(--color-text-3);
+}
+
+.field-input::selection {
+  background-color: var(--color-selection);
+}
+
+/* The ring of a focused field: no token mixes the focus color with transparency, so the soft
+   accent stands in for it. */
+.field:focus-within {
+  border-color: var(--color-focus);
+  outline: 3px solid var(--color-accent-soft);
+}
+
+.field.invalid {
+  border-color: var(--color-danger);
+  outline: 3px solid var(--color-danger-soft);
+}
+
+.field:disabled {
+  opacity: 0.45;
+}

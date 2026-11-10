@@ -6,7 +6,6 @@ use crate::dirty::Dirty;
 use crate::element_arena::ElementArena;
 use crate::element_id::ElementId;
 use crate::motion::motion_resolver::MotionResolver;
-use crate::role::Role;
 use crate::style::computed_style::ComputedStyle;
 use crate::style::style_outcome::StyleOutcome;
 use crate::style::style_resolver::StyleResolver;
@@ -136,7 +135,7 @@ impl StylePass<'_> {
             self.elements[id].dirty.insert(Dirty::PAINT);
             outcome.repaints = true;
         }
-        if previous.text != style.text && self.elements[id].role == Role::Text {
+        if previous.text != style.text && self.elements[id].role.sets_lines() {
             self.elements.invalidate_layout(id);
             self.elements.invalidate_text(id);
         }

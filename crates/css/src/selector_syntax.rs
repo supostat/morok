@@ -5,6 +5,7 @@ use morok_style::{CompoundSelector, Selector, States};
 
 use crate::class_table::ClassTable;
 use crate::problem::Problem;
+use crate::pseudo_element::PseudoElement;
 use crate::span::Span;
 
 const RESERVED_CLASS_NAMES: [&str; 3] = ["self", "super", "crate"];
@@ -15,6 +16,8 @@ const OWN_CLASS_HINT: &str = "give the element its own class";
 pub(crate) struct ParsedSelector {
     pub(crate) selector: Selector,
     pub(crate) specificity: u32,
+    /// The part of the subject the rule styles; none for the subject itself.
+    pub(crate) pseudo_element: Option<PseudoElement>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -28,6 +31,7 @@ struct CompoundDraft {
     class_names: Vec<String>,
     states: States,
     pseudo_classes: u32,
+    pseudo_element: Option<PseudoElement>,
 }
 
 #[derive(Default)]
@@ -98,10 +102,14 @@ impl<'i> Reader<'i> {
                     self.combinator = Some(Combinator::Child);
                 }
                 Token::Delim('.') => {
+                    self.nothing_follows_a_pseudo_element(start)?;
                     let class_name = self.class_name(start)?;
                     self.compound_mut().class_names.push(class_name);
                 }
-                Token::Colon => self.pseudo(start)?,
+                Token::Colon => {
+                    self.nothing_follows_a_pseudo_element(start)?;
+                    self.pseudo(start)?;
+                }
                 other => return Err(self.unsupported(start, &other)),
             }
             self.selector.span = Some(Span {
@@ -149,6 +157,18 @@ impl<'i> Reader<'i> {
         }
         self.drafts.push(selector);
         Ok(())
+    }
+
+    /// A pseudo-element is the last part of its compound: no class and no state comes after it.
+    fn nothing_follows_a_pseudo_element(&self, start: usize) -> Result<(), Problem> {
+        let Some(pseudo_element) = self.compound.as_ref().and_then(|compound| compound.pseudo_element) else {
+            return Ok(());
+        };
+        Err(self.problem(
+            start,
+            format!("nothing follows `::{}` in a selector", pseudo_element.name()),
+            "write the classes and the states before the pseudo-element",
+        ))
     }
 
     fn class_name(&mut self, start: usize) -> Result<String, Problem> {
@@ -202,11 +222,15 @@ impl<'i> Reader<'i> {
                     Some(Token::Ident(name)) => name.as_ref().to_owned(),
                     _ => String::new(),
                 };
-                Err(self.problem(
-                    start,
-                    format!("the pseudo-element `::{name}` is not supported"),
-                    "draw it as an element of its own",
-                ))
+                let Some(pseudo_element) = PseudoElement::named(&name) else {
+                    return Err(self.problem(
+                        start,
+                        format!("the pseudo-element `::{name}` is not supported"),
+                        PseudoElement::HINT,
+                    ));
+                };
+                self.compound_mut().pseudo_element = Some(pseudo_element);
+                Ok(())
             }
             _ => Err(self.problem(start, "expected a pseudo-class after `:`", "write it as `:hover`")),
         }
@@ -278,6 +302,16 @@ impl SelectorDraft {
         if self.combinators.len() > 1 {
             return Err(problem("only one child step is supported", self.own_class_hint()));
         }
+        let (_, parents) = self
+            .compounds
+            .split_last()
+            .expect("a selector that was read has a compound");
+        if parents.iter().any(|parent| parent.pseudo_element.is_some()) {
+            return Err(problem(
+                "a pseudo-element has no children to select",
+                "a pseudo-element ends the selector of the element it belongs to".to_owned(),
+            ));
+        }
         Ok(self)
     }
 
@@ -305,6 +339,7 @@ impl SelectorDraft {
         };
         ParsedSelector {
             selector: Selector { subject, parent },
+            pseudo_element: self.compounds.last().and_then(|compound| compound.pseudo_element),
             specificity: self
                 .compounds
                 .iter()

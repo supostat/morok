@@ -25,6 +25,8 @@ pub(crate) struct InputState {
     pub(crate) shortcuts: Vec<Shortcut>,
     /// The serial number of the last shortcut registered.
     pub(crate) last_shortcut: u64,
+    /// The element whose edited text the pointer selects in, from a press on it to the release.
+    pub(crate) text_drag: Option<ElementId>,
     /// Scratch space for the elements the pointer comes over, the innermost first.
     pub(crate) entered: Vec<ElementId>,
     /// Scratch space of the hit test: the point in the coordinates of every enclosing group.
@@ -46,6 +48,7 @@ impl Default for InputState {
             focus_traps: Vec::new(),
             shortcuts: Vec::new(),
             last_shortcut: 0,
+            text_drag: None,
             entered: Vec::new(),
             group_points: Vec::new(),
         }

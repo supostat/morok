@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
 use morok_style::{
-    FontFamilies, FontStyle, FontVariantNumeric, FontWeight, TextAlign, TextDecoration, TextOverflow, Theme, Token,
-    WhiteSpace,
+    Color, FontFamilies, FontStyle, FontVariantNumeric, FontWeight, TextAlign, TextDecoration, TextOverflow, Theme,
+    Token, WhiteSpace,
 };
 
 use crate::text::font_request::FontRequest;
@@ -34,6 +34,8 @@ pub struct TextStyle {
     pub text_decoration: TextDecoration,
     /// Applies to the text children of the element; not inherited.
     pub text_overflow: TextOverflow,
+    /// The color of the caret of an edited text; none is `auto`, the color of the text.
+    pub caret_color: Option<Color>,
 }
 
 impl TextStyle {
@@ -49,6 +51,7 @@ impl TextStyle {
         font_variant_numeric: FontVariantNumeric::Normal,
         text_decoration: TextDecoration::None,
         text_overflow: TextOverflow::Clip,
+        caret_color: None,
     };
 
     /// What a child starts from before its own declarations apply.

@@ -4,6 +4,7 @@ use morok_style::Declaration;
 use crate::diagnostic::Diagnostic;
 use crate::problem::Problem;
 use crate::property;
+use crate::pseudo_element::PseudoElement;
 use crate::source_file::SourceFile;
 use crate::span::Span;
 use crate::value_context::ValueContext;
@@ -18,6 +19,9 @@ pub(crate) enum DeclarationBlock {
     Rule,
     /// The block of a keyframe: the animatable properties only.
     Keyframe,
+    /// The block of a rule of a pseudo-element: the properties the pseudo-element takes, read
+    /// into the declarations of its element that carry them.
+    PseudoElement(PseudoElement),
 }
 
 /// Reads the `property: value;` list of a block into longhand declarations.
@@ -154,7 +158,18 @@ fn value(
             hint: "a keyframe sets lengths, colors, `box-shadow`, `opacity` and `transform`".to_owned(),
         });
     }
-    Ok(longhands)
+    let DeclarationBlock::PseudoElement(pseudo_element) = block else {
+        return Ok(longhands);
+    };
+    longhands
+        .into_iter()
+        .map(|longhand| pseudo_element.declaration(longhand))
+        .collect::<Option<Vec<_>>>()
+        .ok_or_else(|| Problem {
+            span: name_span,
+            message: format!("`{}` is not supported in `::{}`", property.name, pseudo_element.name()),
+            hint: format!("it takes {}", pseudo_element.expectation()),
+        })
 }
 
 fn skip_to_end(input: &mut Parser<'_>) {

@@ -56,6 +56,7 @@ fn item_kinds(scene: &Scene) -> Vec<(&'static str, Rect)> {
             DisplayItem::PushClip { frame } => ("push clip", frame.border_box),
             DisplayItem::GlyphRun { origin, .. } => ("glyph run", Rect::new(origin.x, origin.y, 0.0, 0.0)),
             DisplayItem::TextDecoration { rect, .. } => ("text decoration", *rect),
+            DisplayItem::Fill { rect, .. } => ("fill", *rect),
             DisplayItem::PopClip => ("pop clip", Rect::ZERO),
             DisplayItem::PushGroup { effects } => ("push group", effects.frame.border_box),
             DisplayItem::PopGroup => ("pop group", Rect::ZERO),

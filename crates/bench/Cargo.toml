@@ -19,6 +19,14 @@ morok-style.workspace = true
 # Under debug assertions objc2 verifies the signature of every message it sends and allocates
 # while doing so; the allocation gate counts the allocations of the kit, not of that check.
 objc2 = { workspace = true, features = ["disable-encoding-assertions"] }
+objc2-app-kit = { workspace = true, features = [
+  "NSApplication",
+  "NSEvent",
+  "NSGraphicsContext",
+  "NSResponder",
+  "NSWindow",
+] }
+objc2-foundation = { workspace = true, features = ["NSArray", "NSGeometry", "NSString"] }
 serde.workspace = true
 toml.workspace = true
 

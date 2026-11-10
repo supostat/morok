@@ -80,11 +80,14 @@ impl<'a> CompiledSuite<'a> {
         )
     }
 
-    /// The markup of the tree before any change, with the motion of the case for the page to
-    /// play when it has one.
+    /// The markup of the tree before any change, with what its edited texts need, and the
+    /// motion of the case for the page to play when it has one.
     fn markup(&self, case: &Case) -> String {
         let mut scene = self.scene(case, ColorScheme::Light);
         let mut markup = markup::of(&scene);
+        if let Some(support) = markup::edited_text_support(&scene) {
+            markup.push_str(&support);
+        }
         if let Moment::InMotion { change, after } = case.moment {
             change(&mut scene);
             markup.push_str(&markup::motion_script(&scene, after));

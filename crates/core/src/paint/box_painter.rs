@@ -1,5 +1,6 @@
 use morok_style::{BackgroundImage, Declaration, ShadowLayer, StyleSheet, TextDecoration, Theme};
 
+use crate::editing::editable_painter;
 use crate::element::Element;
 use crate::geometry::point::Point;
 use crate::geometry::rect::Rect;
@@ -32,7 +33,7 @@ impl BoxPainter<'_> {
 
     /// Appends what CSS paints of a box, bottom layer first: the shadows around it, the
     /// background color, the background image, the inset shadows and the border; then, for a
-    /// text, its lines.
+    /// text, its lines, and for an edited text what it shows inside its content box.
     pub(crate) fn paint_box(self, element: &Element, display_list: &mut DisplayList) {
         let frame = Self::frame(element);
         let paint = &element.style.paint;
@@ -63,6 +64,9 @@ impl BoxPainter<'_> {
         }
         if element.role == Role::Text && paint.color.alpha > 0.0 {
             Self::paint_text(element, display_list);
+        }
+        if element.editable.is_some() {
+            editable_painter::paint(element, display_list);
         }
         Self::paint_media(element, &frame, display_list);
     }

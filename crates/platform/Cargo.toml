@@ -15,6 +15,7 @@ accesskit_macos.workspace = true
 bytemuck.workspace = true
 dispatch2 = { workspace = true, features = ["block2", "objc2"] }
 resvg.workspace = true
+unicode-segmentation.workspace = true
 morok-core.workspace = true
 morok-style.workspace = true
 objc2.workspace = true
@@ -26,8 +27,11 @@ objc2-app-kit = { workspace = true, features = [
   "NSFont",
   "NSFontDescriptor",
   "NSGraphics",
+  "NSPasteboard",
   "NSResponder",
   "NSRunningApplication",
+  "NSTextInputClient",
+  "NSTextInputContext",
   "NSTrackingArea",
   "NSView",
   "NSWindow",
@@ -65,11 +69,14 @@ objc2-core-text = { workspace = true, features = [
 ] }
 objc2-foundation = { workspace = true, features = [
   "NSArray",
+  "NSAttributedString",
   "NSDate",
   "NSDictionary",
   "NSError",
   "NSGeometry",
   "NSNotification",
+  "NSObjCRuntime",
+  "NSRange",
   "NSRunLoop",
   "NSString",
 ] }
@@ -115,12 +122,15 @@ objc2-quartz-core = { workspace = true, features = [
 ] }
 
 [dev-dependencies]
+morok-components.workspace = true
 morok-css.workspace = true
+morok-reactive.workspace = true
 objc2.workspace = true
 objc2-app-kit = { workspace = true, features = [
   "NSApplication",
   "NSEvent",
   "NSGraphicsContext",
+  "NSPasteboard",
   "NSResponder",
   "NSView",
   "NSWindow",
@@ -130,6 +140,8 @@ objc2-foundation = { workspace = true, features = [
   "NSDate",
   "NSGeometry",
   "NSNotification",
+  "NSObjCRuntime",
+  "NSRange",
   "NSRunLoop",
   "NSString",
 ] }
@@ -144,6 +156,10 @@ harness = false
 
 [[test]]
 name = "event_translation"
+harness = false
+
+[[test]]
+name = "text_input_client"
 harness = false
 
 [[test]]

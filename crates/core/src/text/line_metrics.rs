@@ -7,6 +7,10 @@ pub(crate) struct LineMetrics {
     pub(crate) line_height: f32,
     /// From the top of the line box down to the baseline.
     pub(crate) baseline: f32,
+    /// From the baseline up to the top of the content area, in whole device pixels.
+    pub(crate) ascent: f32,
+    /// The height of the content area of the font, in whole device pixels.
+    pub(crate) content_height: f32,
 }
 
 /// Browsers keep a length in sixty-fourths of a device pixel and cut what is finer off.
@@ -36,6 +40,8 @@ impl LineMetrics {
         Self {
             line_height,
             baseline: leading_above + ascent,
+            ascent,
+            content_height,
         }
     }
 }

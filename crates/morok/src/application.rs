@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use morok_components::view::{Mount, Surfaces};
 use morok_core::ElementId;
-use morok_platform::{Appearance, RendererError, WindowOptions};
+use morok_platform::{Appearance, PasteboardClipboard, RendererError, WindowOptions};
 use morok_reactive::Runtime;
 
 use crate::application_state::ApplicationState;
@@ -28,14 +28,23 @@ impl Application {
     ///
     /// When called from a thread other than the main one.
     pub fn new(styles: Styles) -> Result<Self, RendererError> {
+        let platform = morok_platform::Application::new()?;
+        let mut state = ApplicationState::new(styles);
+        state.surfaces.register_kit_icons(|svg| {
+            platform
+                .renderer()
+                .add_icon(svg)
+                .expect("the icons of the kit are SVG the renderer reads")
+        });
         Ok(Self {
-            platform: morok_platform::Application::new()?,
-            state: Rc::new(RefCell::new(ApplicationState::new(styles))),
+            platform,
+            state: Rc::new(RefCell::new(state)),
         })
     }
 
     /// Opens a window on a new surface and mounts `root` on it: the component is called once
-    /// and the element it builds becomes the child of the root of the tree.
+    /// and the element it builds becomes the child of the root of the tree. The texts of the
+    /// surface copy to and paste from the clipboard of the system.
     pub fn open_window(&self, options: &WindowOptions, root: impl FnOnce(&mut Mount<'_>) -> ElementId) -> Window {
         let platform = morok_platform::Window::open(&self.platform, options, |frame_scheduler, settings| {
             let state = &mut *self.state.borrow_mut();
@@ -46,6 +55,7 @@ impl Application {
             let tree = state.surfaces.surface_mut(surface).tree_mut();
             tree.set_reduced_motion(settings.reduces_motion);
             tree.set_frame_scheduler(frame_scheduler);
+            tree.set_clipboard(Box::new(PasteboardClipboard::general()));
             let tree_root = tree.root();
             state.surfaces.mount(&mut state.runtime, surface, tree_root, root);
             WindowContent {

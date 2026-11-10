@@ -1,7 +1,8 @@
-use morok_core::ElementId;
+use morok_core::{ElementId, IconId};
 use morok_reactive::Runtime;
 use morok_style::{StyleSheet, Theme};
 
+use crate::kit_icon::KitIcon;
 use crate::view::mount::Mount;
 use crate::view::surface::Surface;
 use crate::view::surface_id::SurfaceId;
@@ -16,6 +17,8 @@ const CLOSED_SURFACE: &str = "a surface is not used after it is closed";
 pub struct Surfaces {
     slots: Vec<SurfaceSlot>,
     free_indices: Vec<u32>,
+    /// The IDs of the icons of the kit, by [`KitIcon`]; empty until the host registers them.
+    kit_icon_ids: Vec<IconId>,
 }
 
 impl Surfaces {
@@ -23,9 +26,16 @@ impl Surfaces {
         Self::default()
     }
 
+    /// Registers the icons of the kit with the renderer of the host through `register`, which
+    /// takes the SVG of an icon and gives the ID the renderer shows it by. Surfaces opened from
+    /// then on show the icons the components ask for.
+    pub fn register_kit_icons(&mut self, mut register: impl FnMut(&'static str) -> IconId) {
+        self.kit_icon_ids = KitIcon::ALL.iter().map(|icon| register(icon.svg())).collect();
+    }
+
     /// Opens a surface with an empty tree styled by `style_sheet` under `theme`.
     pub fn open(&mut self, runtime: &mut Runtime<Self>, style_sheet: StyleSheet, theme: Theme) -> SurfaceId {
-        let surface = Surface::new(style_sheet, theme, runtime.scope(|_| {}));
+        let surface = Surface::new(style_sheet, theme, runtime.scope(|_| {}), self.kit_icon_ids.clone());
         if let Some(index) = self.free_indices.pop() {
             let slot = &mut self.slots[index as usize];
             slot.surface = Some(surface);

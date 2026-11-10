@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::frame_scheduler::FrameScheduler;
 
 /// The frames a tree asks its host for: one request serves every change made before the frame
@@ -36,6 +38,14 @@ impl FrameRequests {
         self.is_pending = true;
         if let Some(scheduler) = &self.scheduler {
             scheduler.request_frame();
+        }
+    }
+
+    /// Asks the host for a frame once `delay` has passed, whether or not one waits already:
+    /// the frame that waits runs before then.
+    pub(crate) fn request_after(&self, delay: Duration) {
+        if let Some(scheduler) = &self.scheduler {
+            scheduler.request_frame_after(delay);
         }
     }
 

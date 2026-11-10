@@ -1,4 +1,5 @@
 use std::rc::Rc;
+use std::time::Duration;
 
 use morok_core::FrameScheduler;
 
@@ -14,5 +15,9 @@ pub(crate) struct FrameRequester {
 impl FrameScheduler for FrameRequester {
     fn request_frame(&self) {
         self.frame_loop.request_frame();
+    }
+
+    fn request_frame_after(&self, delay: Duration) {
+        self.frame_loop.request_frame_after(delay);
     }
 }

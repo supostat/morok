@@ -6,8 +6,9 @@ use crate::declaration_reader::{self, DeclarationBlock};
 use crate::diagnostic::Diagnostic;
 use crate::keyframes_rules::KeyframesRules;
 use crate::keyframes_syntax;
+use crate::problem::Problem;
 use crate::rule_prelude::{self, RuleEnd};
-use crate::selector_syntax;
+use crate::selector_syntax::{self, ParsedSelector};
 use crate::source_file::SourceFile;
 use crate::span::Span;
 use crate::value_context::ValueContext;
@@ -51,20 +52,22 @@ pub(crate) fn read(source: &SourceFile, context: &ValueContext<'_>, read_rules: 
         } else if prelude_text.starts_with(AT_RULE_PREFIX) {
             read_rules.diagnostics.push(at_rule(source, prelude));
         } else if rule_end == RuleEnd::Block {
-            let selectors = selector_syntax::parse(text, prelude, read_rules.classes);
+            let selectors = selector_syntax::parse(text, prelude, read_rules.classes)
+                .and_then(|selectors| Ok((declaration_block(&selectors, prelude)?, selectors)));
+            let block = selectors.as_ref().map_or(DeclarationBlock::Rule, |(block, _)| *block);
             let declarations = input
-                .parse_nested_block(|block| {
+                .parse_nested_block(|declarations| {
                     Ok::<_, ParseError<()>>(declaration_reader::read(
                         source,
                         context,
-                        DeclarationBlock::Rule,
                         block,
+                        declarations,
                         read_rules.diagnostics,
                     ))
                 })
                 .expect("a rule block is read to its end");
             match selectors {
-                Ok(selectors) => read_rules.rules.extend(selectors.into_iter().map(|parsed| SourceRule {
+                Ok((_, selectors)) => read_rules.rules.extend(selectors.into_iter().map(|parsed| SourceRule {
                     selector: parsed.selector,
                     specificity: parsed.specificity,
                     declarations: declarations.clone(),
@@ -87,6 +90,26 @@ pub(crate) fn read(source: &SourceFile, context: &ValueContext<'_>, read_rules: 
             return;
         }
     }
+}
+
+/// What the block of a rule with these selectors sets: the properties of an element, or those
+/// of the one pseudo-element all its selectors name. A block is read once for every selector
+/// of its rule, so the selectors of a pseudo-element do not share a rule with others.
+fn declaration_block(selectors: &[ParsedSelector], prelude: Span) -> Result<DeclarationBlock, Problem> {
+    let (first, rest) = selectors.split_first().expect("a rule that was read has a selector");
+    if rest
+        .iter()
+        .any(|selector| selector.pseudo_element != first.pseudo_element)
+    {
+        return Err(Problem {
+            span: prelude,
+            message: "a rule of a pseudo-element is shared with other selectors".to_owned(),
+            hint: "write the rule of each pseudo-element apart from the rules of elements".to_owned(),
+        });
+    }
+    Ok(first
+        .pseudo_element
+        .map_or(DeclarationBlock::Rule, DeclarationBlock::PseudoElement))
 }
 
 /// Reads the keyframes in the block of a `@keyframes` rule, which is open.

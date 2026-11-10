@@ -204,6 +204,7 @@ impl FrameEncoding<'_> {
                 color,
             } => self.glyph_run(origin, font, glyphs, color),
             DisplayItem::TextDecoration { rect, color } => self.text_decoration(&rect, color),
+            DisplayItem::Fill { rect, color } => self.fill(&rect, color),
             DisplayItem::PushClip { frame } => self.push_clip(&self.snapped(&frame)),
             DisplayItem::PopClip => {
                 self.active_clips.pop();
@@ -719,6 +720,21 @@ impl FrameEncoding<'_> {
 
     /// The line of a text decoration lies on whole device pixels and is at least one of them
     /// thick: a hairline between pixels would turn gray.
+    /// A rectangle of one color, its edges where the item puts them: the tree places the boxes
+    /// of a selection and of a caret on device pixels itself.
+    fn fill(&mut self, rect: &Rect, color: Color) {
+        self.emit(RectInstance {
+            bounds: self.bounds_of(rect),
+            outer: RoundedRect {
+                rect: [rect.x, rect.y, rect.width, rect.height],
+                ..RoundedRect::zeroed()
+            },
+            colors: [premultiplied(color); 4],
+            kind: RectKind::Fill as u32,
+            ..RectInstance::zeroed()
+        });
+    }
+
     fn text_decoration(&mut self, rect: &Rect, color: Color) {
         let scale = self.scale;
         let snap = |edge: f32| (edge * scale).round() / scale;

@@ -31,4 +31,9 @@ impl InputHandler for EventDispatch<'_> {
         self.handlers
             .element_event(self.runtime, element, &ElementEvent::Accessibility(*action));
     }
+
+    fn text_changed(&mut self, element: ElementId, text: &str) {
+        self.handlers
+            .element_event(self.runtime, element, &ElementEvent::TextChanged(text));
+    }
 }

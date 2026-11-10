@@ -9,4 +9,6 @@ pub enum ElementEvent<'a> {
     Key(KeyEvent),
     /// An assistive technology asks the element for one of the actions it offers.
     Accessibility(AccessibilityAction<'a>),
+    /// The user changed the text the element edits; this is what it holds now.
+    TextChanged(&'a str),
 }

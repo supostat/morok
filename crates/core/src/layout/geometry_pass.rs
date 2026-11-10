@@ -3,12 +3,12 @@ use crate::element_arena::ElementArena;
 use crate::element_id::ElementId;
 use crate::geometry::point::Point;
 use crate::geometry::rect::Rect;
-use crate::role::Role;
 use crate::style::positioning::Positioning;
 
 /// Turns the boxes layout wrote, each relative to the element that positions it, into border
 /// boxes on the surface, and marks for painting every element whose border box changed. A text
-/// whose box changed its size has its lines laid out again: they are broken by its width.
+/// whose box changed its size has its lines laid out again: they are broken by its width, and
+/// an edited text is scrolled inside its box.
 #[derive(Debug)]
 pub(crate) struct GeometryPass<'a> {
     pub(crate) elements: &'a mut ElementArena,
@@ -47,7 +47,7 @@ impl GeometryPass<'_> {
             element.dirty.insert(Dirty::PAINT);
             self.repaints = true;
         }
-        if border_box.size() != previous.size() && element.role == Role::Text {
+        if border_box.size() != previous.size() && element.role.sets_lines() {
             self.elements.invalidate_text(id);
         }
         for position in 0..self.elements[id].children.len() {

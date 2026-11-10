@@ -31,6 +31,9 @@ impl FrameScheduler for CountingScheduler {
     fn request_frame(&self) {
         self.requested_frames.set(self.requested_frames.get() + 1);
     }
+
+    /// A frame asked for later is no frame asked for now.
+    fn request_frame_after(&self, _delay: Duration) {}
 }
 
 /// A scene of the rules with one element of the classes on a block root, after its first frame

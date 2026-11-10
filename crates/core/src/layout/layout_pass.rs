@@ -7,6 +7,7 @@ use taffy::{
 };
 
 use crate::dirty::Dirty;
+use crate::editing::line_mode::LineMode;
 use crate::element_arena::ElementArena;
 use crate::element_id::ElementId;
 use crate::geometry::size::Size;
@@ -97,6 +98,8 @@ impl LayoutPass<'_> {
     /// The layout of an element without children: a text is as wide as its widest line and as
     /// high as its lines at the line height of CSS, every other element has no content of its
     /// own. A text that does not wrap is measured on one line whatever width it is offered.
+    /// An edited text scrolls inside its box, so it asks for no width; it is as high as its
+    /// one line, or as the lines it wraps into at the width it is given.
     fn compute_leaf_layout(&mut self, id: ElementId, inputs: LayoutInput) -> LayoutOutput {
         let styles = ElementStyles {
             elements: self.elements,
@@ -123,16 +126,44 @@ impl LayoutPass<'_> {
                         height: known_dimensions.height.unwrap_or(natural.height),
                     };
                 }
+                let style = &element.style.text;
+                let font = style.font_request(theme);
+                if let Some(editable) = element.editable.as_deref() {
+                    let wrap_width = match (known_dimensions.width, available_space.width) {
+                        (Some(width), _) | (None, AvailableSpace::Definite(width)) => WidthConstraint::Definite(width),
+                        (None, AvailableSpace::MinContent | AvailableSpace::MaxContent) => WidthConstraint::MaxContent,
+                    };
+                    let line_count = match editable.line_mode {
+                        LineMode::Single => 1,
+                        LineMode::Multiple => editable
+                            .editor
+                            .text()
+                            .split('\n')
+                            .map(|paragraph| {
+                                let extent = text_shaper.measure(&TextRequest {
+                                    text: paragraph,
+                                    font,
+                                    letter_spacing: style.letter_spacing,
+                                    width: wrap_width,
+                                });
+                                extent.line_count.max(1)
+                            })
+                            .sum(),
+                    };
+                    let line = LineMetrics::of(style, &text_shaper.font_metrics(&font), scale);
+                    return taffy::Size {
+                        width: known_dimensions.width.unwrap_or(0.0),
+                        height: known_dimensions.height.unwrap_or(line_count as f32 * line.line_height),
+                    };
+                }
                 if element.role != Role::Text {
                     return taffy::Size::ZERO;
                 }
-                let style = &element.style.text;
                 let offered_width = match (known_dimensions.width, available_space.width) {
                     (Some(width), _) | (None, AvailableSpace::Definite(width)) => WidthConstraint::Definite(width),
                     (None, AvailableSpace::MinContent) => WidthConstraint::MinContent,
                     (None, AvailableSpace::MaxContent) => WidthConstraint::MaxContent,
                 };
-                let font = style.font_request(theme);
                 let extent = text_shaper.measure(&TextRequest {
                     text: processed(&element.text, style.white_space, processed_text),
                     font,
