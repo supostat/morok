@@ -1,0 +1,97 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 300.0
+height = 52.0
+
+[[light]]
+node = "#1 .controls-stage"
+x = 0.0
+y = 0.0
+width = 300.0
+height = 50.0
+
+[[light]]
+node = "#2 .controls-rows"
+x = 16.0
+y = 16.0
+width = 268.0
+height = 18.0
+
+[[light]]
+node = "#3 .controls-row"
+x = 16.0
+y = 16.0
+width = 262.0
+height = 18.0
+
+[[light]]
+node = "#4 .progress.indeterminate"
+x = 16.0
+y = 22.0
+width = 220.0
+height = 6.0
+
+[[light]]
+node = "#5 .progress-fill"
+x = 105.10028
+y = 22.0
+width = 66.0
+height = 6.0
+
+[[light]]
+node = "#6 .spinner"
+x = 256.2721
+y = 12.272078
+width = 25.455841
+height = 25.455843
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 300.0
+height = 52.0
+
+[[dark]]
+node = "#1 .controls-stage"
+x = 0.0
+y = 0.0
+width = 300.0
+height = 50.0
+
+[[dark]]
+node = "#2 .controls-rows"
+x = 16.0
+y = 16.0
+width = 268.0
+height = 18.0
+
+[[dark]]
+node = "#3 .controls-row"
+x = 16.0
+y = 16.0
+width = 262.0
+height = 18.0
+
+[[dark]]
+node = "#4 .progress.indeterminate"
+x = 16.0
+y = 22.0
+width = 220.0
+height = 6.0
+
+[[dark]]
+node = "#5 .progress-fill"
+x = 105.10028
+y = 22.0
+width = 66.0
+height = 6.0
+
+[[dark]]
+node = "#6 .spinner"
+x = 256.2721
+y = 12.272078
+width = 25.455841
+height = 25.455843

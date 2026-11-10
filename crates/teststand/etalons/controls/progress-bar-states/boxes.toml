@@ -1,0 +1,167 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 260.0
+height = 84.0
+
+[[light]]
+node = "#1 .controls-stage"
+x = 0.0
+y = 0.0
+width = 260.0
+height = 82.0
+
+[[light]]
+node = "#2 .controls-rows"
+x = 16.0
+y = 16.0
+width = 228.0
+height = 50.0
+
+[[light]]
+node = "#3 .controls-row"
+x = 16.0
+y = 16.0
+width = 220.0
+height = 6.0
+
+[[light]]
+node = "#4 .progress"
+x = 16.0
+y = 16.0
+width = 220.0
+height = 6.0
+
+[[light]]
+node = "#5 .progress-fill"
+x = 16.0
+y = 16.0
+width = 0.0
+height = 6.0
+
+[[light]]
+node = "#6 .controls-row"
+x = 16.0
+y = 38.0
+width = 220.0
+height = 6.0
+
+[[light]]
+node = "#7 .progress"
+x = 16.0
+y = 38.0
+width = 220.0
+height = 6.0
+
+[[light]]
+node = "#8 .progress-fill"
+x = 16.0
+y = 38.0
+width = 136.39844
+height = 6.0
+
+[[light]]
+node = "#9 .controls-row"
+x = 16.0
+y = 60.0
+width = 220.0
+height = 6.0
+
+[[light]]
+node = "#10 .progress"
+x = 16.0
+y = 60.0
+width = 220.0
+height = 6.0
+
+[[light]]
+node = "#11 .progress-fill"
+x = 16.0
+y = 60.0
+width = 220.0
+height = 6.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 260.0
+height = 84.0
+
+[[dark]]
+node = "#1 .controls-stage"
+x = 0.0
+y = 0.0
+width = 260.0
+height = 82.0
+
+[[dark]]
+node = "#2 .controls-rows"
+x = 16.0
+y = 16.0
+width = 228.0
+height = 50.0
+
+[[dark]]
+node = "#3 .controls-row"
+x = 16.0
+y = 16.0
+width = 220.0
+height = 6.0
+
+[[dark]]
+node = "#4 .progress"
+x = 16.0
+y = 16.0
+width = 220.0
+height = 6.0
+
+[[dark]]
+node = "#5 .progress-fill"
+x = 16.0
+y = 16.0
+width = 0.0
+height = 6.0
+
+[[dark]]
+node = "#6 .controls-row"
+x = 16.0
+y = 38.0
+width = 220.0
+height = 6.0
+
+[[dark]]
+node = "#7 .progress"
+x = 16.0
+y = 38.0
+width = 220.0
+height = 6.0
+
+[[dark]]
+node = "#8 .progress-fill"
+x = 16.0
+y = 38.0
+width = 136.39844
+height = 6.0
+
+[[dark]]
+node = "#9 .controls-row"
+x = 16.0
+y = 60.0
+width = 220.0
+height = 6.0
+
+[[dark]]
+node = "#10 .progress"
+x = 16.0
+y = 60.0
+width = 220.0
+height = 6.0
+
+[[dark]]
+node = "#11 .progress-fill"
+x = 16.0
+y = 60.0
+width = 220.0
+height = 6.0

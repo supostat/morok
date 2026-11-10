@@ -14,6 +14,8 @@ pub(crate) struct Semantics {
     name: String,
     value: StoredValue,
     actions: AccessibleActions,
+    /// Whether the node tells if the element is checked although its role does not say so.
+    is_toggle: bool,
     /// How many times any of the above, or the text of the element, was changed.
     revision: u64,
     pub(crate) published: PublishedNode,
@@ -28,6 +30,7 @@ impl Semantics {
             name: String::new(),
             value: StoredValue::None,
             actions: AccessibleActions::NONE,
+            is_toggle: false,
             revision: 0,
             published: PublishedNode::default(),
             children_scratch: Vec::new(),
@@ -76,6 +79,12 @@ impl Semantics {
         self.note(changes)
     }
 
+    pub(crate) fn set_toggle(&mut self, is_toggle: bool) -> bool {
+        let changes = self.is_toggle != is_toggle;
+        self.is_toggle = is_toggle;
+        self.note(changes)
+    }
+
     /// The text of the element changed: a text element gives its text as its value.
     pub(crate) fn text_changed(&mut self) {
         self.revision += 1;
@@ -88,12 +97,14 @@ impl Semantics {
         changes
     }
 
-    /// Whether the checked state of the element is a part of what the role is.
+    /// Whether the node tells if the element is checked: the checked state is a part of what
+    /// the role is, or the element was made a toggle.
     fn toggles(&self) -> bool {
-        matches!(
-            self.role,
-            Role::CheckBox | Role::Switch | Role::RadioButton | Role::MenuItemCheckBox | Role::MenuItemRadio
-        )
+        self.is_toggle
+            || matches!(
+                self.role,
+                Role::CheckBox | Role::Switch | Role::RadioButton | Role::MenuItemCheckBox | Role::MenuItemRadio
+            )
     }
 
     /// The node of the element; `text` is the text of a text element.

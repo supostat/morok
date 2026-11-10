@@ -1,0 +1,629 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 540.0
+height = 96.0
+
+[[light]]
+node = "#1 .controls-stage"
+x = 0.0
+y = 0.0
+width = 540.0
+height = 85.6875
+
+[[light]]
+node = "#2 .controls-rows"
+x = 16.0
+y = 16.0
+width = 508.0
+height = 53.6875
+
+[[light]]
+node = "#3 .controls-row"
+x = 16.0
+y = 16.0
+width = 489.3828
+height = 18.84375
+
+[[light]]
+node = "#4 .check"
+x = 16.0
+y = 16.0
+width = 50.890625
+height = 18.84375
+
+[[light]]
+node = "#5 .check-box"
+x = 16.0
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#6 .check-mark"
+x = 20.7
+y = 22.121876
+width = 6.5999985
+height = 6.5999985
+
+[[light]]
+node = "#7 text"
+x = 40.0
+y = 16.0
+width = 26.890625
+height = 18.84375
+
+[[light]]
+node = "#8 .check"
+x = 90.890625
+y = 16.0
+width = 72.8125
+height = 18.84375
+
+[[light]]
+node = "#9 .check-box"
+x = 90.890625
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#10 .check-mark"
+x = 95.59062
+y = 22.121876
+width = 6.600006
+height = 6.5999985
+
+[[light]]
+node = "#11 text"
+x = 114.890625
+y = 16.0
+width = 48.8125
+height = 18.84375
+
+[[light]]
+node = "#12 .check"
+x = 187.70313
+y = 16.0
+width = 60.40625
+height = 18.84375
+
+[[light]]
+node = "#13 .check-box"
+x = 187.70313
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#14 .check-mark"
+x = 192.40312
+y = 22.121876
+width = 6.600006
+height = 6.5999985
+
+[[light]]
+node = "#15 text"
+x = 211.70313
+y = 16.0
+width = 36.40625
+height = 18.84375
+
+[[light]]
+node = "#16 .check"
+x = 272.10938
+y = 16.0
+width = 76.71094
+height = 18.84375
+
+[[light]]
+node = "#17 .check-box"
+x = 272.10938
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#18 .check-mark"
+x = 276.8094
+y = 22.121876
+width = 6.5999756
+height = 6.5999985
+
+[[light]]
+node = "#19 text"
+x = 296.10938
+y = 16.0
+width = 52.710938
+height = 18.84375
+
+[[light]]
+node = "#20 .check"
+x = 372.8203
+y = 16.0
+width = 132.5625
+height = 18.84375
+
+[[light]]
+node = "#21 .check-box"
+x = 372.8203
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#22 .check-mark"
+x = 377.52032
+y = 22.121876
+width = 6.5999756
+height = 6.5999985
+
+[[light]]
+node = "#23 text"
+x = 396.8203
+y = 16.0
+width = 108.5625
+height = 18.84375
+
+[[light]]
+node = "#24 .controls-row"
+x = 16.0
+y = 50.84375
+width = 489.3828
+height = 18.84375
+
+[[light]]
+node = "#25 .check"
+x = 16.0
+y = 50.84375
+width = 50.890625
+height = 18.84375
+
+[[light]]
+node = "#26 .check-box"
+x = 16.0
+y = 52.265625
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#27 .check-mark"
+x = 18.5
+y = 54.765625
+width = 11.0
+height = 11.0
+
+[[light]]
+node = "#28 text"
+x = 40.0
+y = 50.84375
+width = 26.890625
+height = 18.84375
+
+[[light]]
+node = "#29 .check"
+x = 90.890625
+y = 50.84375
+width = 72.8125
+height = 18.84375
+
+[[light]]
+node = "#30 .check-box"
+x = 90.890625
+y = 52.265625
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#31 .check-mark"
+x = 93.390625
+y = 54.765625
+width = 11.0
+height = 11.0
+
+[[light]]
+node = "#32 text"
+x = 114.890625
+y = 50.84375
+width = 48.8125
+height = 18.84375
+
+[[light]]
+node = "#33 .check"
+x = 187.70313
+y = 50.84375
+width = 60.40625
+height = 18.84375
+
+[[light]]
+node = "#34 .check-box"
+x = 187.70313
+y = 52.265625
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#35 .check-mark"
+x = 190.20313
+y = 54.765625
+width = 11.0
+height = 11.0
+
+[[light]]
+node = "#36 text"
+x = 211.70313
+y = 50.84375
+width = 36.40625
+height = 18.84375
+
+[[light]]
+node = "#37 .check"
+x = 272.10938
+y = 50.84375
+width = 76.71094
+height = 18.84375
+
+[[light]]
+node = "#38 .check-box"
+x = 272.10938
+y = 52.265625
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#39 .check-mark"
+x = 274.60938
+y = 54.765625
+width = 11.0
+height = 11.0
+
+[[light]]
+node = "#40 text"
+x = 296.10938
+y = 50.84375
+width = 52.710938
+height = 18.84375
+
+[[light]]
+node = "#41 .check"
+x = 372.8203
+y = 50.84375
+width = 132.5625
+height = 18.84375
+
+[[light]]
+node = "#42 .check-box"
+x = 372.8203
+y = 52.265625
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#43 .check-mark"
+x = 375.3203
+y = 54.765625
+width = 11.0
+height = 11.0
+
+[[light]]
+node = "#44 text"
+x = 396.8203
+y = 50.84375
+width = 108.5625
+height = 18.84375
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 540.0
+height = 96.0
+
+[[dark]]
+node = "#1 .controls-stage"
+x = 0.0
+y = 0.0
+width = 540.0
+height = 85.6875
+
+[[dark]]
+node = "#2 .controls-rows"
+x = 16.0
+y = 16.0
+width = 508.0
+height = 53.6875
+
+[[dark]]
+node = "#3 .controls-row"
+x = 16.0
+y = 16.0
+width = 489.3828
+height = 18.84375
+
+[[dark]]
+node = "#4 .check"
+x = 16.0
+y = 16.0
+width = 50.890625
+height = 18.84375
+
+[[dark]]
+node = "#5 .check-box"
+x = 16.0
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#6 .check-mark"
+x = 20.7
+y = 22.121876
+width = 6.5999985
+height = 6.5999985
+
+[[dark]]
+node = "#7 text"
+x = 40.0
+y = 16.0
+width = 26.890625
+height = 18.84375
+
+[[dark]]
+node = "#8 .check"
+x = 90.890625
+y = 16.0
+width = 72.8125
+height = 18.84375
+
+[[dark]]
+node = "#9 .check-box"
+x = 90.890625
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#10 .check-mark"
+x = 95.59062
+y = 22.121876
+width = 6.600006
+height = 6.5999985
+
+[[dark]]
+node = "#11 text"
+x = 114.890625
+y = 16.0
+width = 48.8125
+height = 18.84375
+
+[[dark]]
+node = "#12 .check"
+x = 187.70313
+y = 16.0
+width = 60.40625
+height = 18.84375
+
+[[dark]]
+node = "#13 .check-box"
+x = 187.70313
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#14 .check-mark"
+x = 192.40312
+y = 22.121876
+width = 6.600006
+height = 6.5999985
+
+[[dark]]
+node = "#15 text"
+x = 211.70313
+y = 16.0
+width = 36.40625
+height = 18.84375
+
+[[dark]]
+node = "#16 .check"
+x = 272.10938
+y = 16.0
+width = 76.71094
+height = 18.84375
+
+[[dark]]
+node = "#17 .check-box"
+x = 272.10938
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#18 .check-mark"
+x = 276.8094
+y = 22.121876
+width = 6.5999756
+height = 6.5999985
+
+[[dark]]
+node = "#19 text"
+x = 296.10938
+y = 16.0
+width = 52.710938
+height = 18.84375
+
+[[dark]]
+node = "#20 .check"
+x = 372.8203
+y = 16.0
+width = 132.5625
+height = 18.84375
+
+[[dark]]
+node = "#21 .check-box"
+x = 372.8203
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#22 .check-mark"
+x = 377.52032
+y = 22.121876
+width = 6.5999756
+height = 6.5999985
+
+[[dark]]
+node = "#23 text"
+x = 396.8203
+y = 16.0
+width = 108.5625
+height = 18.84375
+
+[[dark]]
+node = "#24 .controls-row"
+x = 16.0
+y = 50.84375
+width = 489.3828
+height = 18.84375
+
+[[dark]]
+node = "#25 .check"
+x = 16.0
+y = 50.84375
+width = 50.890625
+height = 18.84375
+
+[[dark]]
+node = "#26 .check-box"
+x = 16.0
+y = 52.265625
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#27 .check-mark"
+x = 18.5
+y = 54.765625
+width = 11.0
+height = 11.0
+
+[[dark]]
+node = "#28 text"
+x = 40.0
+y = 50.84375
+width = 26.890625
+height = 18.84375
+
+[[dark]]
+node = "#29 .check"
+x = 90.890625
+y = 50.84375
+width = 72.8125
+height = 18.84375
+
+[[dark]]
+node = "#30 .check-box"
+x = 90.890625
+y = 52.265625
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#31 .check-mark"
+x = 93.390625
+y = 54.765625
+width = 11.0
+height = 11.0
+
+[[dark]]
+node = "#32 text"
+x = 114.890625
+y = 50.84375
+width = 48.8125
+height = 18.84375
+
+[[dark]]
+node = "#33 .check"
+x = 187.70313
+y = 50.84375
+width = 60.40625
+height = 18.84375
+
+[[dark]]
+node = "#34 .check-box"
+x = 187.70313
+y = 52.265625
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#35 .check-mark"
+x = 190.20313
+y = 54.765625
+width = 11.0
+height = 11.0
+
+[[dark]]
+node = "#36 text"
+x = 211.70313
+y = 50.84375
+width = 36.40625
+height = 18.84375
+
+[[dark]]
+node = "#37 .check"
+x = 272.10938
+y = 50.84375
+width = 76.71094
+height = 18.84375
+
+[[dark]]
+node = "#38 .check-box"
+x = 272.10938
+y = 52.265625
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#39 .check-mark"
+x = 274.60938
+y = 54.765625
+width = 11.0
+height = 11.0
+
+[[dark]]
+node = "#40 text"
+x = 296.10938
+y = 50.84375
+width = 52.710938
+height = 18.84375
+
+[[dark]]
+node = "#41 .check"
+x = 372.8203
+y = 50.84375
+width = 132.5625
+height = 18.84375
+
+[[dark]]
+node = "#42 .check-box"
+x = 372.8203
+y = 52.265625
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#43 .check-mark"
+x = 375.3203
+y = 54.765625
+width = 11.0
+height = 11.0
+
+[[dark]]
+node = "#44 text"
+x = 396.8203
+y = 50.84375
+width = 108.5625
+height = 18.84375

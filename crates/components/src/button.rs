@@ -1,15 +1,13 @@
 use std::fmt::{Debug, Formatter, Result};
 
 use morok_core::accesskit::Role as AccessibleRole;
-use morok_core::{
-    AccessibilityAction, AccessibleActions, ElementId, Focusability, Key, KeyEvent, KeyPhase, PointerEventKind,
-    Propagation,
-};
+use morok_core::{AccessibleActions, ElementId, Focusability};
 use morok_reactive::Runtime;
 use morok_style::States;
 
+use crate::activation::{ActivationKeys, handle_activation};
 use crate::styles::CLASSES;
-use crate::view::{Action, ElementEvent, Mount, Property, Surfaces};
+use crate::view::{Action, Mount, Property, Surfaces};
 
 /// A push button: a label that is pressed by a click, by Space or Return while it has focus,
 /// and by an assistive technology. A disabled button is pressed by none of them.
@@ -73,14 +71,13 @@ impl Button {
             .accessible_name(label)
             .accessible_actions(AccessibleActions::CLICK)
             .on_event(move |runtime, event| {
-                if !presses(event) {
-                    return Propagation::Continue;
-                }
-                let is_held_down = matches!(event, ElementEvent::Key(key) if key.is_repeat);
-                if !is_held_down && !press_is_disabled.get(runtime) {
-                    on_press(runtime);
-                }
-                Propagation::Stop
+                handle_activation(
+                    runtime,
+                    event,
+                    ActivationKeys::SpaceAndReturn,
+                    &press_is_disabled,
+                    &mut on_press,
+                )
             })
             .child(label_text)
             .id()
@@ -96,19 +93,4 @@ impl Debug for Button {
             .field("is_disabled", &self.is_disabled)
             .finish_non_exhaustive()
     }
-}
-
-/// Whether the event is one that presses a button: a click, Space or Return going down with
-/// no modifier held, or an assistive technology asking for the default action.
-fn presses(event: &ElementEvent<'_>) -> bool {
-    match event {
-        ElementEvent::Pointer(pointer) => matches!(pointer.kind, PointerEventKind::Clicked { .. }),
-        ElementEvent::Key(key) => is_press_of_an_activation_key(key),
-        ElementEvent::Accessibility(action) => *action == AccessibilityAction::Click,
-        ElementEvent::TextChanged(_) => false,
-    }
-}
-
-fn is_press_of_an_activation_key(key: &KeyEvent) -> bool {
-    key.phase == KeyPhase::Pressed && key.modifiers.is_empty() && matches!(key.key, Key::Space | Key::Enter)
 }

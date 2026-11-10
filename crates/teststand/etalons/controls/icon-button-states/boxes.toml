@@ -1,0 +1,279 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 440.0
+height = 60.0
+
+[[light]]
+node = "#1 .controls-stage"
+x = 0.0
+y = 0.0
+width = 440.0
+height = 60.0
+
+[[light]]
+node = "#2 .controls-rows"
+x = 16.0
+y = 16.0
+width = 408.0
+height = 28.0
+
+[[light]]
+node = "#3 .controls-row"
+x = 16.0
+y = 16.0
+width = 392.0
+height = 28.0
+
+[[light]]
+node = "#4 .icon-button"
+x = 16.0
+y = 16.0
+width = 28.0
+height = 28.0
+
+[[light]]
+node = "#5 .icon-button-icon"
+x = 22.5
+y = 22.5
+width = 15.0
+height = 15.0
+
+[[light]]
+node = "#6 .icon-button"
+x = 68.0
+y = 16.0
+width = 28.0
+height = 28.0
+
+[[light]]
+node = "#7 .icon-button-icon"
+x = 74.5
+y = 22.5
+width = 15.0
+height = 15.0
+
+[[light]]
+node = "#8 .icon-button"
+x = 120.0
+y = 16.0
+width = 28.0
+height = 28.0
+
+[[light]]
+node = "#9 .icon-button-icon"
+x = 126.5
+y = 22.5
+width = 15.0
+height = 15.0
+
+[[light]]
+node = "#10 .icon-button"
+x = 172.0
+y = 16.0
+width = 28.0
+height = 28.0
+
+[[light]]
+node = "#11 .icon-button-icon"
+x = 178.5
+y = 22.5
+width = 15.0
+height = 15.0
+
+[[light]]
+node = "#12 .icon-button"
+x = 224.0
+y = 16.0
+width = 28.0
+height = 28.0
+
+[[light]]
+node = "#13 .icon-button-icon"
+x = 230.5
+y = 22.5
+width = 15.0
+height = 15.0
+
+[[light]]
+node = "#14 .icon-button"
+x = 276.0
+y = 16.0
+width = 28.0
+height = 28.0
+
+[[light]]
+node = "#15 .icon-button-icon"
+x = 282.5
+y = 22.5
+width = 15.0
+height = 15.0
+
+[[light]]
+node = "#16 .icon-button"
+x = 328.0
+y = 16.0
+width = 28.0
+height = 28.0
+
+[[light]]
+node = "#17 .icon-button-icon"
+x = 334.5
+y = 22.5
+width = 15.0
+height = 15.0
+
+[[light]]
+node = "#18 .icon-button"
+x = 380.0
+y = 16.0
+width = 28.0
+height = 28.0
+
+[[light]]
+node = "#19 .icon-button-icon"
+x = 386.5
+y = 22.5
+width = 15.0
+height = 15.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 440.0
+height = 60.0
+
+[[dark]]
+node = "#1 .controls-stage"
+x = 0.0
+y = 0.0
+width = 440.0
+height = 60.0
+
+[[dark]]
+node = "#2 .controls-rows"
+x = 16.0
+y = 16.0
+width = 408.0
+height = 28.0
+
+[[dark]]
+node = "#3 .controls-row"
+x = 16.0
+y = 16.0
+width = 392.0
+height = 28.0
+
+[[dark]]
+node = "#4 .icon-button"
+x = 16.0
+y = 16.0
+width = 28.0
+height = 28.0
+
+[[dark]]
+node = "#5 .icon-button-icon"
+x = 22.5
+y = 22.5
+width = 15.0
+height = 15.0
+
+[[dark]]
+node = "#6 .icon-button"
+x = 68.0
+y = 16.0
+width = 28.0
+height = 28.0
+
+[[dark]]
+node = "#7 .icon-button-icon"
+x = 74.5
+y = 22.5
+width = 15.0
+height = 15.0
+
+[[dark]]
+node = "#8 .icon-button"
+x = 120.0
+y = 16.0
+width = 28.0
+height = 28.0
+
+[[dark]]
+node = "#9 .icon-button-icon"
+x = 126.5
+y = 22.5
+width = 15.0
+height = 15.0
+
+[[dark]]
+node = "#10 .icon-button"
+x = 172.0
+y = 16.0
+width = 28.0
+height = 28.0
+
+[[dark]]
+node = "#11 .icon-button-icon"
+x = 178.5
+y = 22.5
+width = 15.0
+height = 15.0
+
+[[dark]]
+node = "#12 .icon-button"
+x = 224.0
+y = 16.0
+width = 28.0
+height = 28.0
+
+[[dark]]
+node = "#13 .icon-button-icon"
+x = 230.5
+y = 22.5
+width = 15.0
+height = 15.0
+
+[[dark]]
+node = "#14 .icon-button"
+x = 276.0
+y = 16.0
+width = 28.0
+height = 28.0
+
+[[dark]]
+node = "#15 .icon-button-icon"
+x = 282.5
+y = 22.5
+width = 15.0
+height = 15.0
+
+[[dark]]
+node = "#16 .icon-button"
+x = 328.0
+y = 16.0
+width = 28.0
+height = 28.0
+
+[[dark]]
+node = "#17 .icon-button-icon"
+x = 334.5
+y = 22.5
+width = 15.0
+height = 15.0
+
+[[dark]]
+node = "#18 .icon-button"
+x = 380.0
+y = 16.0
+width = 28.0
+height = 28.0
+
+[[dark]]
+node = "#19 .icon-button-icon"
+x = 386.5
+y = 22.5
+width = 15.0
+height = 15.0

@@ -1,0 +1,31 @@
+/* A progress bar: a track filled as far as a task is done, or crossed again and again by a
+   stripe while that is not known. */
+
+.progress {
+  overflow: hidden;
+  flex-shrink: 0;
+  width: 220px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-line);
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background-color: var(--color-accent);
+}
+
+.progress.indeterminate > .progress-fill {
+  width: 30%;
+  animation: progress-sweep 1400ms var(--motion-ease) infinite;
+}
+
+@keyframes progress-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(340%);
+  }
+}

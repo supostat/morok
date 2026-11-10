@@ -1,0 +1,64 @@
+/* A segmented control: segments in a sunken strip, the chosen one raised, in every state. */
+
+.segmented {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-sunken);
+}
+
+.segmented:disabled {
+  opacity: 0.45;
+}
+
+.segment {
+  display: flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-2);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: var(--text-weight-medium);
+  line-height: var(--text-leading);
+  transition:
+    background-color var(--motion-fast),
+    color var(--motion-fast);
+}
+
+.segment:hover {
+  color: var(--color-text);
+}
+
+.segment:active {
+  background-color: var(--color-line);
+}
+
+.segment:checked {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-raised);
+}
+
+.segment:focus-visible {
+  outline: 2px solid var(--color-focus);
+}
+
+/* The segments of a disabled control answer neither the pointer over them nor a press. */
+.segment:disabled:hover {
+  color: var(--color-text-2);
+}
+
+.segment:disabled:active {
+  background-color: transparent;
+}
+
+.segment:checked:disabled:hover {
+  color: var(--color-text);
+}
+
+.segment:checked:disabled:active {
+  background-color: var(--color-surface);
+}

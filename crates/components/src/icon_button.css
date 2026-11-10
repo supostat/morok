@@ -1,0 +1,63 @@
+/* A button that shows an icon in place of a label, in every state; a toggle stays tinted while
+   it is on. */
+
+.icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--color-text-2);
+  transition:
+    background-color var(--motion-fast),
+    color var(--motion-fast);
+}
+
+.icon-button:hover {
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text);
+}
+
+.icon-button:active {
+  background-color: var(--color-line);
+  color: var(--color-text);
+}
+
+.icon-button:checked {
+  background-color: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.icon-button:checked:active {
+  color: var(--color-accent-active);
+}
+
+.icon-button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.icon-button:disabled {
+  opacity: 0.45;
+}
+
+/* A disabled button answers neither the pointer over it nor a press. */
+.icon-button:disabled:hover,
+.icon-button:disabled:active {
+  background-color: transparent;
+  color: var(--color-text-2);
+}
+
+.icon-button:checked:disabled:hover,
+.icon-button:checked:disabled:active {
+  background-color: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.icon-button-icon {
+  width: 15px;
+  height: 15px;
+}

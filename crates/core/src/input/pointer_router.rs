@@ -7,6 +7,7 @@ use crate::input::pointer_input::PointerInput;
 use crate::input::pointer_input_kind::PointerInputKind;
 use crate::input::pointer_targets::PointerTargets;
 use crate::input::propagation::Propagation;
+use crate::paint::group_transform::surface_transform;
 
 /// Routes what the pointer does to the elements it concerns.
 ///
@@ -92,10 +93,12 @@ impl PointerRouter<'_> {
     }
 
     fn tell(&mut self, element: ElementId, input: &PointerInput, kind: PointerEventKind) -> Propagation {
+        let elements = &*self.targets.marker.elements;
         let event = PointerEvent {
             kind,
             position: input.position,
             modifiers: input.modifiers,
+            element_box: surface_transform(elements, element).bounds_of(&elements[element].border_box),
         };
         self.handler.pointer_event(element, &event)
     }

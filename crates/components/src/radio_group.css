@@ -1,0 +1,25 @@
+/* A group of radio buttons: rows of round boxes one under another, the chosen box dotted. */
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.check.radio > .check-box {
+  border-radius: var(--radius-full);
+}
+
+.radio-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-text-on-accent);
+  transform: scale(0);
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+
+.check-box:checked > .radio-dot {
+  transform: scale(1);
+}

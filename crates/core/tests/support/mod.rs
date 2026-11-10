@@ -412,6 +412,8 @@ impl Scene {
 #[derive(Debug, Default)]
 pub(crate) struct InputLog {
     pub(crate) pointer_events: Vec<(ElementId, PointerEventKind)>,
+    /// The box each pointer event of `pointer_events` told its element it has.
+    pub(crate) pointer_event_boxes: Vec<Rect>,
     pub(crate) key_events: Vec<(ElementId, KeyPhase, Key)>,
     pub(crate) shortcuts: Vec<ShortcutId>,
     /// What an assistive technology asked of which element, as the debug form of the action.
@@ -449,6 +451,7 @@ impl InputLog {
 impl InputHandler for InputLog {
     fn pointer_event(&mut self, element: ElementId, event: &PointerEvent) -> Propagation {
         self.pointer_events.push((element, event.kind));
+        self.pointer_event_boxes.push(event.element_box);
         self.answer(element)
     }
 

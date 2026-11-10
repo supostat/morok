@@ -1,5 +1,8 @@
 use morok_core::accesskit::Role as AccessibleRole;
-use morok_core::{AccessibleActions, ElementId, ElementTree, Focusability, KeyChord, Propagation, ShortcutScope};
+use morok_core::{
+    AccessibleActions, AccessibleValue, ElementId, ElementTree, Focusability, KeyChord, NumericValue, Propagation,
+    ShortcutScope,
+};
 use morok_reactive::{Runtime, Signal, Source};
 use morok_style::{Class, Declaration, States};
 
@@ -81,9 +84,11 @@ impl ElementBuilder<'_, '_> {
         })
     }
 
-    pub fn focusable(&mut self, focusability: Focusability) -> &mut Self {
-        self.mount.surface.tree.set_focusability(self.element, focusability);
-        self
+    /// Says whether the element takes focus and whether the Tab key stops on it.
+    pub fn focusable(&mut self, focusability: impl Into<Property<Focusability>>) -> &mut Self {
+        self.bind(focusability.into(), |tree, element, focusability| {
+            tree.set_focusability(element, *focusability);
+        })
     }
 
     /// Gives the element a node of the role in the accessibility tree.
@@ -101,6 +106,28 @@ impl ElementBuilder<'_, '_> {
         self.bind(name.into(), |tree, element, name| {
             tree.set_accessible_name(element, name);
         })
+    }
+
+    /// Says what number the node of the element stands for, and the range it moves in.
+    ///
+    /// # Panics
+    ///
+    /// When the element has no accessible role.
+    pub fn accessible_number(&mut self, number: impl Into<Property<NumericValue>>) -> &mut Self {
+        self.bind(number.into(), |tree, element, number| {
+            tree.set_accessible_value(element, AccessibleValue::Number(*number));
+        })
+    }
+
+    /// Makes the node of the element tell whether the element is checked, as a button that
+    /// stays pressed does.
+    ///
+    /// # Panics
+    ///
+    /// When the element has no accessible role.
+    pub fn accessible_toggle(&mut self) -> &mut Self {
+        self.mount.surface.tree.set_accessible_toggle(self.element, true);
+        self
     }
 
     /// Says what an assistive technology may ask the element to do.

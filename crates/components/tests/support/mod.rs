@@ -5,7 +5,7 @@ use std::time::Duration;
 use morok_components::styles::STYLE_SHEET;
 use morok_components::tokens::LIGHT;
 use morok_components::view::{Mount, SurfaceId, Surfaces};
-use morok_core::accesskit::{Action, ActionRequest, Node, NodeId, TreeId, TreeUpdate};
+use morok_core::accesskit::{Action, ActionData, ActionRequest, Node, NodeId, TreeId, TreeUpdate};
 use morok_core::{
     CaretLine, CaretLines, CaretStop, ElementId, ElementTree, FontId, FontMetrics, FontRequest, ItemRange, Key,
     KeyEvent, KeyPhase, Modifiers, Point, PointerButton, PointerInput, PointerInputKind, ShapedGlyph, ShapedLine,
@@ -216,6 +216,34 @@ impl Stage {
         self.pointer(PointerInputKind::Released { button, click_count: 1 }, position);
     }
 
+    /// Presses the primary button at `from`, moves the pointer through `through` with the
+    /// button down and releases it at the last of them.
+    pub(crate) fn drag(&mut self, from: Point, through: &[Point]) {
+        let button = PointerButton::Primary;
+        self.pointer(PointerInputKind::Pressed { button, click_count: 1 }, from);
+        let mut last = from;
+        for position in through {
+            self.pointer(PointerInputKind::Moved, *position);
+            last = *position;
+        }
+        self.pointer(PointerInputKind::Released { button, click_count: 1 }, last);
+    }
+
+    /// Moves the pointer to a point of the surface with no button down.
+    pub(crate) fn move_pointer(&mut self, position: Point) {
+        self.pointer(PointerInputKind::Moved, position);
+    }
+
+    /// The point `fraction` of the way across the box the last frame gave the element, at
+    /// half its height.
+    pub(crate) fn across(&self, element: ElementId, fraction: f32) -> Point {
+        let border_box = self.tree().border_box(element);
+        Point {
+            x: border_box.x + border_box.width * fraction,
+            y: border_box.y + border_box.height / 2.0,
+        }
+    }
+
     /// The middle of the box the last frame gave the element.
     pub(crate) fn middle_of(&self, element: ElementId) -> Point {
         let border_box = self.tree().border_box(element);
@@ -265,11 +293,16 @@ impl Stage {
 
     /// An assistive technology asks the node of the element for its default action.
     pub(crate) fn accessibility_click(&mut self, element: ElementId) {
+        self.accessibility_action(element, Action::Click, None);
+    }
+
+    /// An assistive technology asks the node of the element for the action, with its data.
+    pub(crate) fn accessibility_action(&mut self, element: ElementId, action: Action, data: Option<ActionData>) {
         let request = ActionRequest {
-            action: Action::Click,
+            action,
             target_tree: TreeId::ROOT,
             target_node: NodeId::from(element),
-            data: None,
+            data,
         };
         self.surfaces
             .surface_mut(self.surface)

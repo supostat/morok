@@ -18,6 +18,7 @@ pub mod etalons;
 mod frame_png;
 mod geometry_gate;
 mod harness_page;
+mod inline_style;
 mod lab_color;
 mod manifest;
 mod marker_classes;

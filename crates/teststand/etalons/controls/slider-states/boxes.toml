@@ -1,0 +1,531 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 760.0
+height = 120.0
+
+[[light]]
+node = "#1 .controls-stage"
+x = 0.0
+y = 0.0
+width = 760.0
+height = 118.0
+
+[[light]]
+node = "#2 .controls-rows"
+x = 16.0
+y = 16.0
+width = 728.0
+height = 86.0
+
+[[light]]
+node = "#3 .controls-row"
+x = 16.0
+y = 16.0
+width = 708.0
+height = 18.0
+
+[[light]]
+node = "#4 .slider"
+x = 16.0
+y = 16.0
+width = 220.0
+height = 18.0
+
+[[light]]
+node = "#5 .slider-rail"
+x = 16.0
+y = 23.0
+width = 220.0
+height = 4.0
+
+[[light]]
+node = "#6 .slider-fill"
+x = 16.0
+y = 23.0
+width = 0.0
+height = 4.0
+
+[[light]]
+node = "#7 .slider-thumb"
+x = 7.0
+y = 16.0
+width = 18.0
+height = 18.0
+
+[[light]]
+node = "#8 .slider"
+x = 260.0
+y = 16.0
+width = 220.0
+height = 18.0
+
+[[light]]
+node = "#9 .slider-rail"
+x = 260.0
+y = 23.0
+width = 220.0
+height = 4.0
+
+[[light]]
+node = "#10 .slider-fill"
+x = 260.0
+y = 23.0
+width = 88.0
+height = 4.0
+
+[[light]]
+node = "#11 .slider-thumb"
+x = 339.0
+y = 16.0
+width = 18.0
+height = 18.0
+
+[[light]]
+node = "#12 .slider"
+x = 504.0
+y = 16.0
+width = 220.0
+height = 18.0
+
+[[light]]
+node = "#13 .slider-rail"
+x = 504.0
+y = 23.0
+width = 220.0
+height = 4.0
+
+[[light]]
+node = "#14 .slider-fill"
+x = 504.0
+y = 23.0
+width = 220.0
+height = 4.0
+
+[[light]]
+node = "#15 .slider-thumb"
+x = 715.0
+y = 16.0
+width = 18.0
+height = 18.0
+
+[[light]]
+node = "#16 .controls-row"
+x = 16.0
+y = 50.0
+width = 708.0
+height = 18.0
+
+[[light]]
+node = "#17 .slider"
+x = 16.0
+y = 50.0
+width = 220.0
+height = 18.0
+
+[[light]]
+node = "#18 .slider-rail"
+x = 16.0
+y = 57.0
+width = 220.0
+height = 4.0
+
+[[light]]
+node = "#19 .slider-fill"
+x = 16.0
+y = 57.0
+width = 88.0
+height = 4.0
+
+[[light]]
+node = "#20 .slider-thumb"
+x = 95.0
+y = 50.0
+width = 18.0
+height = 18.0
+
+[[light]]
+node = "#21 .slider"
+x = 260.0
+y = 50.0
+width = 220.0
+height = 18.0
+
+[[light]]
+node = "#22 .slider-rail"
+x = 260.0
+y = 57.0
+width = 220.0
+height = 4.0
+
+[[light]]
+node = "#23 .slider-fill"
+x = 260.0
+y = 57.0
+width = 88.0
+height = 4.0
+
+[[light]]
+node = "#24 .slider-thumb"
+x = 339.0
+y = 50.0
+width = 18.0
+height = 18.0
+
+[[light]]
+node = "#25 .slider"
+x = 504.0
+y = 50.0
+width = 220.0
+height = 18.0
+
+[[light]]
+node = "#26 .slider-rail"
+x = 504.0
+y = 57.0
+width = 220.0
+height = 4.0
+
+[[light]]
+node = "#27 .slider-fill"
+x = 504.0
+y = 57.0
+width = 132.0
+height = 4.0
+
+[[light]]
+node = "#28 .slider-thumb"
+x = 627.0
+y = 50.0
+width = 18.0
+height = 18.0
+
+[[light]]
+node = "#29 .controls-row"
+x = 16.0
+y = 84.0
+width = 464.0
+height = 18.0
+
+[[light]]
+node = "#30 .slider"
+x = 16.0
+y = 84.0
+width = 220.0
+height = 18.0
+
+[[light]]
+node = "#31 .slider-rail"
+x = 16.0
+y = 91.0
+width = 220.0
+height = 4.0
+
+[[light]]
+node = "#32 .slider-fill"
+x = 16.0
+y = 91.0
+width = 88.0
+height = 4.0
+
+[[light]]
+node = "#33 .slider-thumb"
+x = 95.0
+y = 84.0
+width = 18.0
+height = 18.0
+
+[[light]]
+node = "#34 .slider"
+x = 260.0
+y = 84.0
+width = 220.0
+height = 18.0
+
+[[light]]
+node = "#35 .slider-rail"
+x = 260.0
+y = 91.0
+width = 220.0
+height = 4.0
+
+[[light]]
+node = "#36 .slider-fill"
+x = 260.0
+y = 91.0
+width = 88.0
+height = 4.0
+
+[[light]]
+node = "#37 .slider-thumb"
+x = 339.0
+y = 84.0
+width = 18.0
+height = 18.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 760.0
+height = 120.0
+
+[[dark]]
+node = "#1 .controls-stage"
+x = 0.0
+y = 0.0
+width = 760.0
+height = 118.0
+
+[[dark]]
+node = "#2 .controls-rows"
+x = 16.0
+y = 16.0
+width = 728.0
+height = 86.0
+
+[[dark]]
+node = "#3 .controls-row"
+x = 16.0
+y = 16.0
+width = 708.0
+height = 18.0
+
+[[dark]]
+node = "#4 .slider"
+x = 16.0
+y = 16.0
+width = 220.0
+height = 18.0
+
+[[dark]]
+node = "#5 .slider-rail"
+x = 16.0
+y = 23.0
+width = 220.0
+height = 4.0
+
+[[dark]]
+node = "#6 .slider-fill"
+x = 16.0
+y = 23.0
+width = 0.0
+height = 4.0
+
+[[dark]]
+node = "#7 .slider-thumb"
+x = 7.0
+y = 16.0
+width = 18.0
+height = 18.0
+
+[[dark]]
+node = "#8 .slider"
+x = 260.0
+y = 16.0
+width = 220.0
+height = 18.0
+
+[[dark]]
+node = "#9 .slider-rail"
+x = 260.0
+y = 23.0
+width = 220.0
+height = 4.0
+
+[[dark]]
+node = "#10 .slider-fill"
+x = 260.0
+y = 23.0
+width = 88.0
+height = 4.0
+
+[[dark]]
+node = "#11 .slider-thumb"
+x = 339.0
+y = 16.0
+width = 18.0
+height = 18.0
+
+[[dark]]
+node = "#12 .slider"
+x = 504.0
+y = 16.0
+width = 220.0
+height = 18.0
+
+[[dark]]
+node = "#13 .slider-rail"
+x = 504.0
+y = 23.0
+width = 220.0
+height = 4.0
+
+[[dark]]
+node = "#14 .slider-fill"
+x = 504.0
+y = 23.0
+width = 220.0
+height = 4.0
+
+[[dark]]
+node = "#15 .slider-thumb"
+x = 715.0
+y = 16.0
+width = 18.0
+height = 18.0
+
+[[dark]]
+node = "#16 .controls-row"
+x = 16.0
+y = 50.0
+width = 708.0
+height = 18.0
+
+[[dark]]
+node = "#17 .slider"
+x = 16.0
+y = 50.0
+width = 220.0
+height = 18.0
+
+[[dark]]
+node = "#18 .slider-rail"
+x = 16.0
+y = 57.0
+width = 220.0
+height = 4.0
+
+[[dark]]
+node = "#19 .slider-fill"
+x = 16.0
+y = 57.0
+width = 88.0
+height = 4.0
+
+[[dark]]
+node = "#20 .slider-thumb"
+x = 95.0
+y = 50.0
+width = 18.0
+height = 18.0
+
+[[dark]]
+node = "#21 .slider"
+x = 260.0
+y = 50.0
+width = 220.0
+height = 18.0
+
+[[dark]]
+node = "#22 .slider-rail"
+x = 260.0
+y = 57.0
+width = 220.0
+height = 4.0
+
+[[dark]]
+node = "#23 .slider-fill"
+x = 260.0
+y = 57.0
+width = 88.0
+height = 4.0
+
+[[dark]]
+node = "#24 .slider-thumb"
+x = 339.0
+y = 50.0
+width = 18.0
+height = 18.0
+
+[[dark]]
+node = "#25 .slider"
+x = 504.0
+y = 50.0
+width = 220.0
+height = 18.0
+
+[[dark]]
+node = "#26 .slider-rail"
+x = 504.0
+y = 57.0
+width = 220.0
+height = 4.0
+
+[[dark]]
+node = "#27 .slider-fill"
+x = 504.0
+y = 57.0
+width = 132.0
+height = 4.0
+
+[[dark]]
+node = "#28 .slider-thumb"
+x = 627.0
+y = 50.0
+width = 18.0
+height = 18.0
+
+[[dark]]
+node = "#29 .controls-row"
+x = 16.0
+y = 84.0
+width = 464.0
+height = 18.0
+
+[[dark]]
+node = "#30 .slider"
+x = 16.0
+y = 84.0
+width = 220.0
+height = 18.0
+
+[[dark]]
+node = "#31 .slider-rail"
+x = 16.0
+y = 91.0
+width = 220.0
+height = 4.0
+
+[[dark]]
+node = "#32 .slider-fill"
+x = 16.0
+y = 91.0
+width = 88.0
+height = 4.0
+
+[[dark]]
+node = "#33 .slider-thumb"
+x = 95.0
+y = 84.0
+width = 18.0
+height = 18.0
+
+[[dark]]
+node = "#34 .slider"
+x = 260.0
+y = 84.0
+width = 220.0
+height = 18.0
+
+[[dark]]
+node = "#35 .slider-rail"
+x = 260.0
+y = 91.0
+width = 220.0
+height = 4.0
+
+[[dark]]
+node = "#36 .slider-fill"
+x = 260.0
+y = 91.0
+width = 88.0
+height = 4.0
+
+[[dark]]
+node = "#37 .slider-thumb"
+x = 339.0
+y = 84.0
+width = 18.0
+height = 18.0

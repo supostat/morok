@@ -1,0 +1,461 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 440.0
+height = 104.0
+
+[[light]]
+node = "#1 .controls-stage"
+x = 0.0
+y = 0.0
+width = 440.0
+height = 104.0
+
+[[light]]
+node = "#2 .controls-rows"
+x = 16.0
+y = 16.0
+width = 408.0
+height = 72.0
+
+[[light]]
+node = "#3 .controls-row"
+x = 16.0
+y = 16.0
+width = 376.10938
+height = 28.0
+
+[[light]]
+node = "#4 .segmented"
+x = 16.0
+y = 16.0
+width = 176.05469
+height = 28.0
+
+[[light]]
+node = "#5 .segment"
+x = 18.0
+y = 18.0
+width = 45.007813
+height = 24.0
+
+[[light]]
+node = "#6 text"
+x = 30.0
+y = 21.296875
+width = 21.007813
+height = 17.398438
+
+[[light]]
+node = "#7 .segment"
+x = 65.00781
+y = 18.0
+width = 74.60156
+height = 24.0
+
+[[light]]
+node = "#8 text"
+x = 77.00781
+y = 21.296875
+width = 50.601563
+height = 17.398438
+
+[[light]]
+node = "#9 .segment"
+x = 141.60938
+y = 18.0
+width = 48.445313
+height = 24.0
+
+[[light]]
+node = "#10 text"
+x = 153.60938
+y = 21.296875
+width = 24.445313
+height = 17.398438
+
+[[light]]
+node = "#11 .segmented"
+x = 216.05469
+y = 16.0
+width = 176.05469
+height = 28.0
+
+[[light]]
+node = "#12 .segment"
+x = 218.05469
+y = 18.0
+width = 45.007813
+height = 24.0
+
+[[light]]
+node = "#13 text"
+x = 230.05469
+y = 21.296875
+width = 21.007813
+height = 17.398438
+
+[[light]]
+node = "#14 .segment"
+x = 265.0625
+y = 18.0
+width = 74.60156
+height = 24.0
+
+[[light]]
+node = "#15 text"
+x = 277.0625
+y = 21.296875
+width = 50.601563
+height = 17.398438
+
+[[light]]
+node = "#16 .segment"
+x = 341.66406
+y = 18.0
+width = 48.445313
+height = 24.0
+
+[[light]]
+node = "#17 text"
+x = 353.66406
+y = 21.296875
+width = 24.445313
+height = 17.398438
+
+[[light]]
+node = "#18 .controls-row"
+x = 16.0
+y = 60.0
+width = 376.10938
+height = 28.0
+
+[[light]]
+node = "#19 .segmented"
+x = 16.0
+y = 60.0
+width = 176.05469
+height = 28.0
+
+[[light]]
+node = "#20 .segment"
+x = 18.0
+y = 62.0
+width = 45.007813
+height = 24.0
+
+[[light]]
+node = "#21 text"
+x = 30.0
+y = 65.296875
+width = 21.007813
+height = 17.398438
+
+[[light]]
+node = "#22 .segment"
+x = 65.00781
+y = 62.0
+width = 74.60156
+height = 24.0
+
+[[light]]
+node = "#23 text"
+x = 77.00781
+y = 65.296875
+width = 50.601563
+height = 17.398438
+
+[[light]]
+node = "#24 .segment"
+x = 141.60938
+y = 62.0
+width = 48.445313
+height = 24.0
+
+[[light]]
+node = "#25 text"
+x = 153.60938
+y = 65.296875
+width = 24.445313
+height = 17.398438
+
+[[light]]
+node = "#26 .segmented"
+x = 216.05469
+y = 60.0
+width = 176.05469
+height = 28.0
+
+[[light]]
+node = "#27 .segment"
+x = 218.05469
+y = 62.0
+width = 45.007813
+height = 24.0
+
+[[light]]
+node = "#28 text"
+x = 230.05469
+y = 65.296875
+width = 21.007813
+height = 17.398438
+
+[[light]]
+node = "#29 .segment"
+x = 265.0625
+y = 62.0
+width = 74.60156
+height = 24.0
+
+[[light]]
+node = "#30 text"
+x = 277.0625
+y = 65.296875
+width = 50.601563
+height = 17.398438
+
+[[light]]
+node = "#31 .segment"
+x = 341.66406
+y = 62.0
+width = 48.445313
+height = 24.0
+
+[[light]]
+node = "#32 text"
+x = 353.66406
+y = 65.296875
+width = 24.445313
+height = 17.398438
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 440.0
+height = 104.0
+
+[[dark]]
+node = "#1 .controls-stage"
+x = 0.0
+y = 0.0
+width = 440.0
+height = 104.0
+
+[[dark]]
+node = "#2 .controls-rows"
+x = 16.0
+y = 16.0
+width = 408.0
+height = 72.0
+
+[[dark]]
+node = "#3 .controls-row"
+x = 16.0
+y = 16.0
+width = 376.10938
+height = 28.0
+
+[[dark]]
+node = "#4 .segmented"
+x = 16.0
+y = 16.0
+width = 176.05469
+height = 28.0
+
+[[dark]]
+node = "#5 .segment"
+x = 18.0
+y = 18.0
+width = 45.007813
+height = 24.0
+
+[[dark]]
+node = "#6 text"
+x = 30.0
+y = 21.296875
+width = 21.007813
+height = 17.398438
+
+[[dark]]
+node = "#7 .segment"
+x = 65.00781
+y = 18.0
+width = 74.60156
+height = 24.0
+
+[[dark]]
+node = "#8 text"
+x = 77.00781
+y = 21.296875
+width = 50.601563
+height = 17.398438
+
+[[dark]]
+node = "#9 .segment"
+x = 141.60938
+y = 18.0
+width = 48.445313
+height = 24.0
+
+[[dark]]
+node = "#10 text"
+x = 153.60938
+y = 21.296875
+width = 24.445313
+height = 17.398438
+
+[[dark]]
+node = "#11 .segmented"
+x = 216.05469
+y = 16.0
+width = 176.05469
+height = 28.0
+
+[[dark]]
+node = "#12 .segment"
+x = 218.05469
+y = 18.0
+width = 45.007813
+height = 24.0
+
+[[dark]]
+node = "#13 text"
+x = 230.05469
+y = 21.296875
+width = 21.007813
+height = 17.398438
+
+[[dark]]
+node = "#14 .segment"
+x = 265.0625
+y = 18.0
+width = 74.60156
+height = 24.0
+
+[[dark]]
+node = "#15 text"
+x = 277.0625
+y = 21.296875
+width = 50.601563
+height = 17.398438
+
+[[dark]]
+node = "#16 .segment"
+x = 341.66406
+y = 18.0
+width = 48.445313
+height = 24.0
+
+[[dark]]
+node = "#17 text"
+x = 353.66406
+y = 21.296875
+width = 24.445313
+height = 17.398438
+
+[[dark]]
+node = "#18 .controls-row"
+x = 16.0
+y = 60.0
+width = 376.10938
+height = 28.0
+
+[[dark]]
+node = "#19 .segmented"
+x = 16.0
+y = 60.0
+width = 176.05469
+height = 28.0
+
+[[dark]]
+node = "#20 .segment"
+x = 18.0
+y = 62.0
+width = 45.007813
+height = 24.0
+
+[[dark]]
+node = "#21 text"
+x = 30.0
+y = 65.296875
+width = 21.007813
+height = 17.398438
+
+[[dark]]
+node = "#22 .segment"
+x = 65.00781
+y = 62.0
+width = 74.60156
+height = 24.0
+
+[[dark]]
+node = "#23 text"
+x = 77.00781
+y = 65.296875
+width = 50.601563
+height = 17.398438
+
+[[dark]]
+node = "#24 .segment"
+x = 141.60938
+y = 62.0
+width = 48.445313
+height = 24.0
+
+[[dark]]
+node = "#25 text"
+x = 153.60938
+y = 65.296875
+width = 24.445313
+height = 17.398438
+
+[[dark]]
+node = "#26 .segmented"
+x = 216.05469
+y = 60.0
+width = 176.05469
+height = 28.0
+
+[[dark]]
+node = "#27 .segment"
+x = 218.05469
+y = 62.0
+width = 45.007813
+height = 24.0
+
+[[dark]]
+node = "#28 text"
+x = 230.05469
+y = 65.296875
+width = 21.007813
+height = 17.398438
+
+[[dark]]
+node = "#29 .segment"
+x = 265.0625
+y = 62.0
+width = 74.60156
+height = 24.0
+
+[[dark]]
+node = "#30 text"
+x = 277.0625
+y = 65.296875
+width = 50.601563
+height = 17.398438
+
+[[dark]]
+node = "#31 .segment"
+x = 341.66406
+y = 62.0
+width = 48.445313
+height = 24.0
+
+[[dark]]
+node = "#32 text"
+x = 353.66406
+y = 65.296875
+width = 24.445313
+height = 17.398438

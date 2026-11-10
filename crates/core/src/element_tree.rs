@@ -54,7 +54,7 @@ use crate::motion::timeline::Timeline;
 use crate::paint::box_painter::BoxPainter;
 use crate::paint::damage::Damage;
 use crate::paint::display_list::DisplayList;
-use crate::paint::group_transform::local_transform;
+use crate::paint::group_transform::surface_transform;
 use crate::paint::paint_order::PaintOrder;
 use crate::paint::paint_pass::{OpenGroup, PaintPass};
 use crate::paint::paint_step::PaintStep;
@@ -330,6 +330,12 @@ impl ElementTree {
         self.mark_style(element);
     }
 
+    /// The declarations set on the element directly, each property once, in the order the
+    /// properties were first set.
+    pub fn inline_declarations(&self, element: ElementId) -> &[Declaration] {
+        self.elements[element].inline_style.declarations()
+    }
+
     /// Drops every inline declaration of the element.
     pub fn clear_inline(&mut self, element: ElementId) {
         self.elements[element].inline_style.clear();
@@ -470,14 +476,7 @@ impl ElementTree {
     /// What takes a point of the element to the surface: the transforms of the element and
     /// of its ancestors.
     fn surface_transform(&self, element: ElementId) -> Transform {
-        let mut on_surface = Transform::IDENTITY;
-        let mut current = Some(element);
-        while let Some(id) = current {
-            let transformed = &self.elements[id];
-            on_surface = on_surface.then(&local_transform(transformed));
-            current = transformed.parent;
-        }
-        on_surface
+        surface_transform(&self.elements, element)
     }
 
     /// The line boxes of a text element as the last layout stage placed them, top to bottom.
@@ -1017,6 +1016,18 @@ impl ElementTree {
     /// When the element has no accessible role.
     pub fn set_accessible_value(&mut self, element: ElementId, value: AccessibleValue<'_>) {
         let changes = self.semantics_mut(element).set_value(value);
+        self.accessibility_changed(element, changes);
+    }
+
+    /// Makes the node of the element tell whether the element is checked, as the node of a
+    /// button that stays pressed does. A check box, a switch and a radio button tell it by
+    /// their role.
+    ///
+    /// # Panics
+    ///
+    /// When the element has no accessible role.
+    pub fn set_accessible_toggle(&mut self, element: ElementId, is_toggle: bool) {
+        let changes = self.semantics_mut(element).set_toggle(is_toggle);
         self.accessibility_changed(element, changes);
     }
 

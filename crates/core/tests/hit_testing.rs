@@ -1,6 +1,6 @@
 mod support;
 
-use morok_core::{ElementId, Point, PointerButton, PointerEventKind, PointerInputKind, Role};
+use morok_core::{ElementId, Point, PointerButton, PointerEventKind, PointerInputKind, Rect, Role};
 use morok_style::States;
 use support::{InputLog, Scene};
 
@@ -163,6 +163,39 @@ fn a_moved_box_is_hit_where_it_is_shown_and_not_where_it_was_laid_out() {
     assert_eq!(scene.tree.element_at(point(150.0, 150.0)), Some(scene.root()));
     assert_eq!(scene.tree.element_at(point(300.0, 150.0)), Some(square));
     assert_eq!(scene.tree.element_at(point(255.0, 105.0)), Some(dot));
+}
+
+#[test]
+fn every_element_that_hears_of_the_pointer_is_told_its_box_as_the_surface_shows_it() {
+    let (mut scene, elements) = stage_with(&["square"]);
+    let square = elements[0];
+    scene.add_classes(square, &["moved"]);
+    let dot = scene.add(square, Role::Element, &["dot"]);
+    scene.frame();
+    let mut log = InputLog::default();
+
+    scene.press(255.0, 105.0, &mut log);
+
+    let pressed = PointerEventKind::Pressed {
+        button: PointerButton::Primary,
+        click_count: 1,
+    };
+    let told: Vec<_> = log
+        .pointer_events
+        .iter()
+        .zip(&log.pointer_event_boxes)
+        .filter(|((_, kind), _)| *kind == pressed)
+        .map(|((element, _), element_box)| (*element, *element_box))
+        .collect();
+    assert_eq!(
+        told,
+        [
+            (dot, Rect::new(250.0, 100.0, 10.0, 10.0)),
+            (square, Rect::new(250.0, 100.0, 100.0, 100.0)),
+            (scene.root(), Rect::new(0.0, 0.0, 400.0, 300.0)),
+        ],
+        "the press goes from the innermost element out, each told the box moved by its transforms"
+    );
 }
 
 #[test]

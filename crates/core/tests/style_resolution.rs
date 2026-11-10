@@ -416,9 +416,15 @@ fn an_inline_declaration_overrides_every_rule_until_it_is_cleared() {
         scene.tree.style(bar).layout.width,
         ResolvedLengthOrAuto::Length(pixels(72.0))
     );
+    assert_eq!(
+        scene.tree.inline_declarations(bar),
+        [width(72.0), Declaration::BackgroundColor(ColorValue::Transparent)],
+        "a property set again keeps its place"
+    );
 
     scene.tree.clear_inline(bar);
     scene.frame();
+    assert!(scene.tree.inline_declarations(bar).is_empty());
     assert_eq!(
         scene.tree.style(bar).layout.width,
         ResolvedLengthOrAuto::Length(pixels(20.0))

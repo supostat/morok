@@ -1,0 +1,19 @@
+/* The stage of the control cases: a padded surface with the controls of a case in rows. */
+
+.controls-stage {
+  padding: var(--space-4);
+  background-color: var(--color-bg);
+}
+
+.controls-rows {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.controls-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}

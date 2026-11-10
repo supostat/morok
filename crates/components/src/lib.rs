@@ -1,11 +1,24 @@
 #![forbid(unsafe_code)]
 
+mod activation;
 mod button;
+mod check_row;
+mod checkbox;
+mod fraction_of_box;
+mod icon_button;
 mod kit_icon;
+mod progress_bar;
+mod radio_group;
 mod search_field;
+mod segmented_control;
+mod single_choice;
+mod slider;
+mod slider_scale;
+mod spinner;
 pub mod styles;
 mod stylesheet_source;
 mod stylesheets;
+mod switch;
 mod text_area;
 mod text_field;
 mod text_field_parts;
@@ -13,9 +26,17 @@ pub mod tokens;
 pub mod view;
 
 pub use button::Button;
+pub use checkbox::Checkbox;
+pub use icon_button::IconButton;
 pub use kit_icon::KitIcon;
+pub use progress_bar::ProgressBar;
+pub use radio_group::RadioGroup;
 pub use search_field::SearchField;
+pub use segmented_control::SegmentedControl;
+pub use slider::Slider;
+pub use spinner::Spinner;
 pub use stylesheet_source::StylesheetSource;
 pub use stylesheets::STYLESHEETS;
+pub use switch::Switch;
 pub use text_area::TextArea;
 pub use text_field::TextField;

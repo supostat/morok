@@ -1,0 +1,64 @@
+/* A slider: a rail filled up to a round thumb, in every state. The fill and the thumb are
+   placed along the rail by the value. */
+
+.slider {
+  position: relative;
+  flex-shrink: 0;
+  width: 220px;
+  height: 18px;
+}
+
+.slider:disabled {
+  opacity: 0.45;
+}
+
+.slider-rail {
+  position: absolute;
+  top: 7px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-line);
+}
+
+.slider-fill {
+  position: absolute;
+  top: 7px;
+  left: 0;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-accent);
+}
+
+.slider-thumb {
+  position: absolute;
+  top: 0;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-full);
+  background-color: var(--color-knob);
+  box-shadow: var(--shadow-raised);
+  transition: border-color var(--motion-fast);
+}
+
+.slider:hover > .slider-thumb {
+  border-color: var(--color-text-3);
+}
+
+.slider:active > .slider-thumb {
+  border-color: var(--color-accent);
+}
+
+.slider:focus-visible > .slider-thumb {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* A disabled slider answers neither the pointer over it nor a press. */
+.slider:disabled:hover > .slider-thumb,
+.slider:disabled:active > .slider-thumb {
+  border-color: var(--color-line-strong);
+}

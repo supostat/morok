@@ -4,6 +4,7 @@ use std::time::Duration;
 use morok_core::{ElementId, Role};
 use morok_style::States;
 
+use crate::inline_style::style_attribute;
 use crate::marker_classes::{self, PLACEHOLDER_MARKER};
 use crate::scene::Scene;
 
@@ -19,7 +20,8 @@ pub(crate) const SELECTION_START_ATTRIBUTE: &str = "data-selection-start";
 pub(crate) const SELECTION_END_ATTRIBUTE: &str = "data-selection-end";
 
 /// The markup Chrome lays the tree of the scene out from: one `div` per element, in document
-/// order, with the classes of the element and the marker classes of its states. A text holds
+/// order, with the classes of the element, the marker classes of its states and the
+/// declarations set on it directly. A text holds
 /// its characters; an icon is its SVG inline, so that `currentColor` is the color of the
 /// element; an image is an `img` with its file as a data URL. An edited text holds its
 /// characters, or while it is empty its placeholder; a focused one tells the page where its
@@ -49,22 +51,26 @@ fn write_element(scene: &Scene, element: ElementId, markup: &mut String) {
     if shows_placeholder {
         classes.push(PLACEHOLDER_MARKER.to_owned());
     }
-    let class_attribute = if classes.is_empty() {
+    let mut attributes = if classes.is_empty() {
         String::new()
     } else {
         format!(" class=\"{}\"", classes.join(" "))
     };
+    let inline_declarations = tree.inline_declarations(element);
+    if !inline_declarations.is_empty() {
+        let _ = write!(attributes, " style=\"{}\"", style_attribute(inline_declarations));
+    }
     match role {
         Role::Icon => {
             let icon = scene.icon_of(element).expect("an icon element shows an icon");
-            markup.push_str(&icon.svg.replacen(SVG_TAG, &format!("{SVG_TAG}{class_attribute}"), 1));
+            markup.push_str(&icon.svg.replacen(SVG_TAG, &format!("{SVG_TAG}{attributes}"), 1));
             return;
         }
         Role::Image => {
             let image = scene.image_of(element).expect("an image element shows an image");
             let _ = write!(
                 markup,
-                "<img{class_attribute} src=\"data:{};base64,{}\">",
+                "<img{attributes} src=\"data:{};base64,{}\">",
                 image.media_type,
                 base64(image.encoded)
             );
@@ -74,7 +80,7 @@ fn write_element(scene: &Scene, element: ElementId, markup: &mut String) {
         Role::Canvas | Role::Scroll => unreachable!("the roles were checked above"),
     }
     markup.push_str("<div");
-    markup.push_str(&class_attribute);
+    markup.push_str(&attributes);
     match role {
         Role::Text => {
             markup.push(' ');

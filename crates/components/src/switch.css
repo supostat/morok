@@ -1,0 +1,53 @@
+/* A switch: a track whose knob slides to the end that says the setting is on, in every state. */
+
+.switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 32px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-line-strong);
+  transition: background-color var(--motion-base) var(--motion-ease);
+}
+
+.switch:checked {
+  background-color: var(--color-accent);
+}
+
+.check:active > .switch {
+  background-color: var(--color-text-3);
+}
+
+.check:active > .switch:checked {
+  background-color: var(--color-accent-active);
+}
+
+.check:focus-visible > .switch {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* A disabled switch does not answer a press. */
+.check:disabled:active > .switch {
+  background-color: var(--color-line-strong);
+}
+
+.check:disabled:active > .switch:checked {
+  background-color: var(--color-accent);
+}
+
+.switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-knob);
+  box-shadow: var(--shadow-raised);
+  transition: transform var(--motion-base) var(--motion-ease);
+}
+
+.switch:checked > .switch-knob {
+  transform: translateX(14px);
+}

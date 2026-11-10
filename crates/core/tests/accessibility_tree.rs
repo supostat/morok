@@ -275,6 +275,24 @@ fn a_node_carries_the_states_of_its_element() {
 }
 
 #[test]
+fn a_button_made_a_toggle_tells_whether_it_is_checked() {
+    let mut dialog = DialogScene::new();
+
+    dialog.scene.tree.set_accessible_toggle(dialog.save, true);
+    let changed = dialog.update();
+    assert_eq!(dialog.mirror.node(dialog.save).toggled(), Some(Toggled::False));
+    assert_eq!(changed, ids(&[dialog.save]));
+
+    dialog.scene.tree.set_state(dialog.save, States::CHECKED, true);
+    dialog.update();
+    assert_eq!(dialog.mirror.node(dialog.save).toggled(), Some(Toggled::True));
+
+    dialog.scene.tree.set_accessible_toggle(dialog.save, false);
+    dialog.update();
+    assert_eq!(dialog.mirror.node(dialog.save).toggled(), None);
+}
+
+#[test]
 fn a_node_offers_the_actions_of_its_element_and_focus_when_the_element_takes_it() {
     let mut dialog = DialogScene::new();
     let save = dialog.mirror.node(dialog.save);

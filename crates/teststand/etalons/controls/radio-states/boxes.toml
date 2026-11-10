@@ -1,0 +1,685 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 540.0
+height = 88.0
+
+[[light]]
+node = "#1 .controls-stage"
+x = 0.0
+y = 0.0
+width = 540.0
+height = 81.6875
+
+[[light]]
+node = "#2 .controls-rows"
+x = 16.0
+y = 16.0
+width = 508.0
+height = 49.6875
+
+[[light]]
+node = "#3 .controls-row"
+x = 16.0
+y = 16.0
+width = 489.5547
+height = 49.6875
+
+[[light]]
+node = "#4 .radio-group"
+x = 16.0
+y = 16.0
+width = 78.71094
+height = 49.6875
+
+[[light]]
+node = "#5 .check.radio"
+x = 16.0
+y = 16.0
+width = 76.78906
+height = 18.84375
+
+[[light]]
+node = "#6 .check-box"
+x = 16.0
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#7 .radio-dot"
+x = 21.0
+y = 22.421875
+width = 6.0
+height = 6.0
+
+[[light]]
+node = "#8 text"
+x = 40.0
+y = 16.0
+width = 52.789063
+height = 18.84375
+
+[[light]]
+node = "#9 .check.radio"
+x = 16.0
+y = 46.84375
+width = 78.71094
+height = 18.84375
+
+[[light]]
+node = "#10 .check-box"
+x = 16.0
+y = 48.265625
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#11 .radio-dot"
+x = 24.0
+y = 56.265625
+width = 0.0
+height = 0.0
+
+[[light]]
+node = "#12 text"
+x = 40.0
+y = 46.84375
+width = 54.710938
+height = 18.84375
+
+[[light]]
+node = "#13 .radio-group"
+x = 118.71094
+y = 16.0
+width = 78.71094
+height = 49.6875
+
+[[light]]
+node = "#14 .check.radio"
+x = 118.71094
+y = 16.0
+width = 76.78906
+height = 18.84375
+
+[[light]]
+node = "#15 .check-box"
+x = 118.71094
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#16 .radio-dot"
+x = 123.71094
+y = 22.421875
+width = 6.0
+height = 6.0
+
+[[light]]
+node = "#17 text"
+x = 142.71094
+y = 16.0
+width = 52.789063
+height = 18.84375
+
+[[light]]
+node = "#18 .check.radio"
+x = 118.71094
+y = 46.84375
+width = 78.71094
+height = 18.84375
+
+[[light]]
+node = "#19 .check-box"
+x = 118.71094
+y = 48.265625
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#20 .radio-dot"
+x = 126.71094
+y = 56.265625
+width = 0.0
+height = 0.0
+
+[[light]]
+node = "#21 text"
+x = 142.71094
+y = 46.84375
+width = 54.710938
+height = 18.84375
+
+[[light]]
+node = "#22 .radio-group"
+x = 221.42188
+y = 16.0
+width = 78.71094
+height = 49.6875
+
+[[light]]
+node = "#23 .check.radio"
+x = 221.42188
+y = 16.0
+width = 76.78906
+height = 18.84375
+
+[[light]]
+node = "#24 .check-box"
+x = 221.42188
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#25 .radio-dot"
+x = 226.42188
+y = 22.421875
+width = 6.0
+height = 6.0
+
+[[light]]
+node = "#26 text"
+x = 245.42188
+y = 16.0
+width = 52.789063
+height = 18.84375
+
+[[light]]
+node = "#27 .check.radio"
+x = 221.42188
+y = 46.84375
+width = 78.71094
+height = 18.84375
+
+[[light]]
+node = "#28 .check-box"
+x = 221.42188
+y = 48.265625
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#29 .radio-dot"
+x = 229.42188
+y = 56.265625
+width = 0.0
+height = 0.0
+
+[[light]]
+node = "#30 text"
+x = 245.42188
+y = 46.84375
+width = 54.710938
+height = 18.84375
+
+[[light]]
+node = "#31 .radio-group"
+x = 324.1328
+y = 16.0
+width = 78.71094
+height = 49.6875
+
+[[light]]
+node = "#32 .check.radio"
+x = 324.1328
+y = 16.0
+width = 76.78906
+height = 18.84375
+
+[[light]]
+node = "#33 .check-box"
+x = 324.1328
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#34 .radio-dot"
+x = 329.1328
+y = 22.421875
+width = 6.0
+height = 6.0
+
+[[light]]
+node = "#35 text"
+x = 348.1328
+y = 16.0
+width = 52.789063
+height = 18.84375
+
+[[light]]
+node = "#36 .check.radio"
+x = 324.1328
+y = 46.84375
+width = 78.71094
+height = 18.84375
+
+[[light]]
+node = "#37 .check-box"
+x = 324.1328
+y = 48.265625
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#38 .radio-dot"
+x = 332.1328
+y = 56.265625
+width = 0.0
+height = 0.0
+
+[[light]]
+node = "#39 text"
+x = 348.1328
+y = 46.84375
+width = 54.710938
+height = 18.84375
+
+[[light]]
+node = "#40 .radio-group"
+x = 426.84375
+y = 16.0
+width = 78.71094
+height = 49.6875
+
+[[light]]
+node = "#41 .check.radio"
+x = 426.84375
+y = 16.0
+width = 76.78906
+height = 18.84375
+
+[[light]]
+node = "#42 .check-box"
+x = 426.84375
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#43 .radio-dot"
+x = 431.84375
+y = 22.421875
+width = 6.0
+height = 6.0
+
+[[light]]
+node = "#44 text"
+x = 450.84375
+y = 16.0
+width = 52.789063
+height = 18.84375
+
+[[light]]
+node = "#45 .check.radio"
+x = 426.84375
+y = 46.84375
+width = 78.71094
+height = 18.84375
+
+[[light]]
+node = "#46 .check-box"
+x = 426.84375
+y = 48.265625
+width = 16.0
+height = 16.0
+
+[[light]]
+node = "#47 .radio-dot"
+x = 434.84375
+y = 56.265625
+width = 0.0
+height = 0.0
+
+[[light]]
+node = "#48 text"
+x = 450.84375
+y = 46.84375
+width = 54.710938
+height = 18.84375
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 540.0
+height = 88.0
+
+[[dark]]
+node = "#1 .controls-stage"
+x = 0.0
+y = 0.0
+width = 540.0
+height = 81.6875
+
+[[dark]]
+node = "#2 .controls-rows"
+x = 16.0
+y = 16.0
+width = 508.0
+height = 49.6875
+
+[[dark]]
+node = "#3 .controls-row"
+x = 16.0
+y = 16.0
+width = 489.5547
+height = 49.6875
+
+[[dark]]
+node = "#4 .radio-group"
+x = 16.0
+y = 16.0
+width = 78.71094
+height = 49.6875
+
+[[dark]]
+node = "#5 .check.radio"
+x = 16.0
+y = 16.0
+width = 76.78906
+height = 18.84375
+
+[[dark]]
+node = "#6 .check-box"
+x = 16.0
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#7 .radio-dot"
+x = 21.0
+y = 22.421875
+width = 6.0
+height = 6.0
+
+[[dark]]
+node = "#8 text"
+x = 40.0
+y = 16.0
+width = 52.789063
+height = 18.84375
+
+[[dark]]
+node = "#9 .check.radio"
+x = 16.0
+y = 46.84375
+width = 78.71094
+height = 18.84375
+
+[[dark]]
+node = "#10 .check-box"
+x = 16.0
+y = 48.265625
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#11 .radio-dot"
+x = 24.0
+y = 56.265625
+width = 0.0
+height = 0.0
+
+[[dark]]
+node = "#12 text"
+x = 40.0
+y = 46.84375
+width = 54.710938
+height = 18.84375
+
+[[dark]]
+node = "#13 .radio-group"
+x = 118.71094
+y = 16.0
+width = 78.71094
+height = 49.6875
+
+[[dark]]
+node = "#14 .check.radio"
+x = 118.71094
+y = 16.0
+width = 76.78906
+height = 18.84375
+
+[[dark]]
+node = "#15 .check-box"
+x = 118.71094
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#16 .radio-dot"
+x = 123.71094
+y = 22.421875
+width = 6.0
+height = 6.0
+
+[[dark]]
+node = "#17 text"
+x = 142.71094
+y = 16.0
+width = 52.789063
+height = 18.84375
+
+[[dark]]
+node = "#18 .check.radio"
+x = 118.71094
+y = 46.84375
+width = 78.71094
+height = 18.84375
+
+[[dark]]
+node = "#19 .check-box"
+x = 118.71094
+y = 48.265625
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#20 .radio-dot"
+x = 126.71094
+y = 56.265625
+width = 0.0
+height = 0.0
+
+[[dark]]
+node = "#21 text"
+x = 142.71094
+y = 46.84375
+width = 54.710938
+height = 18.84375
+
+[[dark]]
+node = "#22 .radio-group"
+x = 221.42188
+y = 16.0
+width = 78.71094
+height = 49.6875
+
+[[dark]]
+node = "#23 .check.radio"
+x = 221.42188
+y = 16.0
+width = 76.78906
+height = 18.84375
+
+[[dark]]
+node = "#24 .check-box"
+x = 221.42188
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#25 .radio-dot"
+x = 226.42188
+y = 22.421875
+width = 6.0
+height = 6.0
+
+[[dark]]
+node = "#26 text"
+x = 245.42188
+y = 16.0
+width = 52.789063
+height = 18.84375
+
+[[dark]]
+node = "#27 .check.radio"
+x = 221.42188
+y = 46.84375
+width = 78.71094
+height = 18.84375
+
+[[dark]]
+node = "#28 .check-box"
+x = 221.42188
+y = 48.265625
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#29 .radio-dot"
+x = 229.42188
+y = 56.265625
+width = 0.0
+height = 0.0
+
+[[dark]]
+node = "#30 text"
+x = 245.42188
+y = 46.84375
+width = 54.710938
+height = 18.84375
+
+[[dark]]
+node = "#31 .radio-group"
+x = 324.1328
+y = 16.0
+width = 78.71094
+height = 49.6875
+
+[[dark]]
+node = "#32 .check.radio"
+x = 324.1328
+y = 16.0
+width = 76.78906
+height = 18.84375
+
+[[dark]]
+node = "#33 .check-box"
+x = 324.1328
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#34 .radio-dot"
+x = 329.1328
+y = 22.421875
+width = 6.0
+height = 6.0
+
+[[dark]]
+node = "#35 text"
+x = 348.1328
+y = 16.0
+width = 52.789063
+height = 18.84375
+
+[[dark]]
+node = "#36 .check.radio"
+x = 324.1328
+y = 46.84375
+width = 78.71094
+height = 18.84375
+
+[[dark]]
+node = "#37 .check-box"
+x = 324.1328
+y = 48.265625
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#38 .radio-dot"
+x = 332.1328
+y = 56.265625
+width = 0.0
+height = 0.0
+
+[[dark]]
+node = "#39 text"
+x = 348.1328
+y = 46.84375
+width = 54.710938
+height = 18.84375
+
+[[dark]]
+node = "#40 .radio-group"
+x = 426.84375
+y = 16.0
+width = 78.71094
+height = 49.6875
+
+[[dark]]
+node = "#41 .check.radio"
+x = 426.84375
+y = 16.0
+width = 76.78906
+height = 18.84375
+
+[[dark]]
+node = "#42 .check-box"
+x = 426.84375
+y = 17.421875
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#43 .radio-dot"
+x = 431.84375
+y = 22.421875
+width = 6.0
+height = 6.0
+
+[[dark]]
+node = "#44 text"
+x = 450.84375
+y = 16.0
+width = 52.789063
+height = 18.84375
+
+[[dark]]
+node = "#45 .check.radio"
+x = 426.84375
+y = 46.84375
+width = 78.71094
+height = 18.84375
+
+[[dark]]
+node = "#46 .check-box"
+x = 426.84375
+y = 48.265625
+width = 16.0
+height = 16.0
+
+[[dark]]
+node = "#47 .radio-dot"
+x = 434.84375
+y = 56.265625
+width = 0.0
+height = 0.0
+
+[[dark]]
+node = "#48 text"
+x = 450.84375
+y = 46.84375
+width = 54.710938
+height = 18.84375

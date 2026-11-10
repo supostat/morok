@@ -1,4 +1,6 @@
 use crate::element::Element;
+use crate::element_arena::ElementArena;
+use crate::element_id::ElementId;
 use crate::geometry::transform::Transform;
 use crate::motion::transform_step::transform_of;
 
@@ -14,4 +16,17 @@ pub(crate) fn local_transform(element: &Element) -> Transform {
     Transform::translation(-origin_x, -origin_y)
         .then(&transform_of(&element.lists.transform, border_box))
         .then(&Transform::translation(origin_x, origin_y))
+}
+
+/// What takes a point of the element to the surface: the transforms of the element and of its
+/// ancestors.
+pub(crate) fn surface_transform(elements: &ElementArena, element: ElementId) -> Transform {
+    let mut on_surface = Transform::IDENTITY;
+    let mut current = Some(element);
+    while let Some(id) = current {
+        let transformed = &elements[id];
+        on_surface = on_surface.then(&local_transform(transformed));
+        current = transformed.parent;
+    }
+    on_surface
 }
