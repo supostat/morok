@@ -12,13 +12,22 @@ const DISPLAYS: [(&str, Display); 4] = [
     ("grid", Display::Grid),
     ("none", Display::None),
 ];
-const POSITIONS: [(&str, Position); 2] = [("relative", Position::Relative), ("absolute", Position::Absolute)];
-const OVERFLOWS: [(&str, Overflow); 2] = [("visible", Overflow::Visible), ("hidden", Overflow::Hidden)];
+const POSITIONS: [(&str, Position); 3] = [
+    ("relative", Position::Relative),
+    ("absolute", Position::Absolute),
+    ("sticky", Position::Sticky),
+];
+const OVERFLOWS: [(&str, Overflow); 4] = [
+    ("visible", Overflow::Visible),
+    ("hidden", Overflow::Hidden),
+    ("auto", Overflow::Auto),
+    ("scroll", Overflow::Scroll),
+];
 
 const AUTO: &str = "auto";
 const NONE: &str = "none";
 
-const OVERFLOW: &str = "`visible` or `hidden`";
+const OVERFLOW: &str = "`visible`, `hidden`, `auto` or `scroll`";
 const SIZE: &str = "a length, a percentage, `calc()` or `auto`";
 const MAXIMUM_SIZE: &str = "a length, a percentage, `calc()` or `none`";
 const FOUR_SIZES: &str = "one to four lengths, percentages or `auto`";
@@ -34,12 +43,12 @@ pub(crate) const PROPERTIES: &[Property] = &[
     },
     Property {
         name: "position",
-        expectation: "`relative` or `absolute`",
+        expectation: "`relative`, `absolute` or `sticky`",
         parse: |_, input| Ok(vec![Declaration::Position(keyword(input, &POSITIONS)?)]),
     },
     Property {
         name: "overflow",
-        expectation: "one or two of `visible` and `hidden`",
+        expectation: "one or two of `visible`, `hidden`, `auto` and `scroll`",
         parse: |_, input| {
             let horizontal = keyword(input, &OVERFLOWS)?;
             let vertical = if input.is_exhausted() {

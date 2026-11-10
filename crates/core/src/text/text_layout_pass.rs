@@ -76,7 +76,7 @@ impl TextLayoutPass<'_> {
     fn cuts_overflowing_lines(&self, id: ElementId) -> bool {
         self.elements[id].parent.is_some_and(|parent| {
             let style = &self.elements[parent].style;
-            style.text.text_overflow == TextOverflow::Ellipsis && style.layout.overflow_x == Overflow::Hidden
+            style.text.text_overflow == TextOverflow::Ellipsis && style.layout.overflow_x != Overflow::Visible
         })
     }
 

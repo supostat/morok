@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::ops::Range;
 
 use morok_core::accesskit::ActionRequest;
-use morok_core::{ElementId, ElementTree, IconId, KeyEvent, PointerInput, TextCommand};
+use morok_core::{ElementId, ElementTree, IconId, KeyEvent, PointerInput, ScrollInput, TextCommand};
 use morok_reactive::{Runtime, Scope};
 use morok_style::{StyleSheet, Theme};
 
@@ -132,6 +132,11 @@ impl Surface {
             runtime,
         };
         self.tree.refresh_hover(&mut dispatch);
+    }
+
+    /// Takes a scroll of the wheel or the trackpad over the surface.
+    pub fn scroll_input(&mut self, input: &ScrollInput) {
+        self.tree.scroll_input(input);
     }
 
     /// Takes a key that went down or up. Returns whether a component, a shortcut or the focus

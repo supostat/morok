@@ -1,5 +1,5 @@
-use morok_core::{Key, KeyEvent, KeyPhase, Modifiers, Point, PointerInput, PointerInputKind};
-use objc2_app_kit::{NSEvent, NSEventModifierFlags, NSView};
+use morok_core::{Key, KeyEvent, KeyPhase, Modifiers, Point, PointerInput, PointerInputKind, ScrollInput, ScrollPhase};
+use objc2_app_kit::{NSEvent, NSEventModifierFlags, NSEventPhase, NSView};
 
 /// The keys that are told by where they sit on the keyboard, by their virtual key code.
 const NAMED_KEYS: [(u16, Key); 28] = [
@@ -45,6 +45,59 @@ pub(crate) fn pointer_input(view: &NSView, event: &NSEvent, kind: PointerInputKi
             y: in_view.y as f32,
         },
         modifiers: modifiers(event.modifierFlags()),
+    }
+}
+
+/// How far a line of a wheel without precise deltas scrolls, in CSS pixels.
+const WHEEL_LINE_LENGTH: f32 = 40.0;
+
+/// What the wheel or the trackpad did over the surface of `view`, from the scroll-wheel event
+/// `AppKit` sent for it: the deltas in CSS pixels, towards the end of the content, and where
+/// the event stands in its gesture. None for an event that moves nothing: fingers resting on
+/// the trackpad, or that may begin a gesture.
+pub(crate) fn scroll_input(view: &NSView, event: &NSEvent) -> Option<ScrollInput> {
+    let phase = scroll_phase(event.phase(), event.momentumPhase())?;
+    let in_view = view.convertPoint_fromView(event.locationInWindow(), None);
+    // A precise delta is in points, which the surface takes for CSS pixels; the delta of a
+    // wheel is in lines. AppKit tells how far the content moves, so the scroll is the opposite.
+    let unit = if event.hasPreciseScrollingDeltas() {
+        1.0
+    } else {
+        WHEEL_LINE_LENGTH
+    };
+    Some(ScrollInput {
+        position: Point {
+            x: in_view.x as f32,
+            y: in_view.y as f32,
+        },
+        delta: Point {
+            x: -(event.scrollingDeltaX() as f32) * unit,
+            y: -(event.scrollingDeltaY() as f32) * unit,
+        },
+        phase,
+    })
+}
+
+fn scroll_phase(phase: NSEventPhase, momentum: NSEventPhase) -> Option<ScrollPhase> {
+    if momentum != NSEventPhase::None {
+        return if momentum.intersects(NSEventPhase::Ended.union(NSEventPhase::Cancelled)) {
+            Some(ScrollPhase::MomentumEnded)
+        } else if momentum.intersects(NSEventPhase::Began.union(NSEventPhase::Changed)) {
+            Some(ScrollPhase::Momentum)
+        } else {
+            None
+        };
+    }
+    if phase == NSEventPhase::None {
+        Some(ScrollPhase::Discrete)
+    } else if phase.contains(NSEventPhase::Began) {
+        Some(ScrollPhase::GestureBegan)
+    } else if phase.contains(NSEventPhase::Changed) {
+        Some(ScrollPhase::GestureChanged)
+    } else if phase.intersects(NSEventPhase::Ended.union(NSEventPhase::Cancelled)) {
+        Some(ScrollPhase::GestureEnded)
+    } else {
+        None
     }
 }
 
@@ -97,4 +150,36 @@ fn typed_character(event: &NSEvent) -> Option<char> {
         return None;
     }
     character.to_lowercase().next()
+}
+
+#[cfg(test)]
+mod tests {
+    use morok_core::ScrollPhase;
+    use objc2_app_kit::NSEventPhase;
+
+    use super::scroll_phase;
+
+    #[test]
+    fn the_phases_of_a_gesture_and_of_its_momentum_are_told_apart() {
+        let none = NSEventPhase::None;
+        assert_eq!(scroll_phase(none, none), Some(ScrollPhase::Discrete));
+        assert_eq!(scroll_phase(NSEventPhase::MayBegin, none), None);
+        assert_eq!(scroll_phase(NSEventPhase::Began, none), Some(ScrollPhase::GestureBegan));
+        assert_eq!(
+            scroll_phase(NSEventPhase::Changed, none),
+            Some(ScrollPhase::GestureChanged)
+        );
+        assert_eq!(scroll_phase(NSEventPhase::Stationary, none), None);
+        assert_eq!(scroll_phase(NSEventPhase::Ended, none), Some(ScrollPhase::GestureEnded));
+        assert_eq!(
+            scroll_phase(NSEventPhase::Cancelled, none),
+            Some(ScrollPhase::GestureEnded)
+        );
+        assert_eq!(scroll_phase(none, NSEventPhase::Began), Some(ScrollPhase::Momentum));
+        assert_eq!(scroll_phase(none, NSEventPhase::Changed), Some(ScrollPhase::Momentum));
+        assert_eq!(
+            scroll_phase(none, NSEventPhase::Ended),
+            Some(ScrollPhase::MomentumEnded)
+        );
+    }
 }

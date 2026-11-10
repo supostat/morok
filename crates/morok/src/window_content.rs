@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use morok_components::view::SurfaceId;
 use morok_core::accesskit::{ActionRequest, TreeUpdate};
-use morok_core::{ElementTree, KeyEvent, Point, PointerInput, Rect, Size, TextCommand};
+use morok_core::{ElementTree, KeyEvent, Point, PointerInput, Rect, ScrollInput, Size, TextCommand};
 use morok_platform::{FocusedText, SurfaceContent};
 use morok_style::ColorScheme;
 
@@ -70,6 +70,11 @@ impl SurfaceContent for WindowContent {
             .surface_mut(self.surface)
             .pointer_input(&mut state.runtime, input);
         Self::request_frame_for_queued_effects(state, self.surface);
+    }
+
+    fn scroll_input(&mut self, input: &ScrollInput) {
+        let state = &mut *self.state.borrow_mut();
+        state.surfaces.surface_mut(self.surface).scroll_input(input);
     }
 
     fn key_input(&mut self, event: &KeyEvent) -> bool {

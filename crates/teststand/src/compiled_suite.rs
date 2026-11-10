@@ -10,6 +10,7 @@ use crate::marker_classes;
 use crate::markup;
 use crate::moment::Moment;
 use crate::scene::Scene;
+use crate::scroll_markup;
 use crate::stand_error::StandError;
 use crate::suite::Suite;
 
@@ -86,6 +87,9 @@ impl<'a> CompiledSuite<'a> {
         let mut scene = self.scene(case, ColorScheme::Light);
         let mut markup = markup::of(&scene);
         if let Some(support) = markup::edited_text_support(&scene) {
+            markup.push_str(&support);
+        }
+        if let Some(support) = scroll_markup::scroll_support(&scene) {
             markup.push_str(&support);
         }
         if let Moment::InMotion { change, after } = case.moment {

@@ -65,6 +65,12 @@ impl<'a> Mount<'a> {
         builder
     }
 
+    /// Creates a box whose content scrolls inside it and builds on it.
+    pub fn scroll(&mut self) -> ElementBuilder<'_, 'a> {
+        let element = self.surface.tree.create(Role::Scroll);
+        self.build(element)
+    }
+
     /// Creates one line of text the user edits and builds on it.
     pub fn text_input(&mut self) -> ElementBuilder<'_, 'a> {
         let element = self.surface.tree.create(Role::TextInput);

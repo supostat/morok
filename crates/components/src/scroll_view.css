@@ -1,0 +1,53 @@
+/* A scroll view: a viewport whose content scrolls, under overlay bars at its right and bottom
+   edges. A thumb shows while the content moves and while the pointer is over its bar, and
+   fades a moment after the content comes to rest. */
+
+.scroll-view {
+  position: relative;
+}
+
+.scroll-viewport {
+  overflow: auto;
+  width: 100%;
+  height: 100%;
+}
+
+.scroll-bar {
+  position: absolute;
+  padding: 2px;
+}
+
+.scroll-bar.vertical {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 11px;
+}
+
+.scroll-bar.horizontal {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 11px;
+}
+
+.scroll-thumb {
+  border-radius: var(--radius-full);
+  background-color: var(--color-text-3);
+  opacity: 0;
+  transition: opacity var(--motion-slow) var(--motion-ease) 1000ms;
+}
+
+.scroll-bar.vertical > .scroll-thumb {
+  width: 100%;
+}
+
+.scroll-bar.horizontal > .scroll-thumb {
+  height: 100%;
+}
+
+.scroll-thumb.showing,
+.scroll-bar:hover > .scroll-thumb {
+  opacity: 1;
+  transition: none;
+}

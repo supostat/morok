@@ -16,6 +16,7 @@ mod media;
 mod motion;
 mod paint;
 mod role;
+mod scroll;
 mod style;
 mod text;
 
@@ -68,6 +69,9 @@ pub use paint::gradient_stop::GradientStop;
 pub use paint::group_effects::GroupEffects;
 pub use paint::item_range::ItemRange;
 pub use role::Role;
+pub use scroll::scroll_bars::ScrollBars;
+pub use scroll::scroll_input::ScrollInput;
+pub use scroll::scroll_phase::ScrollPhase;
 pub use style::computed_style::ComputedStyle;
 pub use style::effect_style::EffectStyle;
 pub use style::layout_style::LayoutStyle;

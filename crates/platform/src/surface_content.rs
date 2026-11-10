@@ -2,7 +2,7 @@ use std::ops::Range;
 use std::time::Duration;
 
 use morok_core::accesskit::{ActionRequest, TreeUpdate};
-use morok_core::{ElementTree, KeyEvent, Point, PointerInput, Rect, Size, TextCommand};
+use morok_core::{ElementTree, KeyEvent, Point, PointerInput, Rect, ScrollInput, Size, TextCommand};
 use morok_style::ColorScheme;
 
 use crate::focused_text::FocusedText;
@@ -24,6 +24,9 @@ pub trait SurfaceContent {
 
     /// The pointer moved over the surface, pressed or released a button on it, or left it.
     fn pointer_input(&mut self, input: &PointerInput);
+
+    /// The wheel or the trackpad scrolled over the surface.
+    fn scroll_input(&mut self, input: &ScrollInput);
 
     /// A key went down or up while the surface had the keyboard. Returns whether the content
     /// used the key; a key it did not use goes on to the window and the application.

@@ -144,6 +144,26 @@ impl Semantics {
         if facts.takes_focus {
             node.add_action(Action::Focus);
         }
+        if let Some(scroll) = facts.scroll.position {
+            node.set_scroll_x(f64::from(scroll.offset.x));
+            node.set_scroll_x_min(0.0);
+            node.set_scroll_x_max(f64::from(scroll.limit.x));
+            node.set_scroll_y(f64::from(scroll.offset.y));
+            node.set_scroll_y_min(0.0);
+            node.set_scroll_y_max(f64::from(scroll.limit.y));
+            if scroll.limit.x > 0.0 {
+                node.add_action(Action::ScrollLeft);
+                node.add_action(Action::ScrollRight);
+            }
+            if scroll.limit.y > 0.0 {
+                node.add_action(Action::ScrollUp);
+                node.add_action(Action::ScrollDown);
+            }
+            node.add_action(Action::SetScrollOffset);
+        }
+        if facts.scroll.is_inside_scroll {
+            node.add_action(Action::ScrollIntoView);
+        }
         for (offered, action) in [
             (AccessibleActions::CLICK, Action::Click),
             (AccessibleActions::INCREMENT, Action::Increment),

@@ -11,7 +11,8 @@ use morok_components::tokens::{DARK, LIGHT};
 use morok_components::view::{SurfaceId, Surfaces};
 use morok_core::accesskit::{ActionRequest, TreeUpdate};
 use morok_core::{
-    DisplayItem, ElementId, ElementTree, FrameScheduler, KeyEvent, Point, PointerInput, Rect, Size, TextCommand,
+    DisplayItem, ElementId, ElementTree, FrameScheduler, KeyEvent, Point, PointerInput, Rect, ScrollInput, Size,
+    TextCommand,
 };
 use morok_platform::{
     Application, CoreTextShaper, FocusedText, PasteboardClipboard, SurfaceContent, SurfaceSettings, Window,
@@ -113,6 +114,8 @@ impl SurfaceContent for FieldWindow {
     /// The field is changed through the input client alone: a pointer that happens to be over
     /// the window changes nothing.
     fn pointer_input(&mut self, _input: &PointerInput) {}
+
+    fn scroll_input(&mut self, _input: &ScrollInput) {}
 
     fn key_input(&mut self, event: &KeyEvent) -> bool {
         let was_used = self

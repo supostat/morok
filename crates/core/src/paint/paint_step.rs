@@ -13,4 +13,8 @@ pub(crate) enum PaintStep {
     /// its positioned descendants — are transformed and composited as one.
     PushGroup(ElementId),
     PopGroup,
+    /// The entries up to the matching [`PaintStep::PopScroll`] — content of this `Scroll`
+    /// element — are moved by its scroll.
+    PushScroll(ElementId),
+    PopScroll,
 }

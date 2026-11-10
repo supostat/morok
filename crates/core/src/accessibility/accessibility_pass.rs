@@ -11,8 +11,9 @@ use crate::element_arena::ElementArena;
 use crate::element_id::ElementId;
 use crate::geometry::transform::Transform;
 use crate::input::focusability::Focusability;
-use crate::paint::group_transform::local_transform;
+use crate::paint::group_transform::{local_transform, scroll_transform};
 use crate::role::Role;
+use crate::scroll::scroll_position::{NodeScroll, ScrollPosition};
 
 /// Works out a tree update: the node of every rendered element that has one, an element
 /// without a node handing its children up to the nearest element with one.
@@ -26,6 +27,8 @@ pub(crate) struct AccessibilityPass<'a> {
     pub(crate) focused: Option<ElementId>,
     /// Device pixels to a CSS pixel on the surface.
     pub(crate) scale: f32,
+    /// How many `Scroll` elements are around the element being visited.
+    pub(crate) scrolls_around: usize,
     /// The number of this update; the update before it has the number one less.
     pub(crate) update: u64,
     pub(crate) holds_whole_tree: bool,
@@ -98,11 +101,16 @@ impl AccessibilityPass<'_> {
         semantics.children_scratch = children;
     }
 
+    /// The children of a `Scroll` element are where its scroll shows them.
     fn visit_children(&mut self, id: ElementId, on_surface: Transform, siblings: &mut Vec<NodeId>) {
+        let on_surface = scroll_transform(&self.elements[id]).then(&on_surface);
+        let scrolls = self.elements[id].scroll.is_some();
+        self.scrolls_around += usize::from(scrolls);
         for position in 0..self.elements[id].children.len() {
             let child = self.elements[id].children[position];
             self.visit(child, on_surface, siblings);
         }
+        self.scrolls_around -= usize::from(scrolls);
     }
 
     fn semantics_mut(&mut self, id: ElementId) -> &mut Semantics {
@@ -126,6 +134,13 @@ impl AccessibilityPass<'_> {
             is_checked: element.states.contains(States::CHECKED),
             takes_focus: element.focusability != Focusability::NotFocusable && !is_disabled,
             scale: (id == self.root).then_some(self.scale),
+            scroll: NodeScroll {
+                is_inside_scroll: self.scrolls_around > 0,
+                position: element.scroll.as_deref().map(|scroll| ScrollPosition {
+                    offset: scroll.shown,
+                    limit: scroll.limit,
+                }),
+            },
         }
     }
 

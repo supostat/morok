@@ -31,6 +31,11 @@ pub(crate) struct InputState {
     pub(crate) entered: Vec<ElementId>,
     /// Scratch space of the hit test: the point in the coordinates of every enclosing group.
     pub(crate) group_points: Vec<Option<Point>>,
+    /// The `Scroll` element a trackpad gesture began over: it takes the gesture and its
+    /// momentum to their end.
+    pub(crate) scroll_latch: Option<ElementId>,
+    /// The element the keyboard focused since the last frame; the frame scrolls it into view.
+    pub(crate) focus_to_reveal: Option<ElementId>,
 }
 
 impl Default for InputState {
@@ -51,6 +56,8 @@ impl Default for InputState {
             text_drag: None,
             entered: Vec::new(),
             group_points: Vec::new(),
+            scroll_latch: None,
+            focus_to_reveal: None,
         }
     }
 }

@@ -4,7 +4,7 @@ use crate::element_id::ElementId;
 use crate::geometry::point::Point;
 use crate::input::hit_shape::HitShape;
 use crate::paint::box_painter::BoxPainter;
-use crate::paint::group_transform::local_transform;
+use crate::paint::group_transform::{local_transform, scroll_transform};
 use crate::paint::paint_step::PaintStep;
 
 /// Finds the element a point of the surface shows.
@@ -58,7 +58,11 @@ impl HitTest<'_> {
                     self.group_points.push(local_point);
                     local_point = self.point_in_group(id, local_point);
                 }
-                PaintStep::PopGroup => {
+                PaintStep::PushScroll(id) => {
+                    self.group_points.push(local_point);
+                    local_point = self.point_in_scroll(id, local_point);
+                }
+                PaintStep::PopGroup | PaintStep::PopScroll => {
                     local_point = self
                         .group_points
                         .pop()
@@ -83,6 +87,11 @@ impl HitTest<'_> {
             return false;
         };
         HitShape::padding_box(&BoxPainter::frame(element)).contains(local_point)
+    }
+
+    fn point_in_scroll(&self, id: ElementId, local_point: Option<Point>) -> Option<Point> {
+        let into_content = scroll_transform(self.shown(id)?).inverse()?;
+        Some(into_content.apply(local_point?))
     }
 
     fn point_in_group(&self, id: ElementId, local_point: Option<Point>) -> Option<Point> {

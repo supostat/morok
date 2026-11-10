@@ -6,7 +6,7 @@ use std::time::Duration;
 use morok_core::accesskit::{ActionRequest, Role as NodeRole, TreeUpdate};
 use morok_core::{
     AccessibilityAction, AccessibleActions, ElementId, ElementTree, Focusability, InputHandler, KeyEvent, PointerEvent,
-    PointerInput, Propagation, Rect, ShortcutId, Size,
+    PointerInput, Propagation, Rect, ScrollInput, ShortcutId, Size,
 };
 use morok_platform::{Application, SurfaceContent, Window, WindowOptions};
 use morok_style::ColorScheme;
@@ -75,6 +75,8 @@ impl SurfaceContent for AccessibleScene {
     }
 
     fn pointer_input(&mut self, _input: &PointerInput) {}
+
+    fn scroll_input(&mut self, _input: &ScrollInput) {}
 
     fn key_input(&mut self, _event: &KeyEvent) -> bool {
         false

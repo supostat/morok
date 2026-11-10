@@ -1,3 +1,4 @@
+mod scrolling;
 mod text_editing;
 
 use std::mem;
@@ -104,6 +105,10 @@ pub struct ElementTree {
     /// The serial number of the last spring started.
     last_spring: u64,
     paint_steps: Vec<PaintStep>,
+    /// Scratch space for the ancestors that clip or scroll a positioned element.
+    ancestor_layers: Vec<(ElementId, bool, bool)>,
+    /// The elements of the `Scroll` role, in or out of the tree.
+    scrollers: Vec<ElementId>,
     /// Scratch space for the groups open while the display list is written.
     open_groups: Vec<OpenGroup>,
     paint_order_is_stale: bool,
@@ -148,6 +153,8 @@ impl ElementTree {
             springs: Vec::new(),
             last_spring: 0,
             paint_steps: Vec::new(),
+            ancestor_layers: Vec::new(),
+            scrollers: Vec::new(),
             open_groups: Vec::new(),
             paint_order_is_stale: true,
             has_unpainted_changes: true,
@@ -181,7 +188,11 @@ impl ElementTree {
 
     /// Creates an element outside the tree; it takes part in frames once it has a parent.
     pub fn create(&mut self, role: Role) -> ElementId {
-        self.elements.insert(Element::new(role))
+        let element = self.elements.insert(Element::new(role));
+        if role == Role::Scroll {
+            self.scrollers.push(element);
+        }
+        element
     }
 
     /// Adds `child` after the last child of `parent`.
@@ -266,6 +277,7 @@ impl ElementTree {
             self.pending.extend(removed.children);
         }
         let elements = &self.elements;
+        self.scrollers.retain(|scroller| elements.contains(*scroller));
         self.input.shortcuts.retain(|shortcut| match shortcut.scope {
             ShortcutScope::Surface => true,
             ShortcutScope::Element(scope) => elements.contains(scope),
@@ -514,6 +526,19 @@ impl ElementTree {
             }
         }
         self.moving_elements.clear();
+        self.show_moving_scroll_bars();
+        let resolved_elements = self.run_style_pass();
+        self.advance_springs();
+        self.advance_caret();
+        if !self.moving_elements.is_empty() || self.springs.iter().any(|spring| !spring.is_settled) {
+            self.request_frame();
+        }
+        resolved_elements
+    }
+
+    /// Resolves the styles of the elements marked for it at the time of the frame. Returns
+    /// their number.
+    fn run_style_pass(&mut self) -> usize {
         let outcome = StylePass {
             elements: &mut self.elements,
             resolver: StyleResolver {
@@ -532,11 +557,6 @@ impl ElementTree {
         .run(self.root);
         self.paint_order_is_stale |= outcome.reorders_paint;
         self.has_unpainted_changes |= outcome.repaints || outcome.reorders_paint;
-        self.advance_springs();
-        self.advance_caret();
-        if !self.moving_elements.is_empty() || self.springs.iter().any(|spring| !spring.is_settled) {
-            self.request_frame();
-        }
         outcome.resolved_elements
     }
 
@@ -645,6 +665,18 @@ impl ElementTree {
             self.scale = scale;
             self.forget_layout();
         }
+        let mut laid_out_elements = self.lay_out(viewport, scale, text_shaper);
+        if self.update_scrolling(laid_out_elements > 0) {
+            // A scroll thumb changed its length: style and lay out the thumbs again, and only them.
+            self.run_style_pass();
+            laid_out_elements += self.lay_out(viewport, scale, text_shaper);
+        }
+        laid_out_elements
+    }
+
+    /// Lays out the elements whose boxes may have changed, places their boxes on the surface
+    /// and lays out their lines. Returns the number of elements laid out.
+    fn lay_out(&mut self, viewport: Size, scale: f32, text_shaper: &mut dyn TextShaper) -> usize {
         let laid_out_elements = LayoutPass {
             elements: &mut self.elements,
             style_sheet: &self.style_sheet,
@@ -697,7 +729,7 @@ impl ElementTree {
                 elements: &mut self.elements,
                 steps: &mut self.paint_steps,
                 damage: &mut self.damage,
-                clipping_ancestors: &mut self.pending,
+                ancestor_layers: &mut self.ancestor_layers,
             }
             .rebuild(self.root);
             self.paint_order_is_stale = false;
@@ -824,6 +856,7 @@ impl ElementTree {
         event
             .focus_move()
             .is_some_and(|direction| self.focus_manager().move_focus(direction))
+            || self.scroll_by_key(event)
     }
 
     pub fn focusability(&self, element: ElementId) -> Focusability {
@@ -1075,6 +1108,9 @@ impl ElementTree {
             return;
         }
         let offered = semantics.actions();
+        if self.scroll_by_request(target, request) {
+            return;
+        }
         if self.edit_text_by_request(target, request, handler) {
             return;
         }
@@ -1108,6 +1144,7 @@ impl ElementTree {
             root: self.root,
             focused: self.input.focused,
             scale: self.scale,
+            scrolls_around: 0,
             update: self.accessibility_updates,
             holds_whole_tree,
             nodes: Vec::new(),

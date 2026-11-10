@@ -1,0 +1,52 @@
+/* The stage of the scroll cases: scroll views side by side over lists, sections and wide rows. */
+
+.scroll-stage {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background-color: var(--color-bg);
+}
+
+.scroll-stage > .scroll-view {
+  flex-shrink: 0;
+  width: 180px;
+  height: 140px;
+  border: 1px solid var(--color-line);
+  background-color: var(--color-surface);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.list-row {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid var(--color-line);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  white-space: nowrap;
+}
+
+.list-row.wide {
+  width: 420px;
+}
+
+.section-header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 var(--space-3);
+  background-color: var(--color-surface-2);
+  color: var(--color-text-2);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: var(--text-weight-semibold);
+}

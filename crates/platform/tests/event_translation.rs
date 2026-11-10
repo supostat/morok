@@ -8,7 +8,7 @@ use morok_core::accesskit::{ActionRequest, TreeUpdate};
 use morok_core::{
     AccessibilityAction, ElementId, ElementTree, Focusability, InputHandler, Key, KeyChord, KeyEvent, KeyPhase,
     Modifiers, Point, PointerButton, PointerEvent, PointerEventKind, PointerInput, PointerInputKind, Propagation,
-    ShortcutId, ShortcutScope, Size,
+    ScrollInput, ShortcutId, ShortcutScope, Size,
 };
 use morok_platform::{Application, SurfaceContent, Window, WindowOptions};
 use morok_style::{ColorScheme, States};
@@ -95,6 +95,8 @@ impl SurfaceContent for InputScene {
         self.pointer_inputs.push(*input);
         self.window_scene.scene.tree.pointer_input(input, &mut self.heard);
     }
+
+    fn scroll_input(&mut self, _input: &ScrollInput) {}
 
     fn key_input(&mut self, event: &KeyEvent) -> bool {
         self.key_inputs.push(*event);

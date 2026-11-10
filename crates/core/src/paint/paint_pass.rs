@@ -1,4 +1,4 @@
-use morok_style::{BackdropFilterFunction, Declaration, FilterFunction, StyleSheet, Theme};
+use morok_style::{BackdropFilterFunction, BlendMode, Declaration, FilterFunction, StyleSheet, Theme};
 
 use crate::dirty::Dirty;
 use crate::element_arena::ElementArena;
@@ -13,7 +13,7 @@ use crate::paint::display_list::DisplayList;
 use crate::paint::filter::Filter;
 use crate::paint::gradient_fill::GradientFill;
 use crate::paint::group_effects::GroupEffects;
-use crate::paint::group_transform::local_transform;
+use crate::paint::group_transform::{local_transform, scroll_transform};
 use crate::paint::item_range::ItemRange;
 use crate::paint::paint_step::PaintStep;
 use crate::paint::visual_bounds::visual_bounds;
@@ -53,6 +53,9 @@ pub(crate) struct OpenGroup {
     bounds: Rect,
     /// How far the filters of the group reach past its content.
     outset: f32,
+    /// Whether the group moves the content of a `Scroll` element by its scroll, rather than
+    /// placing and compositing an element with its content.
+    is_scroll: bool,
 }
 
 impl PaintPass<'_> {
@@ -85,6 +88,8 @@ impl PaintPass<'_> {
                 PaintStep::PopClip => self.pop_clip(),
                 PaintStep::PushGroup(id) => self.push_group(id),
                 PaintStep::PopGroup => self.pop_group(),
+                PaintStep::PushScroll(id) => self.push_scroll(id),
+                PaintStep::PopScroll => self.pop_scroll(),
             }
         }
         for &step in self.steps {
@@ -150,7 +155,54 @@ impl PaintPass<'_> {
             has_rebuilt_content: false,
             bounds: Rect::ZERO,
             outset,
+            is_scroll: false,
         });
+    }
+
+    /// Opens the content of a `Scroll` element, moved by the offset its frame shows. A scroll
+    /// that moved marks the element, so its content rebuilds at the place it shows now.
+    fn push_scroll(&mut self, id: ElementId) {
+        let element = &self.elements[id];
+        let transform = scroll_transform(element).then(&self.transform());
+        let repaints = self.is_marked(id);
+        self.display_list.items.push(DisplayItem::PushGroup {
+            effects: GroupEffects {
+                transform,
+                opacity: 1.0,
+                filter: ItemRange::default(),
+                backdrop_filter: ItemRange::default(),
+                mix_blend_mode: BlendMode::Normal,
+                frame: BoxPainter::frame(element),
+            },
+        });
+        self.open_groups.push(OpenGroup {
+            element: id,
+            transform,
+            repaints,
+            has_rebuilt_content: false,
+            bounds: Rect::ZERO,
+            outset: 0.0,
+            is_scroll: true,
+        });
+    }
+
+    /// Closes the content of a `Scroll` element: what it drew counts as drawn by the group
+    /// around it.
+    fn pop_scroll(&mut self) {
+        let group = self.open_groups.pop().expect("a scroll is open when it is popped");
+        debug_assert!(
+            group.is_scroll,
+            "the innermost open group is a scroll when a scroll is popped"
+        );
+        self.display_list.items.push(DisplayItem::PopGroup);
+        if let Some(parent) = self.open_groups.last_mut()
+            && group.has_rebuilt_content
+        {
+            parent.has_rebuilt_content = true;
+        }
+        if !group.bounds.is_empty() {
+            self.cover(group.bounds);
+        }
     }
 
     /// Closes the open group. A group that composites its picture redraws it whole when

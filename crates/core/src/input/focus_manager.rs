@@ -165,7 +165,11 @@ impl FocusManager<'_> {
         self.marker.set_state_up_to(focused, kept, States::FOCUS_WITHIN, true);
         if let Some(focused) = focused {
             let own_states = match self.input.modality {
-                InputModality::Keyboard => States::FOCUS.union(States::FOCUS_VISIBLE),
+                InputModality::Keyboard => {
+                    self.input.focus_to_reveal = Some(focused);
+                    self.marker.frame_requests.request();
+                    States::FOCUS.union(States::FOCUS_VISIBLE)
+                }
                 InputModality::Pointer => States::FOCUS,
             };
             self.marker.set_state(focused, own_states, true);

@@ -164,26 +164,39 @@ impl CoreStyle for TaffyStyle<'_> {
     }
 
     fn overflow(&self) -> Point<Overflow> {
-        let overflow = if self.style.clips_overflow() {
-            Overflow::Hidden
-        } else {
-            Overflow::Visible
+        let axis = |scrolls: bool| {
+            if scrolls {
+                Overflow::Scroll
+            } else if self.style.clips_overflow() {
+                Overflow::Hidden
+            } else {
+                Overflow::Visible
+            }
         };
         Point {
-            x: overflow,
-            y: overflow,
+            x: axis(self.style.scrolls_horizontally()),
+            y: axis(self.style.scrolls_vertically()),
         }
     }
 
     fn position(&self) -> Position {
         match self.style.positioning {
             Positioning::Static => Position::Static,
-            Positioning::Relative => Position::Relative,
+            Positioning::Relative | Positioning::Sticky => Position::Relative,
             Positioning::Absolute => Position::Absolute,
         }
     }
 
+    /// The insets of a sticky element do not move its box: they bound the shift a scroll gives it.
     fn inset(&self) -> Rect<LengthPercentageAuto> {
+        if self.style.positioning == Positioning::Sticky {
+            return Rect {
+                left: LengthPercentageAuto::auto(),
+                right: LengthPercentageAuto::auto(),
+                top: LengthPercentageAuto::auto(),
+                bottom: LengthPercentageAuto::auto(),
+            };
+        }
         self.sides_or_auto(&self.style.inset, LengthSlot::Inset)
     }
 

@@ -6,6 +6,7 @@ mod effects;
 mod icons_images;
 mod motion;
 mod primitives;
+mod scroll;
 mod text_fields;
 
 use morok_components::STYLESHEETS;
@@ -14,7 +15,7 @@ use morok_css::SourceFile;
 use crate::suite::Suite;
 
 /// The names of all suites.
-pub const NAMES: [&str; 7] = [
+pub const NAMES: [&str; 8] = [
     primitives::NAME,
     effects::NAME,
     icons_images::NAME,
@@ -22,6 +23,7 @@ pub const NAMES: [&str; 7] = [
     button::NAME,
     text_fields::NAME,
     controls::NAME,
+    scroll::NAME,
 ];
 
 pub fn named(name: &str) -> Option<Suite> {
@@ -33,6 +35,7 @@ pub fn named(name: &str) -> Option<Suite> {
         button::NAME => Some(button::suite()),
         text_fields::NAME => Some(text_fields::suite()),
         controls::NAME => Some(controls::suite()),
+        scroll::NAME => Some(scroll::suite()),
         _ => None,
     }
 }

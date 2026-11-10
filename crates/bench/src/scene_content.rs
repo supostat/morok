@@ -2,7 +2,7 @@ use std::fmt::{self, Debug, Formatter};
 use std::time::Duration;
 
 use morok_core::accesskit::{ActionRequest, TreeUpdate};
-use morok_core::{ElementTree, FrameScheduler, KeyEvent, PointerInput, Size};
+use morok_core::{ElementTree, FrameScheduler, KeyEvent, PointerInput, ScrollInput, Size};
 use morok_platform::{CoreTextShaper, SurfaceContent, SurfaceSettings};
 use morok_style::ColorScheme;
 
@@ -60,6 +60,9 @@ impl SurfaceContent for SceneContent {
 
     /// A scene is scripted: a pointer that happens to be over its window changes nothing.
     fn pointer_input(&mut self, _input: &PointerInput) {}
+
+    /// A scene is scripted: a scroll over its window changes nothing.
+    fn scroll_input(&mut self, _input: &ScrollInput) {}
 
     fn key_input(&mut self, _event: &KeyEvent) -> bool {
         false

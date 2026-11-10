@@ -300,7 +300,7 @@ fn a_value_outside_the_grammar_of_its_property_is_an_error() {
             column: 15,
         },
         Rejection {
-            stylesheet: ".a { position: sticky; }",
+            stylesheet: ".a { position: fixed; }",
             message: "`position` does not support this value",
             column: 16,
         },

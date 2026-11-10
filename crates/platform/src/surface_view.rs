@@ -211,6 +211,13 @@ define_class!(
             self.pointer_input(event, PointerInputKind::Exited);
         }
 
+        #[unsafe(method(scrollWheel:))]
+        fn scroll_wheel(&self, event: &NSEvent) {
+            if let Some(input) = input_translation::scroll_input(self, event) {
+                self.content().borrow_mut().scroll_input(&input);
+            }
+        }
+
         /// While the content edits text, a key goes through the input methods of the system
         /// first: they type, compose and dictate, and hand back the keys that are commands.
         #[unsafe(method(keyDown:))]

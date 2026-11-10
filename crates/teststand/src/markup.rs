@@ -7,6 +7,7 @@ use morok_style::States;
 use crate::inline_style::style_attribute;
 use crate::marker_classes::{self, PLACEHOLDER_MARKER};
 use crate::scene::Scene;
+use crate::scroll_markup::scroll_attributes;
 
 /// Marks the element of a text; the harness page finds the texts by it.
 pub(crate) const TEXT_ATTRIBUTE: &str = "data-text";
@@ -42,7 +43,7 @@ fn write_element(scene: &Scene, element: ElementId, markup: &mut String) {
     assert!(
         matches!(
             role,
-            Role::Element | Role::Text | Role::Icon | Role::Image | Role::TextInput | Role::TextArea
+            Role::Element | Role::Text | Role::Icon | Role::Image | Role::TextInput | Role::TextArea | Role::Scroll
         ),
         "the stand has no markup for {role:?}"
     );
@@ -60,6 +61,7 @@ fn write_element(scene: &Scene, element: ElementId, markup: &mut String) {
     if !inline_declarations.is_empty() {
         let _ = write!(attributes, " style=\"{}\"", style_attribute(inline_declarations));
     }
+    attributes.push_str(&scroll_attributes(scene, element));
     match role {
         Role::Icon => {
             let icon = scene.icon_of(element).expect("an icon element shows an icon");
@@ -76,8 +78,8 @@ fn write_element(scene: &Scene, element: ElementId, markup: &mut String) {
             );
             return;
         }
-        Role::Element | Role::Text | Role::TextInput | Role::TextArea => {}
-        Role::Canvas | Role::Scroll => unreachable!("the roles were checked above"),
+        Role::Element | Role::Text | Role::TextInput | Role::TextArea | Role::Scroll => {}
+        Role::Canvas => unreachable!("the roles were checked above"),
     }
     markup.push_str("<div");
     markup.push_str(&attributes);

@@ -30,6 +30,7 @@ mod morok_side;
 mod pixel_class;
 mod rendering;
 mod scene;
+mod scroll_markup;
 mod stand;
 mod stand_error;
 mod suite;

@@ -316,6 +316,14 @@ fn sizes_take_lengths_percentages_tokens_and_keywords() {
             Declaration::OverflowY(Overflow::Visible),
         ]
     );
+    assert_eq!(
+        declarations("position: sticky; overflow: auto scroll;"),
+        [
+            Declaration::Position(Position::Sticky),
+            Declaration::OverflowX(Overflow::Auto),
+            Declaration::OverflowY(Overflow::Scroll),
+        ]
+    );
 }
 
 #[test]

@@ -4,7 +4,7 @@ use std::process::ExitCode;
 use std::time::Duration;
 
 use morok_core::accesskit::{ActionRequest, TreeUpdate};
-use morok_core::{ElementId, ElementTree, FrameScheduler, KeyEvent, PointerInput, Rect, Role, Size};
+use morok_core::{ElementId, ElementTree, FrameScheduler, KeyEvent, PointerInput, Rect, Role, ScrollInput, Size};
 use morok_css::{CompiledTokens, SourceFile, compile_stylesheets, compile_tokens};
 use morok_platform::{CoreTextShaper, FrameImage, OffscreenTarget, Renderer, SurfaceContent, SurfaceSettings};
 use morok_style::{ColorScheme, StyleSheet, Theme};
@@ -156,6 +156,8 @@ impl SurfaceContent for WindowScene {
     /// The scene is changed by its test alone: a pointer that happens to be over the window
     /// changes nothing.
     fn pointer_input(&mut self, _input: &PointerInput) {}
+
+    fn scroll_input(&mut self, _input: &ScrollInput) {}
 
     fn key_input(&mut self, _event: &KeyEvent) -> bool {
         false

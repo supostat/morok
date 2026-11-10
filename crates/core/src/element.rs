@@ -6,14 +6,17 @@ use crate::dirty::Dirty;
 use crate::editing::editable_text::EditableText;
 use crate::editing::line_mode::LineMode;
 use crate::element_id::ElementId;
+use crate::geometry::point::Point;
 use crate::geometry::rect::Rect;
 use crate::input::focusability::Focusability;
 use crate::media::media_content::MediaContent;
 use crate::motion::element_motion::ElementMotion;
 use crate::paint::painted_element::PaintedElement;
 use crate::role::Role;
+use crate::scroll::scroll_state::ScrollState;
 use crate::style::computed_style::ComputedStyle;
 use crate::style::inline_style::InlineStyle;
+use crate::style::positioning::Positioning;
 use crate::style::selector_target::SelectorTarget;
 use crate::style::style_lists::StyleLists;
 use crate::text::text_layout::TextLayout;
@@ -59,6 +62,13 @@ pub(crate) struct Element {
     pub(crate) text_layout: TextLayout,
     /// The text the user edits in an element of an editable role; none for the others.
     pub(crate) editable: Option<Box<EditableText>>,
+    /// How far its content is scrolled, for an element of the `Scroll` role; none for the others.
+    pub(crate) scroll: Option<Box<ScrollState>>,
+    /// How far the frame moves the element from where layout placed it: the shift of a sticky
+    /// element, or the travel of a scroll thumb along its bar.
+    pub(crate) shift: Point,
+    /// Whether the element is the thumb of a scroll bar, which the tree moves along its bar.
+    pub(crate) is_scroll_thumb: bool,
 }
 
 impl Element {
@@ -88,7 +98,16 @@ impl Element {
             painted: PaintedElement::default(),
             text_layout: TextLayout::default(),
             editable: LineMode::of(role).map(|line_mode| Box::new(EditableText::new(line_mode))),
+            scroll: (role == Role::Scroll).then(Box::default),
+            shift: Point::default(),
+            is_scroll_thumb: false,
         }
+    }
+
+    /// Whether the frame may move the element from where layout placed it; such an element
+    /// paints as a group, so that it moves as one.
+    pub(crate) fn is_shifted(&self) -> bool {
+        self.is_scroll_thumb || self.style.layout.positioning == Positioning::Sticky
     }
 
     pub(crate) fn selector_target(&self) -> SelectorTarget<'_> {

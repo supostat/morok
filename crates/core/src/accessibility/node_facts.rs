@@ -1,4 +1,5 @@
 use crate::geometry::rect::Rect;
+use crate::scroll::scroll_position::NodeScroll;
 
 /// Everything of a node that can change without its element being told to change it, with
 /// the count of the changes it was told of. Two equal sets of facts make the same node.
@@ -14,4 +15,5 @@ pub(crate) struct NodeFacts {
     pub(crate) takes_focus: bool,
     /// For the root: device pixels to a CSS pixel on the surface.
     pub(crate) scale: Option<f32>,
+    pub(crate) scroll: NodeScroll,
 }

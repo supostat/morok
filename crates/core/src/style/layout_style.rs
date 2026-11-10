@@ -112,14 +112,34 @@ impl LayoutStyle {
         }
     }
 
-    /// Whether the element clips its content. Hiding the overflow of one axis clips both: CSS
+    /// Whether the element clips its content. Clipping the overflow of one axis clips both: CSS
     /// computes the `visible` of the other axis to `auto`.
     pub fn clips_overflow(&self) -> bool {
-        self.overflow_x == Overflow::Hidden || self.overflow_y == Overflow::Hidden
+        self.overflow_x != Overflow::Visible || self.overflow_y != Overflow::Visible
+    }
+
+    /// Whether the content of a `Scroll` element scrolls across.
+    pub fn scrolls_horizontally(&self) -> bool {
+        scrolls(self.overflow_x, self.overflow_y)
+    }
+
+    /// Whether the content of a `Scroll` element scrolls down.
+    pub fn scrolls_vertically(&self) -> bool {
+        scrolls(self.overflow_y, self.overflow_x)
     }
 
     /// Whether the element generates a box.
     pub fn generates_box(&self) -> bool {
         self.display != Display::None
+    }
+}
+
+/// Whether an axis of overflow `own` scrolls beside an axis of overflow `other`: `auto` and
+/// `scroll` do, and so does a `visible` that CSS computes to `auto` beside a clipping axis.
+fn scrolls(own: Overflow, other: Overflow) -> bool {
+    match own {
+        Overflow::Auto | Overflow::Scroll => true,
+        Overflow::Visible => other != Overflow::Visible,
+        Overflow::Hidden => false,
     }
 }

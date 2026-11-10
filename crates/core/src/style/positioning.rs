@@ -6,6 +6,9 @@ pub enum Positioning {
     Static,
     Relative,
     Absolute,
+    /// Laid out in flow and shifted at paint time to stay inside the scrollport of the nearest
+    /// `Scroll` ancestor; outside a `Scroll` it stays where it was laid out.
+    Sticky,
 }
 
 impl Positioning {
@@ -20,6 +23,7 @@ impl From<Position> for Positioning {
         match position {
             Position::Relative => Self::Relative,
             Position::Absolute => Self::Absolute,
+            Position::Sticky => Self::Sticky,
         }
     }
 }
