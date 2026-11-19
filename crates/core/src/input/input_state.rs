@@ -25,6 +25,8 @@ pub(crate) struct InputState {
     pub(crate) shortcuts: Vec<Shortcut>,
     /// The serial number of the last shortcut registered.
     pub(crate) last_shortcut: u64,
+    /// How many times the lines the shortcuts give the menu bar changed.
+    pub(crate) menu_bar_revision: u64,
     /// The element whose edited text the pointer selects in, from a press on it to the release.
     pub(crate) text_drag: Option<ElementId>,
     /// Scratch space for the elements the pointer comes over, the innermost first.
@@ -53,6 +55,7 @@ impl Default for InputState {
             focus_traps: Vec::new(),
             shortcuts: Vec::new(),
             last_shortcut: 0,
+            menu_bar_revision: 0,
             text_drag: None,
             entered: Vec::new(),
             group_points: Vec::new(),

@@ -1,0 +1,48 @@
+/* The stages of the scaffolding cases: bars across the surface, sidebars side by side, a split
+   view that fills the surface, and all of them put together as a window is. */
+
+.scaffold-bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  background-color: var(--color-bg);
+}
+
+.scaffold-sidebars {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background-color: var(--color-bg);
+}
+
+.scaffold-sidebars > .sidebar {
+  width: 190px;
+  height: 196px;
+}
+
+.scaffold-fill {
+  display: flex;
+  height: 100%;
+  background-color: var(--color-surface);
+}
+
+.scaffold-pane {
+  padding: var(--space-3);
+  color: var(--color-text-2);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+}
+
+.scaffold-window {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--color-surface);
+}
+
+.scaffold-body {
+  display: flex;
+  flex-grow: 1;
+  min-height: 0;
+}

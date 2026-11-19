@@ -1,0 +1,531 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 428.0
+height = 228.0
+
+[[light]]
+node = "#1 .scaffold-sidebars"
+x = 0.0
+y = 0.0
+width = 428.0
+height = 228.0
+
+[[light]]
+node = "#2 .sidebar"
+x = 16.0
+y = 16.0
+width = 190.0
+height = 196.0
+
+[[light]]
+node = "#3 .sidebar-heading"
+x = 24.0
+y = 28.0
+width = 173.0
+height = 27.945313
+
+[[light]]
+node = "#4 .sidebar-item"
+x = 24.0
+y = 55.945313
+width = 173.0
+height = 26.0
+
+[[light]]
+node = "#5 .sidebar-item-icon"
+x = 32.0
+y = 61.945313
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#6 text"
+x = 54.0
+y = 59.523438
+width = 85.21094
+height = 18.84375
+
+[[light]]
+node = "#7 .sidebar-item-detail"
+x = 166.34375
+y = 60.96875
+width = 22.65625
+height = 15.9453125
+
+[[light]]
+node = "#8 .sidebar-item"
+x = 24.0
+y = 81.94531
+width = 173.0
+height = 26.0
+
+[[light]]
+node = "#9 .sidebar-item-icon"
+x = 32.0
+y = 87.94531
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#10 text"
+x = 54.0
+y = 85.52344
+width = 45.34375
+height = 18.84375
+
+[[light]]
+node = "#11 .sidebar-item-detail"
+x = 164.36719
+y = 86.96875
+width = 24.632813
+height = 15.9453125
+
+[[light]]
+node = "#12 .sidebar-heading"
+x = 24.0
+y = 107.94531
+width = 173.0
+height = 27.945313
+
+[[light]]
+node = "#13 .sidebar-item"
+x = 24.0
+y = 135.89063
+width = 173.0
+height = 26.0
+
+[[light]]
+node = "#14 .sidebar-item-icon"
+x = 32.0
+y = 141.89063
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#15 text"
+x = 54.0
+y = 139.46875
+width = 76.96094
+height = 18.84375
+
+[[light]]
+node = "#16 .sidebar-item-detail"
+x = 156.20313
+y = 140.91406
+width = 32.796875
+height = 15.9453125
+
+[[light]]
+node = "#17 .sidebar-item"
+x = 24.0
+y = 161.89063
+width = 173.0
+height = 26.0
+
+[[light]]
+node = "#18 .sidebar-item-icon"
+x = 32.0
+y = 167.89063
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#19 text"
+x = 54.0
+y = 165.46875
+width = 64.015625
+height = 18.84375
+
+[[light]]
+node = "#20 .sidebar"
+x = 222.0
+y = 16.0
+width = 190.0
+height = 196.0
+
+[[light]]
+node = "#21 .sidebar-heading"
+x = 230.0
+y = 28.0
+width = 173.0
+height = 27.945313
+
+[[light]]
+node = "#22 .sidebar-item"
+x = 230.0
+y = 55.945313
+width = 173.0
+height = 26.0
+
+[[light]]
+node = "#23 .sidebar-item-icon"
+x = 238.0
+y = 61.945313
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#24 text"
+x = 260.0
+y = 59.523438
+width = 85.21094
+height = 18.84375
+
+[[light]]
+node = "#25 .sidebar-item-detail"
+x = 372.34375
+y = 60.96875
+width = 22.65625
+height = 15.9453125
+
+[[light]]
+node = "#26 .sidebar-item"
+x = 230.0
+y = 81.94531
+width = 173.0
+height = 26.0
+
+[[light]]
+node = "#27 .sidebar-item-icon"
+x = 238.0
+y = 87.94531
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#28 text"
+x = 260.0
+y = 85.52344
+width = 45.34375
+height = 18.84375
+
+[[light]]
+node = "#29 .sidebar-item-detail"
+x = 370.3672
+y = 86.96875
+width = 24.632813
+height = 15.9453125
+
+[[light]]
+node = "#30 .sidebar-heading"
+x = 230.0
+y = 107.94531
+width = 173.0
+height = 27.945313
+
+[[light]]
+node = "#31 .sidebar-item"
+x = 230.0
+y = 135.89063
+width = 173.0
+height = 26.0
+
+[[light]]
+node = "#32 .sidebar-item-icon"
+x = 238.0
+y = 141.89063
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#33 text"
+x = 260.0
+y = 139.46875
+width = 76.96094
+height = 18.84375
+
+[[light]]
+node = "#34 .sidebar-item-detail"
+x = 362.20313
+y = 140.91406
+width = 32.796875
+height = 15.9453125
+
+[[light]]
+node = "#35 .sidebar-item"
+x = 230.0
+y = 161.89063
+width = 173.0
+height = 26.0
+
+[[light]]
+node = "#36 .sidebar-item-icon"
+x = 238.0
+y = 167.89063
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#37 text"
+x = 260.0
+y = 165.46875
+width = 64.015625
+height = 18.84375
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 428.0
+height = 228.0
+
+[[dark]]
+node = "#1 .scaffold-sidebars"
+x = 0.0
+y = 0.0
+width = 428.0
+height = 228.0
+
+[[dark]]
+node = "#2 .sidebar"
+x = 16.0
+y = 16.0
+width = 190.0
+height = 196.0
+
+[[dark]]
+node = "#3 .sidebar-heading"
+x = 24.0
+y = 28.0
+width = 173.0
+height = 27.945313
+
+[[dark]]
+node = "#4 .sidebar-item"
+x = 24.0
+y = 55.945313
+width = 173.0
+height = 26.0
+
+[[dark]]
+node = "#5 .sidebar-item-icon"
+x = 32.0
+y = 61.945313
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#6 text"
+x = 54.0
+y = 59.523438
+width = 85.21094
+height = 18.84375
+
+[[dark]]
+node = "#7 .sidebar-item-detail"
+x = 166.34375
+y = 60.96875
+width = 22.65625
+height = 15.9453125
+
+[[dark]]
+node = "#8 .sidebar-item"
+x = 24.0
+y = 81.94531
+width = 173.0
+height = 26.0
+
+[[dark]]
+node = "#9 .sidebar-item-icon"
+x = 32.0
+y = 87.94531
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#10 text"
+x = 54.0
+y = 85.52344
+width = 45.34375
+height = 18.84375
+
+[[dark]]
+node = "#11 .sidebar-item-detail"
+x = 164.36719
+y = 86.96875
+width = 24.632813
+height = 15.9453125
+
+[[dark]]
+node = "#12 .sidebar-heading"
+x = 24.0
+y = 107.94531
+width = 173.0
+height = 27.945313
+
+[[dark]]
+node = "#13 .sidebar-item"
+x = 24.0
+y = 135.89063
+width = 173.0
+height = 26.0
+
+[[dark]]
+node = "#14 .sidebar-item-icon"
+x = 32.0
+y = 141.89063
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#15 text"
+x = 54.0
+y = 139.46875
+width = 76.96094
+height = 18.84375
+
+[[dark]]
+node = "#16 .sidebar-item-detail"
+x = 156.20313
+y = 140.91406
+width = 32.796875
+height = 15.9453125
+
+[[dark]]
+node = "#17 .sidebar-item"
+x = 24.0
+y = 161.89063
+width = 173.0
+height = 26.0
+
+[[dark]]
+node = "#18 .sidebar-item-icon"
+x = 32.0
+y = 167.89063
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#19 text"
+x = 54.0
+y = 165.46875
+width = 64.015625
+height = 18.84375
+
+[[dark]]
+node = "#20 .sidebar"
+x = 222.0
+y = 16.0
+width = 190.0
+height = 196.0
+
+[[dark]]
+node = "#21 .sidebar-heading"
+x = 230.0
+y = 28.0
+width = 173.0
+height = 27.945313
+
+[[dark]]
+node = "#22 .sidebar-item"
+x = 230.0
+y = 55.945313
+width = 173.0
+height = 26.0
+
+[[dark]]
+node = "#23 .sidebar-item-icon"
+x = 238.0
+y = 61.945313
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#24 text"
+x = 260.0
+y = 59.523438
+width = 85.21094
+height = 18.84375
+
+[[dark]]
+node = "#25 .sidebar-item-detail"
+x = 372.34375
+y = 60.96875
+width = 22.65625
+height = 15.9453125
+
+[[dark]]
+node = "#26 .sidebar-item"
+x = 230.0
+y = 81.94531
+width = 173.0
+height = 26.0
+
+[[dark]]
+node = "#27 .sidebar-item-icon"
+x = 238.0
+y = 87.94531
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#28 text"
+x = 260.0
+y = 85.52344
+width = 45.34375
+height = 18.84375
+
+[[dark]]
+node = "#29 .sidebar-item-detail"
+x = 370.3672
+y = 86.96875
+width = 24.632813
+height = 15.9453125
+
+[[dark]]
+node = "#30 .sidebar-heading"
+x = 230.0
+y = 107.94531
+width = 173.0
+height = 27.945313
+
+[[dark]]
+node = "#31 .sidebar-item"
+x = 230.0
+y = 135.89063
+width = 173.0
+height = 26.0
+
+[[dark]]
+node = "#32 .sidebar-item-icon"
+x = 238.0
+y = 141.89063
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#33 text"
+x = 260.0
+y = 139.46875
+width = 76.96094
+height = 18.84375
+
+[[dark]]
+node = "#34 .sidebar-item-detail"
+x = 362.20313
+y = 140.91406
+width = 32.796875
+height = 15.9453125
+
+[[dark]]
+node = "#35 .sidebar-item"
+x = 230.0
+y = 161.89063
+width = 173.0
+height = 26.0
+
+[[dark]]
+node = "#36 .sidebar-item-icon"
+x = 238.0
+y = 167.89063
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#37 text"
+x = 260.0
+y = 165.46875
+width = 64.015625
+height = 18.84375

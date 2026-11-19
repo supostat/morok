@@ -8,6 +8,7 @@ mod icons_images;
 mod motion;
 mod overlays;
 mod primitives;
+mod scaffold;
 mod scroll;
 mod select_combobox;
 mod table;
@@ -19,7 +20,7 @@ use morok_css::SourceFile;
 use crate::suite::Suite;
 
 /// The names of all suites.
-pub const NAMES: [&str; 12] = [
+pub const NAMES: [&str; 13] = [
     primitives::NAME,
     effects::NAME,
     icons_images::NAME,
@@ -32,6 +33,7 @@ pub const NAMES: [&str; 12] = [
     table::NAME,
     overlays::NAME,
     select_combobox::NAME,
+    scaffold::NAME,
 ];
 
 pub fn named(name: &str) -> Option<Suite> {
@@ -48,6 +50,7 @@ pub fn named(name: &str) -> Option<Suite> {
         table::NAME => Some(table::suite()),
         overlays::NAME => Some(overlays::suite()),
         select_combobox::NAME => Some(select_combobox::suite()),
+        scaffold::NAME => Some(scaffold::suite()),
         _ => None,
     }
 }

@@ -255,6 +255,7 @@ impl Stage {
         let options = WindowOptions {
             title: String::from("morok: event translation"),
             content_size: CONTENT_SIZE,
+            blur_behind: false,
         };
         let mut built = None;
         let window = Window::open(application, &options, |frame_scheduler, settings| {

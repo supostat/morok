@@ -3,7 +3,7 @@ use crate::stylesheet_source::StylesheetSource;
 /// The stylesheets of the components, in the order the build compiles them: the order of
 /// their paths. A host that compiles them first, in this order, and its own stylesheets after
 /// them gets a style sheet in which every class of the kit has the ID the components know it by.
-pub const STYLESHEETS: [StylesheetSource; 27] = [
+pub const STYLESHEETS: [StylesheetSource; 31] = [
     StylesheetSource {
         path: "crates/components/src/button.css",
         text: include_str!("button.css"),
@@ -73,12 +73,24 @@ pub const STYLESHEETS: [StylesheetSource; 27] = [
         text: include_str!("sheet.css"),
     },
     StylesheetSource {
+        path: "crates/components/src/sidebar.css",
+        text: include_str!("sidebar.css"),
+    },
+    StylesheetSource {
         path: "crates/components/src/slider.css",
         text: include_str!("slider.css"),
     },
     StylesheetSource {
         path: "crates/components/src/spinner.css",
         text: include_str!("spinner.css"),
+    },
+    StylesheetSource {
+        path: "crates/components/src/split_view.css",
+        text: include_str!("split_view.css"),
+    },
+    StylesheetSource {
+        path: "crates/components/src/status_bar.css",
+        text: include_str!("status_bar.css"),
     },
     StylesheetSource {
         path: "crates/components/src/switch.css",
@@ -103,6 +115,10 @@ pub const STYLESHEETS: [StylesheetSource; 27] = [
     StylesheetSource {
         path: "crates/components/src/toast_stack.css",
         text: include_str!("toast_stack.css"),
+    },
+    StylesheetSource {
+        path: "crates/components/src/toolbar.css",
+        text: include_str!("toolbar.css"),
     },
     StylesheetSource {
         path: "crates/components/src/tooltip.css",

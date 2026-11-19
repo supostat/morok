@@ -1,3 +1,4 @@
+mod menu_bar;
 mod scrolling;
 mod text_editing;
 
@@ -293,10 +294,14 @@ impl ElementTree {
         }
         let elements = &self.elements;
         self.scrollers.retain(|scroller| elements.contains(*scroller));
+        let shown_in_menu_bar = self.menu_bar_shortcuts().count();
         self.input.shortcuts.retain(|shortcut| match shortcut.scope {
             ShortcutScope::Surface => true,
             ShortcutScope::Element(scope) => elements.contains(scope),
         });
+        if self.menu_bar_shortcuts().count() != shown_in_menu_bar {
+            self.menu_bar_changed();
+        }
         self.timers.forget_removed(&self.elements);
     }
 
@@ -988,7 +993,12 @@ impl ElementTree {
     pub fn register_shortcut(&mut self, scope: ShortcutScope, chord: KeyChord) -> ShortcutId {
         self.input.last_shortcut += 1;
         let id = ShortcutId::new(self.input.last_shortcut);
-        self.input.shortcuts.push(Shortcut { id, scope, chord });
+        self.input.shortcuts.push(Shortcut {
+            id,
+            scope,
+            chord,
+            menu_command: None,
+        });
         id
     }
 
@@ -1002,7 +1012,9 @@ impl ElementTree {
             .iter()
             .position(|registered| registered.id == shortcut)
             .expect("a shortcut is registered until it is unregistered or its element is removed");
-        self.input.shortcuts.remove(position);
+        if self.input.shortcuts.remove(position).menu_command.is_some() {
+            self.menu_bar_changed();
+        }
     }
 
     /// Drops the cached boxes and the lines of every element: all of them are laid out again.

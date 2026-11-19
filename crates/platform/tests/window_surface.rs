@@ -128,6 +128,7 @@ fn main() -> ExitCode {
     let options = WindowOptions {
         title: String::from("morok: window surface"),
         content_size: OPENED,
+        blur_behind: false,
     };
     let mut opened_in = None;
     let window = Window::open(&application, &options, |frame_scheduler, settings| {

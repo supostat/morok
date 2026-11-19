@@ -1,0 +1,769 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 640.0
+height = 320.0
+
+[[light]]
+node = "#1 .scaffold-window"
+x = 0.0
+y = 0.0
+width = 640.0
+height = 320.0
+
+[[light]]
+node = "#2 .toolbar"
+x = 0.0
+y = 0.0
+width = 640.0
+height = 44.0
+
+[[light]]
+node = "#3 .icon-button"
+x = 12.0
+y = 7.5
+width = 28.0
+height = 28.0
+
+[[light]]
+node = "#4 .icon-button-icon"
+x = 18.5
+y = 14.0
+width = 15.0
+height = 15.0
+
+[[light]]
+node = "#5 .toolbar-title"
+x = 52.0
+y = 12.078125
+width = 123.859375
+height = 18.84375
+
+[[light]]
+node = "#6 .toolbar-spacer"
+x = 187.85938
+y = 21.5
+width = 115.765625
+height = 0.0
+
+[[light]]
+node = "#7 .field.search"
+x = 315.625
+y = 7.5
+width = 220.0
+height = 28.0
+
+[[light]]
+node = "#8 .field-icon"
+x = 324.625
+y = 14.5
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#9 .field-input"
+x = 346.625
+y = 12.078125
+width = 180.0
+height = 18.84375
+
+[[light]]
+node = "#10 .button.primary"
+x = 547.625
+y = 7.5
+width = 80.375
+height = 28.0
+
+[[light]]
+node = "#11 text"
+x = 560.625
+y = 12.078125
+width = 54.375
+height = 18.84375
+
+[[light]]
+node = "#12 .scaffold-body"
+x = 0.0
+y = 44.0
+width = 640.0
+height = 252.0
+
+[[light]]
+node = "#13 .split"
+x = 0.0
+y = 44.0
+width = 640.0
+height = 252.0
+
+[[light]]
+node = "#14 .split-pane"
+x = 0.0
+y = 44.0
+width = 190.0
+height = 252.0
+
+[[light]]
+node = "#15 .sidebar"
+x = 0.0
+y = 44.0
+width = 190.0
+height = 252.0
+
+[[light]]
+node = "#16 .sidebar-heading"
+x = 8.0
+y = 56.0
+width = 174.0
+height = 27.945313
+
+[[light]]
+node = "#17 .sidebar-item"
+x = 8.0
+y = 83.94531
+width = 174.0
+height = 26.0
+
+[[light]]
+node = "#18 .sidebar-item-icon"
+x = 16.0
+y = 89.94531
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#19 text"
+x = 38.0
+y = 87.52344
+width = 85.21094
+height = 18.84375
+
+[[light]]
+node = "#20 .sidebar-item-detail"
+x = 151.34375
+y = 88.96875
+width = 22.65625
+height = 15.9453125
+
+[[light]]
+node = "#21 .sidebar-item"
+x = 8.0
+y = 109.94531
+width = 174.0
+height = 26.0
+
+[[light]]
+node = "#22 .sidebar-item-icon"
+x = 16.0
+y = 115.94531
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#23 text"
+x = 38.0
+y = 113.52344
+width = 45.34375
+height = 18.84375
+
+[[light]]
+node = "#24 .sidebar-item-detail"
+x = 149.36719
+y = 114.96875
+width = 24.632813
+height = 15.9453125
+
+[[light]]
+node = "#25 .sidebar-heading"
+x = 8.0
+y = 135.94531
+width = 174.0
+height = 27.945313
+
+[[light]]
+node = "#26 .sidebar-item"
+x = 8.0
+y = 163.89063
+width = 174.0
+height = 26.0
+
+[[light]]
+node = "#27 .sidebar-item-icon"
+x = 16.0
+y = 169.89063
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#28 text"
+x = 38.0
+y = 167.46875
+width = 76.96094
+height = 18.84375
+
+[[light]]
+node = "#29 .sidebar-item-detail"
+x = 141.20313
+y = 168.91406
+width = 32.796875
+height = 15.9453125
+
+[[light]]
+node = "#30 .sidebar-item"
+x = 8.0
+y = 189.89063
+width = 174.0
+height = 26.0
+
+[[light]]
+node = "#31 .sidebar-item-icon"
+x = 16.0
+y = 195.89063
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#32 text"
+x = 38.0
+y = 193.46875
+width = 64.015625
+height = 18.84375
+
+[[light]]
+node = "#33 .split-divider"
+x = 190.0
+y = 44.0
+width = 1.0
+height = 252.0
+
+[[light]]
+node = "#34 .split-grip"
+x = 187.0
+y = 44.0
+width = 7.0
+height = 252.0
+
+[[light]]
+node = "#35 .split-handle"
+x = 188.0
+y = 156.0
+width = 5.0
+height = 28.0
+
+[[light]]
+node = "#36 .split-pane.flexible"
+x = 191.0
+y = 44.0
+width = 449.0
+height = 252.0
+
+[[light]]
+node = "#37 .scaffold-pane"
+x = 191.0
+y = 44.0
+width = 449.0
+height = 39.0
+
+[[light]]
+node = "#38 text"
+x = 203.0
+y = 56.0
+width = 425.0
+height = 15.0
+
+[[light]]
+node = "#39 .statusbar"
+x = 0.0
+y = 296.0
+width = 640.0
+height = 24.0
+
+[[light]]
+node = "#40 text"
+x = 12.0
+y = 300.52344
+width = 91.546875
+height = 15.9453125
+
+[[light]]
+node = "#41 .status-command"
+x = 119.546875
+y = 299.5
+width = 54.335938
+height = 18.0
+
+[[light]]
+node = "#42 .status-key"
+x = 119.546875
+y = 299.5
+width = 23.226563
+height = 18.0
+
+[[light]]
+node = "#43 text"
+x = 124.546875
+y = 300.52344
+width = 13.2265625
+height = 15.9453125
+
+[[light]]
+node = "#44 text"
+x = 146.77344
+y = 300.52344
+width = 27.109375
+height = 15.9453125
+
+[[light]]
+node = "#45 .status-command"
+x = 189.88281
+y = 299.5
+width = 55.460938
+height = 18.0
+
+[[light]]
+node = "#46 .status-key"
+x = 189.88281
+y = 299.5
+width = 23.273438
+height = 18.0
+
+[[light]]
+node = "#47 text"
+x = 194.88281
+y = 300.52344
+width = 13.2734375
+height = 15.9453125
+
+[[light]]
+node = "#48 text"
+x = 217.15625
+y = 300.52344
+width = 28.1875
+height = 15.9453125
+
+[[light]]
+node = "#49 .status-command"
+x = 261.34375
+y = 299.5
+width = 61.21875
+height = 18.0
+
+[[light]]
+node = "#50 .status-key"
+x = 261.34375
+y = 299.5
+width = 23.289063
+height = 18.0
+
+[[light]]
+node = "#51 text"
+x = 266.34375
+y = 300.52344
+width = 13.2890625
+height = 15.9453125
+
+[[light]]
+node = "#52 text"
+x = 288.6328
+y = 300.52344
+width = 33.929688
+height = 15.9453125
+
+[[light]]
+node = "#53 .status-spacer"
+x = 338.5625
+y = 308.5
+width = 181.91406
+height = 0.0
+
+[[light]]
+node = "#54 text"
+x = 536.47656
+y = 300.52344
+width = 91.52344
+height = 15.9453125
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 640.0
+height = 320.0
+
+[[dark]]
+node = "#1 .scaffold-window"
+x = 0.0
+y = 0.0
+width = 640.0
+height = 320.0
+
+[[dark]]
+node = "#2 .toolbar"
+x = 0.0
+y = 0.0
+width = 640.0
+height = 44.0
+
+[[dark]]
+node = "#3 .icon-button"
+x = 12.0
+y = 7.5
+width = 28.0
+height = 28.0
+
+[[dark]]
+node = "#4 .icon-button-icon"
+x = 18.5
+y = 14.0
+width = 15.0
+height = 15.0
+
+[[dark]]
+node = "#5 .toolbar-title"
+x = 52.0
+y = 12.078125
+width = 123.859375
+height = 18.84375
+
+[[dark]]
+node = "#6 .toolbar-spacer"
+x = 187.85938
+y = 21.5
+width = 115.765625
+height = 0.0
+
+[[dark]]
+node = "#7 .field.search"
+x = 315.625
+y = 7.5
+width = 220.0
+height = 28.0
+
+[[dark]]
+node = "#8 .field-icon"
+x = 324.625
+y = 14.5
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#9 .field-input"
+x = 346.625
+y = 12.078125
+width = 180.0
+height = 18.84375
+
+[[dark]]
+node = "#10 .button.primary"
+x = 547.625
+y = 7.5
+width = 80.375
+height = 28.0
+
+[[dark]]
+node = "#11 text"
+x = 560.625
+y = 12.078125
+width = 54.375
+height = 18.84375
+
+[[dark]]
+node = "#12 .scaffold-body"
+x = 0.0
+y = 44.0
+width = 640.0
+height = 252.0
+
+[[dark]]
+node = "#13 .split"
+x = 0.0
+y = 44.0
+width = 640.0
+height = 252.0
+
+[[dark]]
+node = "#14 .split-pane"
+x = 0.0
+y = 44.0
+width = 190.0
+height = 252.0
+
+[[dark]]
+node = "#15 .sidebar"
+x = 0.0
+y = 44.0
+width = 190.0
+height = 252.0
+
+[[dark]]
+node = "#16 .sidebar-heading"
+x = 8.0
+y = 56.0
+width = 174.0
+height = 27.945313
+
+[[dark]]
+node = "#17 .sidebar-item"
+x = 8.0
+y = 83.94531
+width = 174.0
+height = 26.0
+
+[[dark]]
+node = "#18 .sidebar-item-icon"
+x = 16.0
+y = 89.94531
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#19 text"
+x = 38.0
+y = 87.52344
+width = 85.21094
+height = 18.84375
+
+[[dark]]
+node = "#20 .sidebar-item-detail"
+x = 151.34375
+y = 88.96875
+width = 22.65625
+height = 15.9453125
+
+[[dark]]
+node = "#21 .sidebar-item"
+x = 8.0
+y = 109.94531
+width = 174.0
+height = 26.0
+
+[[dark]]
+node = "#22 .sidebar-item-icon"
+x = 16.0
+y = 115.94531
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#23 text"
+x = 38.0
+y = 113.52344
+width = 45.34375
+height = 18.84375
+
+[[dark]]
+node = "#24 .sidebar-item-detail"
+x = 149.36719
+y = 114.96875
+width = 24.632813
+height = 15.9453125
+
+[[dark]]
+node = "#25 .sidebar-heading"
+x = 8.0
+y = 135.94531
+width = 174.0
+height = 27.945313
+
+[[dark]]
+node = "#26 .sidebar-item"
+x = 8.0
+y = 163.89063
+width = 174.0
+height = 26.0
+
+[[dark]]
+node = "#27 .sidebar-item-icon"
+x = 16.0
+y = 169.89063
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#28 text"
+x = 38.0
+y = 167.46875
+width = 76.96094
+height = 18.84375
+
+[[dark]]
+node = "#29 .sidebar-item-detail"
+x = 141.20313
+y = 168.91406
+width = 32.796875
+height = 15.9453125
+
+[[dark]]
+node = "#30 .sidebar-item"
+x = 8.0
+y = 189.89063
+width = 174.0
+height = 26.0
+
+[[dark]]
+node = "#31 .sidebar-item-icon"
+x = 16.0
+y = 195.89063
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#32 text"
+x = 38.0
+y = 193.46875
+width = 64.015625
+height = 18.84375
+
+[[dark]]
+node = "#33 .split-divider"
+x = 190.0
+y = 44.0
+width = 1.0
+height = 252.0
+
+[[dark]]
+node = "#34 .split-grip"
+x = 187.0
+y = 44.0
+width = 7.0
+height = 252.0
+
+[[dark]]
+node = "#35 .split-handle"
+x = 188.0
+y = 156.0
+width = 5.0
+height = 28.0
+
+[[dark]]
+node = "#36 .split-pane.flexible"
+x = 191.0
+y = 44.0
+width = 449.0
+height = 252.0
+
+[[dark]]
+node = "#37 .scaffold-pane"
+x = 191.0
+y = 44.0
+width = 449.0
+height = 39.0
+
+[[dark]]
+node = "#38 text"
+x = 203.0
+y = 56.0
+width = 425.0
+height = 15.0
+
+[[dark]]
+node = "#39 .statusbar"
+x = 0.0
+y = 296.0
+width = 640.0
+height = 24.0
+
+[[dark]]
+node = "#40 text"
+x = 12.0
+y = 300.52344
+width = 91.546875
+height = 15.9453125
+
+[[dark]]
+node = "#41 .status-command"
+x = 119.546875
+y = 299.5
+width = 54.335938
+height = 18.0
+
+[[dark]]
+node = "#42 .status-key"
+x = 119.546875
+y = 299.5
+width = 23.226563
+height = 18.0
+
+[[dark]]
+node = "#43 text"
+x = 124.546875
+y = 300.52344
+width = 13.2265625
+height = 15.9453125
+
+[[dark]]
+node = "#44 text"
+x = 146.77344
+y = 300.52344
+width = 27.109375
+height = 15.9453125
+
+[[dark]]
+node = "#45 .status-command"
+x = 189.88281
+y = 299.5
+width = 55.460938
+height = 18.0
+
+[[dark]]
+node = "#46 .status-key"
+x = 189.88281
+y = 299.5
+width = 23.273438
+height = 18.0
+
+[[dark]]
+node = "#47 text"
+x = 194.88281
+y = 300.52344
+width = 13.2734375
+height = 15.9453125
+
+[[dark]]
+node = "#48 text"
+x = 217.15625
+y = 300.52344
+width = 28.1875
+height = 15.9453125
+
+[[dark]]
+node = "#49 .status-command"
+x = 261.34375
+y = 299.5
+width = 61.21875
+height = 18.0
+
+[[dark]]
+node = "#50 .status-key"
+x = 261.34375
+y = 299.5
+width = 23.289063
+height = 18.0
+
+[[dark]]
+node = "#51 text"
+x = 266.34375
+y = 300.52344
+width = 13.2890625
+height = 15.9453125
+
+[[dark]]
+node = "#52 text"
+x = 288.6328
+y = 300.52344
+width = 33.929688
+height = 15.9453125
+
+[[dark]]
+node = "#53 .status-spacer"
+x = 338.5625
+y = 308.5
+width = 181.91406
+height = 0.0
+
+[[dark]]
+node = "#54 text"
+x = 536.47656
+y = 300.52344
+width = 91.52344
+height = 15.9453125

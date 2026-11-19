@@ -1,0 +1,55 @@
+/* A sidebar: the column at the side of a window with the places it leads to, in groups under
+   headings; the selected item is sunken. */
+
+.sidebar {
+  height: 100%;
+  padding: var(--space-3) var(--space-2);
+  border-right: 1px solid var(--color-line);
+  background-color: var(--color-surface-2);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  line-height: var(--text-leading);
+}
+
+/* In a pane of a split view the divider of the pane is the edge of the sidebar. */
+.split-pane > .sidebar {
+  border-right-width: 0;
+}
+
+.sidebar-heading {
+  padding: var(--space-2) var(--space-2) var(--space-1);
+  color: var(--color-text-3);
+  font-size: var(--text-xs);
+  font-weight: var(--text-weight-semibold);
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 26px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.sidebar-item:checked {
+  background-color: var(--color-surface-sunken);
+}
+
+.sidebar-item:focus-visible {
+  outline: 2px solid var(--color-focus);
+}
+
+.sidebar-item-icon {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: var(--color-accent);
+}
+
+.sidebar-item-detail {
+  margin-left: auto;
+  color: var(--color-text-3);
+  font-size: var(--text-xs);
+}

@@ -204,6 +204,7 @@ impl Stage {
         let options = WindowOptions {
             title: String::from("morok: text input client"),
             content_size: CONTENT_SIZE,
+            blur_behind: false,
         };
         let field_pasteboard = pasteboard.clone();
         let window = Window::open(application, &options, |frame_scheduler, settings| {

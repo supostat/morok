@@ -34,7 +34,7 @@ fn a_host_that_compiles_its_stylesheets_after_those_of_the_kit_keeps_the_classes
     let mut stylesheets = kit_stylesheets();
     stylesheets.push(SourceFile::new(
         "host.css",
-        ".toolbar { display: flex; } .toolbar > .button { flex: none; }",
+        ".workbench { display: flex; } .workbench > .button { flex: none; }",
     ));
 
     let compiled = compile_stylesheets(&stylesheets, &tokens)
@@ -43,7 +43,7 @@ fn a_host_that_compiles_its_stylesheets_after_those_of_the_kit_keeps_the_classes
     assert_eq!(compiled.class_named("button"), Some(CLASSES.button));
     assert_eq!(compiled.class_named("primary"), Some(CLASSES.primary));
     assert_eq!(
-        compiled.class_named("toolbar").map(morok_style::Class::index),
+        compiled.class_named("workbench").map(morok_style::Class::index),
         Some(STYLE_SHEET.classes.len())
     );
 }

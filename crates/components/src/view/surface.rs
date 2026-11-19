@@ -118,6 +118,16 @@ impl Surface {
         }
     }
 
+    /// The user chose the line `id` of the menu bar, as the tree of the surface listed it: the
+    /// handler of its shortcut runs.
+    pub fn menu_command_chosen(&mut self, runtime: &mut Runtime<Surfaces>, id: usize) {
+        let mut dispatch = EventDispatch {
+            handlers: &mut self.event_handlers,
+            runtime,
+        };
+        self.tree.perform_menu_command(id, &mut dispatch);
+    }
+
     /// The icon of the kit the element shows, for a host that draws it from its SVG.
     pub fn kit_icon_of(&self, element: ElementId) -> Option<KitIcon> {
         self.kit_icon_elements.get(&element).copied()

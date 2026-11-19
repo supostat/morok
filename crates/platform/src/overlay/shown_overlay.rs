@@ -31,7 +31,7 @@ impl ShownOverlay {
     pub(crate) fn open(parent: &SurfaceView, request: &OverlayRequest, room: Size, settings: SurfaceSettings) -> Self {
         let main_thread = parent.mtm();
         let frame = NSRect::new(NSPoint::ZERO, window_size(request.size));
-        let view = SurfaceView::new(main_thread, parent.renderer(), frame, settings, Some(room));
+        let view = SurfaceView::new(main_thread, parent.renderer(), frame, settings, Some(room), false);
         let content = parent
             .content()
             .borrow_mut()

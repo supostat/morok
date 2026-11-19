@@ -35,6 +35,7 @@ pub fn run() -> ExitCode {
     let options = WindowOptions {
         title: String::from("morok: cold start"),
         content_size: CONTENT_SIZE,
+        blur_behind: false,
     };
     let window = application.open_window(&options, |mount| Button::new("Clean up 4.2 GB").primary().mount(mount));
     let opened = Instant::now();

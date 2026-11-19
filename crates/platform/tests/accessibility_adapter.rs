@@ -176,6 +176,7 @@ impl Stage {
         let options = WindowOptions {
             title: String::from("morok: accessibility adapter"),
             content_size: CONTENT_SIZE,
+            blur_behind: false,
         };
         let mut buttons = None;
         let window = Window::open(application, &options, |frame_scheduler, settings| {

@@ -5,7 +5,10 @@ use std::rc::Rc;
 use morok_core::{FrameScheduler, Size};
 use objc2::MainThreadOnly;
 use objc2::rc::Retained;
-use objc2_app_kit::{NSBackingStoreType, NSWindow, NSWindowStyleMask};
+use objc2_app_kit::{
+    NSAutoresizingMaskOptions, NSBackingStoreType, NSVisualEffectBlendingMode, NSVisualEffectMaterial,
+    NSVisualEffectState, NSVisualEffectView, NSWindow, NSWindowStyleMask,
+};
 use objc2_foundation::{NSPoint, NSRect, NSSize, NSString};
 
 use crate::application::Application;
@@ -36,7 +39,14 @@ impl<Content: SurfaceContent + 'static> Window<Content> {
         let main_thread = application.main_thread();
         let settings = application.surface_settings();
         let content_rect = NSRect::new(NSPoint::ZERO, ns_size(options.content_size));
-        let view = SurfaceView::new(main_thread, application.renderer(), content_rect, settings, None);
+        let view = SurfaceView::new(
+            main_thread,
+            application.renderer(),
+            content_rect,
+            settings,
+            None,
+            !options.blur_behind,
+        );
         let content = Rc::new(RefCell::new(build_content(view.frame_scheduler(), settings)));
         view.set_content(Rc::clone(&content) as Rc<RefCell<dyn SurfaceContent>>);
 
@@ -58,7 +68,11 @@ impl<Content: SurfaceContent + 'static> Window<Content> {
             native
         };
         native.setTitle(&NSString::from_str(&options.title));
-        native.setContentView(Some(&view));
+        if options.blur_behind {
+            native.setContentView(Some(&blurred_backdrop_under(&view, content_rect)));
+        } else {
+            native.setContentView(Some(&view));
+        }
         native.makeFirstResponder(Some(&view));
         native.center();
         native.makeKeyAndOrderFront(None);
@@ -107,6 +121,20 @@ impl<Content> Drop for Window<Content> {
         self.view.close();
         self.native.close();
     }
+}
+
+/// A view of the system that shows what lies behind the window, blurred, with `view` over
+/// all of it: the surface of `view` shows the blur through wherever it is not opaque.
+fn blurred_backdrop_under(view: &SurfaceView, frame: NSRect) -> Retained<NSVisualEffectView> {
+    let backdrop = NSVisualEffectView::initWithFrame(NSVisualEffectView::alloc(view.mtm()), frame);
+    backdrop.setBlendingMode(NSVisualEffectBlendingMode::BehindWindow);
+    backdrop.setMaterial(NSVisualEffectMaterial::UnderWindowBackground);
+    backdrop.setState(NSVisualEffectState::FollowsWindowActiveState);
+    view.setAutoresizingMask(
+        NSAutoresizingMaskOptions::ViewWidthSizable | NSAutoresizingMaskOptions::ViewHeightSizable,
+    );
+    backdrop.addSubview(view);
+    backdrop
 }
 
 fn ns_size(size: Size) -> NSSize {

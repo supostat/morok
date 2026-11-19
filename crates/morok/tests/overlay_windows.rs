@@ -81,6 +81,7 @@ impl Stage {
         let options = WindowOptions {
             title: String::from("morok: overlay windows"),
             content_size: CONTENT_SIZE,
+            blur_behind: false,
         };
         let mut built = None;
         let window = application.open_window(&options, |mount| {

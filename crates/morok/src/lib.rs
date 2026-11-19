@@ -16,7 +16,7 @@ mod window;
 pub use application::Application;
 pub use morok_components as components;
 pub use morok_core as core;
-pub use morok_platform::{Appearance, FrameStatistics, RendererError, WindowOptions};
+pub use morok_platform::{Appearance, AtlasStatistics, AtlasUsage, FrameStatistics, RendererError, WindowOptions};
 pub use morok_reactive as reactive;
 pub use morok_style as style;
 pub use styles::Styles;

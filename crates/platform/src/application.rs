@@ -1,5 +1,7 @@
+use std::cell::Cell;
 use std::time::Duration;
 
+use dispatch2::{DispatchQueue, MainThreadBound};
 use morok_style::ColorScheme;
 use objc2::MainThreadMarker;
 use objc2::rc::Retained;
@@ -71,6 +73,20 @@ impl Application {
     /// link callbacks among it, is delivered.
     pub fn run_for(&self, duration: Duration) {
         NSRunLoop::mainRunLoop().runUntilDate(&NSDate::dateWithTimeIntervalSinceNow(duration.as_secs_f64()));
+    }
+
+    /// Runs `work` on the main thread once the event the application is handling is over:
+    /// where a handler does what it cannot do in place — open or close a window — because
+    /// the application is in the middle of telling it of the event.
+    pub fn run_soon(&self, work: impl FnOnce() + 'static) {
+        let work: Box<dyn FnOnce()> = Box::new(work);
+        let work = MainThreadBound::new(Cell::new(Some(work)), self.main_thread);
+        DispatchQueue::main().exec_async(move || {
+            let main_thread = MainThreadMarker::new().expect("the main queue runs on the main thread");
+            if let Some(work) = work.get(main_thread).take() {
+                work();
+            }
+        });
     }
 
     pub(crate) fn main_thread(&self) -> MainThreadMarker {

@@ -13,6 +13,7 @@ mod image_statistics;
 mod image_status;
 mod input_translation;
 mod media;
+mod menu_bar;
 mod native_menu;
 mod overlay;
 mod pasteboard_clipboard;

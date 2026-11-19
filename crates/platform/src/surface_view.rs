@@ -36,6 +36,8 @@ use crate::frame_loop::FrameLoop;
 use crate::frame_requester::FrameRequester;
 use crate::frame_statistics::FrameStatistics;
 use crate::input_translation;
+use crate::menu_bar;
+use crate::menu_bar::menu_bar_target::MenuBarTarget;
 use crate::native_menu;
 use crate::overlay::overlay_request::OverlayRequest;
 use crate::overlay::screen_space::ScreenSpace;
@@ -80,6 +82,11 @@ pub(crate) struct SurfaceState {
     overlays: RefCell<Vec<ShownOverlay>>,
     /// Scratch space for what the content asks for after a frame.
     overlay_requests: RefCell<Vec<OverlayRequest>>,
+    /// What the lines of the menu bar tell of their choice while the bar shows the menus of
+    /// the content.
+    menu_bar_target: RefCell<Option<Retained<MenuBarTarget>>>,
+    /// The revision of the menus of the content the menu bar was built from last.
+    shown_menu_bar: Cell<Option<u64>>,
 }
 
 define_class!(
@@ -373,19 +380,20 @@ define_class!(
 impl SurfaceView {
     /// A view that shows nothing yet: the window gives it its content before it shows it. It
     /// follows the settings of the system from `settings` on. The view of an overlay is given
-    /// the room the screen has for the overlay, and shows through wherever its content draws
-    /// nothing.
+    /// the room the screen has for the overlay. A view that is not opaque shows what lies
+    /// under it wherever its content draws nothing.
     pub(crate) fn new(
         main_thread: MainThreadMarker,
         renderer: &Renderer,
         frame: NSRect,
         settings: SurfaceSettings,
         overlay_room: Option<Size>,
+        is_opaque: bool,
     ) -> Retained<Self> {
         let layer = CAMetalLayer::new();
         layer.setDevice(Some(renderer.device()));
         layer.setPixelFormat(PIXEL_FORMAT);
-        layer.setOpaque(overlay_room.is_none());
+        layer.setOpaque(is_opaque);
         // A backdrop filter reads what the surface already shows.
         layer.setFramebufferOnly(false);
         // SAFETY: the name is a constant of Core Graphics.
@@ -405,6 +413,8 @@ impl SurfaceView {
             key_routing: Cell::new(KeyRouting::Waiting),
             renderer: renderer.clone(),
             overlay_room: Cell::new(overlay_room),
+            menu_bar_target: RefCell::new(None),
+            shown_menu_bar: Cell::new(None),
             overlays: RefCell::new(Vec::new()),
             overlay_requests: RefCell::new(Vec::new()),
         };
@@ -530,6 +540,8 @@ impl SurfaceView {
     /// view, and the notifications of the system let go of it.
     pub(crate) fn close(&self) {
         drop(self.ivars().overlays.take());
+        menu_bar::forget(self, self.mtm());
+        drop(self.ivars().menu_bar_target.take());
         self.frame_loop().stop();
         let observer: &AnyObject = self;
         // SAFETY: the view was added as an observer when it was created.
@@ -621,6 +633,10 @@ impl SurfaceView {
     fn window_key_state_changed(&self, notification: &NSNotification, is_key: bool) {
         if self.is_about_own_window(notification) {
             self.accessibility().view_focus_changed(is_key);
+            if is_key {
+                // The frame that follows shows the menus of the content in the menu bar.
+                self.frame_loop().request_frame();
+            }
         }
     }
 
@@ -687,7 +703,32 @@ impl SurfaceView {
         frame_loop.end_frame();
         self.accessibility().frame_ran();
         self.sync_overlays(now);
+        self.sync_menu_bar();
         self.show_requested_native_menu();
+    }
+
+    /// Shows the menus of the content in the menu bar when they are the bar's to show: the
+    /// window of the view has the keyboard, or no view has shown any menus yet. The bar is
+    /// built anew only when the menus changed, or another view showed its own in between.
+    fn sync_menu_bar(&self) {
+        let state = self.ivars();
+        let Some(window) = self.window() else {
+            return;
+        };
+        let is_overlay = state.overlay_room.get().is_some();
+        let shows_own = menu_bar::shows_menus_of(self);
+        if is_overlay || !(shows_own || window.isKeyWindow() || !menu_bar::shows_menus()) {
+            return;
+        }
+        let revision = self.content().borrow_mut().menu_bar_revision();
+        if shows_own && state.shown_menu_bar.get() == Some(revision) {
+            return;
+        }
+        let menus = self.content().borrow_mut().menu_bar();
+        let target = MenuBarTarget::new(self);
+        menu_bar::show(self, &menus, &target, self.mtm());
+        state.menu_bar_target.replace(Some(target));
+        state.shown_menu_bar.set(Some(revision));
     }
 
     /// Brings the windows of the overlays in line with what the content asks for after a
@@ -769,7 +810,7 @@ impl SurfaceView {
             .object()
             .and_then(|object| object.downcast::<NSWindow>().ok())
             .and_then(|window| window.contentView())
-            .is_some_and(|content_view| content_view.downcast_ref::<Self>().is_some());
+            .is_some_and(|content_view| is_or_holds_surface_view(&content_view));
         if !shows_surface {
             self.user_turned_away();
         }
@@ -802,4 +843,15 @@ impl SurfaceView {
         );
         true
     }
+}
+
+/// Whether the content view of a window is the view of a surface, or holds one over the
+/// blurred backdrop of the window.
+fn is_or_holds_surface_view(content_view: &NSView) -> bool {
+    content_view.downcast_ref::<SurfaceView>().is_some()
+        || content_view
+            .subviews()
+            .to_vec()
+            .iter()
+            .any(|subview| subview.downcast_ref::<SurfaceView>().is_some())
 }

@@ -24,6 +24,7 @@ pub(crate) fn observe(
     let options = WindowOptions {
         title: String::from("morok: bench"),
         content_size: scene.viewport(),
+        blur_behind: false,
     };
     let mut content = SceneContent::new(scene, application.surface_settings())?;
     let window = Window::open(application, &options, |frame_scheduler, _| {

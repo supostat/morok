@@ -23,14 +23,21 @@ objc2-app-kit = { workspace = true, features = [
   "NSApplication",
   "NSEvent",
   "NSGraphicsContext",
+  "NSMenu",
+  "NSMenuItem",
   "NSResponder",
   "NSView",
+  "NSVisualEffectView",
   "NSWindow",
 ] }
 objc2-foundation = { workspace = true, features = ["NSArray", "NSGeometry", "NSString"] }
 
 [[test]]
 name = "button_interaction"
+harness = false
+
+[[test]]
+name = "multiple_windows"
 harness = false
 
 [[test]]

@@ -5,8 +5,8 @@ use std::time::Duration;
 
 use morok_core::accesskit::{ActionRequest, TreeUpdate};
 use morok_core::{
-    ElementTree, FrameScheduler, KeyEvent, NativeMenu, OverlaySide, Point, PointerInput, Rect, ScrollInput, Size,
-    TextCommand,
+    ElementTree, FrameScheduler, KeyEvent, NativeMenu, NativeMenuItem, OverlaySide, Point, PointerInput, Rect,
+    ScrollInput, Size, TextCommand,
 };
 use morok_style::ColorScheme;
 
@@ -125,4 +125,23 @@ pub trait SurfaceContent {
 
     /// The user chose the command `id` of the menu of the system the window showed last.
     fn native_menu_command_chosen(&mut self, _id: usize) {}
+
+    /// How many times the menus the content gives the menu bar changed: the window builds
+    /// the bar anew when the number is another than the one it saw last. Asked after every
+    /// frame of the surface of a window.
+    fn menu_bar_revision(&mut self) -> u64 {
+        0
+    }
+
+    /// The menus the content gives the menu bar, each a submenu of commands: the window shows
+    /// them, after the menu of the application, while it has the keyboard, and tells the
+    /// command the user chose through
+    /// [`menu_bar_command_chosen`](Self::menu_bar_command_chosen). A content with no commands
+    /// keeps this.
+    fn menu_bar(&mut self) -> Vec<NativeMenuItem> {
+        Vec::new()
+    }
+
+    /// The user chose the command `id` of the menus the content gave the menu bar.
+    fn menu_bar_command_chosen(&mut self, _id: usize) {}
 }

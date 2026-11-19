@@ -2,8 +2,8 @@ use std::time::Duration;
 
 use morok_core::accesskit::Role as AccessibleRole;
 use morok_core::{
-    AccessibleActions, AccessibleItem, AccessibleValue, ElementId, ElementTree, Focusability, KeyChord, NumericValue,
-    Propagation, ShortcutScope,
+    AccessibleActions, AccessibleItem, AccessibleValue, ElementId, ElementTree, Focusability, KeyChord, MenuCommand,
+    NumericValue, Propagation, ShortcutScope,
 };
 use morok_reactive::{Runtime, Signal, Source};
 use morok_style::{Class, Declaration, States};
@@ -243,6 +243,37 @@ impl ElementBuilder<'_, '_> {
         let shortcut = surface
             .tree
             .register_shortcut(ShortcutScope::Element(self.element), chord);
+        surface.event_handlers.set_shortcut_handler(
+            shortcut,
+            ShortcutHandler {
+                element: self.element,
+                run: Box::new(handler),
+            },
+        );
+        self
+    }
+
+    /// Registers a shortcut as [`shortcut`](Self::shortcut) does and shows it in the menu bar:
+    /// on the line `title` of the menu `menu`, with its chord beside it. Choosing the line
+    /// runs the handler as the chord does.
+    pub fn menu_command(
+        &mut self,
+        menu: &str,
+        title: &str,
+        chord: KeyChord,
+        handler: impl FnMut(&mut Runtime<Surfaces>) + 'static,
+    ) -> &mut Self {
+        let surface = &mut *self.mount.surface;
+        let shortcut = surface
+            .tree
+            .register_shortcut(ShortcutScope::Element(self.element), chord);
+        surface.tree.show_shortcut_in_menu_bar(
+            shortcut,
+            MenuCommand {
+                menu: menu.to_owned(),
+                title: title.to_owned(),
+            },
+        );
         surface.event_handlers.set_shortcut_handler(
             shortcut,
             ShortcutHandler {

@@ -7,8 +7,8 @@ use std::time::Duration;
 use morok_components::view::SurfaceId;
 use morok_core::accesskit::{ActionRequest, Node, NodeId, Role, TreeId, TreeInfo, TreeUpdate};
 use morok_core::{
-    ElementTree, FrameScheduler, KeyEvent, NativeMenu, OverlaySide, Point, PointerInput, Rect, ScrollInput, Size,
-    TextCommand,
+    ElementTree, FrameScheduler, KeyEvent, NativeMenu, NativeMenuItem, OverlaySide, Point, PointerInput, Rect,
+    ScrollInput, Size, TextCommand,
 };
 use morok_platform::{FocusedText, OverlayId, OverlayRequest, PasteboardClipboard, SurfaceContent, SurfaceSettings};
 use morok_style::ColorScheme;
@@ -349,6 +349,30 @@ impl SurfaceContent for HostedSurface {
             .surfaces
             .surface_mut(self.surface)
             .native_menu_command_chosen(&mut state.runtime, id);
+        Self::request_frame_for_queued_effects(state, self.surface);
+    }
+
+    fn menu_bar_revision(&mut self) -> u64 {
+        state_while_open(&self.state, self.surface).map_or(0, |state| {
+            state.surfaces.surface(self.surface).tree().menu_bar_revision()
+        })
+    }
+
+    /// The menus are the lines the shortcuts of the tree of the surface gave the menu bar.
+    fn menu_bar(&mut self) -> Vec<NativeMenuItem> {
+        state_while_open(&self.state, self.surface)
+            .map_or_else(Vec::new, |state| state.surfaces.surface(self.surface).tree().menu_bar())
+    }
+
+    fn menu_bar_command_chosen(&mut self, id: usize) {
+        let Some(mut state) = state_while_open(&self.state, self.surface) else {
+            return;
+        };
+        let state = &mut *state;
+        state
+            .surfaces
+            .surface_mut(self.surface)
+            .menu_command_chosen(&mut state.runtime, id);
         Self::request_frame_for_queued_effects(state, self.surface);
     }
 }

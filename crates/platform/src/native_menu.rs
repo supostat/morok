@@ -2,7 +2,7 @@ mod menu_target;
 
 use morok_core::{Key, KeyChord, Modifiers, NativeMenu, NativeMenuItem};
 use objc2::rc::Retained;
-use objc2::runtime::AnyObject;
+use objc2::runtime::{AnyObject, Sel};
 use objc2::{MainThreadMarker, sel};
 use objc2_app_kit::{NSEventModifierFlags, NSMenu, NSMenuItem, NSView};
 use objc2_foundation::{NSPoint, NSString};
@@ -26,29 +26,47 @@ const FIRST_FUNCTION_KEY: u32 = 0xF704;
 /// reach may be borrowed while this runs.
 pub(crate) fn pop_up(view: &NSView, menu: &NativeMenu, main_thread: MainThreadMarker) -> Option<usize> {
     let target = MenuTarget::new(main_thread);
-    let shown = menu_of(&menu.items, &target, main_thread);
+    let receiver: &AnyObject = &target;
+    let shown = menu_of(&menu.items, receiver, sel!(commandChosen:), main_thread);
     let location = NSPoint::new(f64::from(menu.position.x), f64::from(menu.position.y));
     shown.popUpMenuPositioningItem_atLocation_inView(None, location, Some(view));
     target.chosen()
 }
 
-fn menu_of(items: &[NativeMenuItem], target: &MenuTarget, main_thread: MainThreadMarker) -> Retained<NSMenu> {
+/// A menu of the system with a line for every item. A command sends `action` to `target`
+/// when the user chooses it, with itself for the argument: its tag is the `id` of the
+/// command. The target implements the action and lives for as long as the menu is shown.
+pub(crate) fn menu_of(
+    items: &[NativeMenuItem],
+    target: &AnyObject,
+    action: Sel,
+    main_thread: MainThreadMarker,
+) -> Retained<NSMenu> {
     let menu = NSMenu::new(main_thread);
     // Each line says itself whether it can be chosen.
     menu.setAutoenablesItems(false);
     for item in items {
-        menu.addItem(&menu_item_of(item, target, main_thread));
+        menu.addItem(&menu_item_of(item, target, action, main_thread));
     }
     menu
 }
 
-fn menu_item_of(item: &NativeMenuItem, target: &MenuTarget, main_thread: MainThreadMarker) -> Retained<NSMenuItem> {
+fn menu_item_of(
+    item: &NativeMenuItem,
+    target: &AnyObject,
+    action: Sel,
+    main_thread: MainThreadMarker,
+) -> Retained<NSMenuItem> {
     match item {
         NativeMenuItem::Separator => NSMenuItem::separatorItem(main_thread),
         NativeMenuItem::Submenu { label, items } => {
+            let title = NSString::from_str(label);
+            let submenu = menu_of(items, target, action, main_thread);
+            // The menu bar titles a menu by the title of the menu itself.
+            submenu.setTitle(&title);
             let opener = NSMenuItem::new(main_thread);
-            opener.setTitle(&NSString::from_str(label));
-            opener.setSubmenu(Some(&menu_of(items, target, main_thread)));
+            opener.setTitle(&title);
+            opener.setSubmenu(Some(&submenu));
             opener
         }
         NativeMenuItem::Command {
@@ -61,12 +79,11 @@ fn menu_item_of(item: &NativeMenuItem, target: &MenuTarget, main_thread: MainThr
             command.setTitle(&NSString::from_str(label));
             command.setEnabled(!is_disabled);
             command.setTag(isize::try_from(*id).expect("a menu has fewer commands than an `isize` counts"));
-            let receiver: &AnyObject = target;
-            // SAFETY: the target implements the selector, taking the item, and outlives the
-            // menu: both live until the menu closed.
+            // SAFETY: the caller gives a target that implements the action, taking the item,
+            // and keeps it alive while the menu is shown.
             unsafe {
-                command.setTarget(Some(receiver));
-                command.setAction(Some(sel!(commandChosen:)));
+                command.setTarget(Some(target));
+                command.setAction(Some(action));
             }
             if let Some(chord) = shortcut {
                 command.setKeyEquivalent(&NSString::from_str(&key_equivalent(chord.key)));

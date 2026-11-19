@@ -34,6 +34,7 @@ fn main() -> ExitCode {
             width: 400.0,
             height: 300.0,
         },
+        blur_behind: false,
     };
     let mut button = None;
     let window = Window::open(&application, &options, |frame_scheduler, settings| {

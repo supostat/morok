@@ -38,6 +38,7 @@ pub fn run(scenario: &str, budget: &InputLatencyBudget) -> Result<Verdict, Bench
     let options = WindowOptions {
         title: String::from("morok: input latency"),
         content_size: CONTENT_SIZE,
+        blur_behind: false,
     };
     let mut field = None;
     let window = application.open_window(&options, |mount| {

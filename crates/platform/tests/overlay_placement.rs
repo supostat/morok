@@ -355,6 +355,7 @@ fn main() -> ExitCode {
     let options = WindowOptions {
         title: String::from("morok: overlay placement"),
         content_size: WINDOW,
+        blur_behind: false,
     };
     let window = Window::open(&application, &options, |frame_scheduler, settings| {
         let mut scene = WindowScene::new(PAGE, frame_scheduler, settings);

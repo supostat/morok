@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use morok_components::view::{Mount, Surfaces};
 use morok_core::ElementId;
-use morok_platform::{Appearance, PasteboardClipboard, RendererError, WindowOptions};
+use morok_platform::{Appearance, AtlasStatistics, PasteboardClipboard, RendererError, WindowOptions};
 use morok_reactive::Runtime;
 
 use crate::application_state::ApplicationState;
@@ -15,9 +15,12 @@ use crate::window::Window;
 /// A running application: the event loop of the system, the GPU resources its windows share
 /// and the signal graph its components live in. Every window is a surface with a tree of its
 /// own; one signal may be shown in several of them.
-#[derive(Debug)]
+///
+/// A clone is another handle to the same application: a handler keeps one to open and close
+/// windows through [`defer`](Self::defer).
+#[derive(Clone, Debug)]
 pub struct Application {
-    platform: morok_platform::Application,
+    platform: Rc<morok_platform::Application>,
     state: Rc<RefCell<ApplicationState>>,
 }
 
@@ -37,14 +40,21 @@ impl Application {
                 .expect("the icons of the kit are SVG the renderer reads")
         });
         Ok(Self {
-            platform,
+            platform: Rc::new(platform),
             state: Rc::new(RefCell::new(state)),
         })
     }
 
     /// Opens a window on a new surface and mounts `root` on it: the component is called once
     /// and the element it builds becomes the child of the root of the tree. The texts of the
-    /// surface copy to and paste from the clipboard of the system.
+    /// surface copy to and paste from the clipboard of the system. The window shares the GPU
+    /// resources of the application with the windows opened before it, and closes when the
+    /// value returned is dropped.
+    ///
+    /// # Panics
+    ///
+    /// When called while the application tells a handler of an event: a handler opens a
+    /// window through [`defer`](Self::defer).
     pub fn open_window(&self, options: &WindowOptions, root: impl FnOnce(&mut Mount<'_>) -> ElementId) -> Window {
         let platform = morok_platform::Window::open(&self.platform, options, |frame_scheduler, settings| {
             let state = &mut *self.state.borrow_mut();
@@ -73,6 +83,18 @@ impl Application {
             state.surfaces.request_frames();
         }
         outcome
+    }
+
+    /// Runs `work` once the event the application is handling is over. A handler of a
+    /// component is called in the middle of an event, where no window can be opened or
+    /// dropped; it hands what opens or drops one to this instead.
+    pub fn defer(&self, work: impl FnOnce() + 'static) {
+        self.platform.run_soon(work);
+    }
+
+    /// The state of the glyph atlases the windows of the application share.
+    pub fn atlas_statistics(&self) -> AtlasStatistics {
+        self.platform.renderer().atlas_statistics()
     }
 
     /// Shows the application in the given appearance, or lets it follow the system again.

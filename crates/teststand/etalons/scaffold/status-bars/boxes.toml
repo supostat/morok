@@ -1,0 +1,475 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 640.0
+height = 96.0
+
+[[light]]
+node = "#1 .scaffold-bars"
+x = 0.0
+y = 0.0
+width = 640.0
+height = 96.0
+
+[[light]]
+node = "#2 .statusbar"
+x = 0.0
+y = 16.0
+width = 640.0
+height = 24.0
+
+[[light]]
+node = "#3 text"
+x = 12.0
+y = 20.523438
+width = 91.546875
+height = 15.9453125
+
+[[light]]
+node = "#4 .status-command"
+x = 119.546875
+y = 19.5
+width = 54.335938
+height = 18.0
+
+[[light]]
+node = "#5 .status-key"
+x = 119.546875
+y = 19.5
+width = 23.226563
+height = 18.0
+
+[[light]]
+node = "#6 text"
+x = 124.546875
+y = 20.523438
+width = 13.2265625
+height = 15.9453125
+
+[[light]]
+node = "#7 text"
+x = 146.77344
+y = 20.523438
+width = 27.109375
+height = 15.9453125
+
+[[light]]
+node = "#8 .status-command"
+x = 189.88281
+y = 19.5
+width = 55.460938
+height = 18.0
+
+[[light]]
+node = "#9 .status-key"
+x = 189.88281
+y = 19.5
+width = 23.273438
+height = 18.0
+
+[[light]]
+node = "#10 text"
+x = 194.88281
+y = 20.523438
+width = 13.2734375
+height = 15.9453125
+
+[[light]]
+node = "#11 text"
+x = 217.15625
+y = 20.523438
+width = 28.1875
+height = 15.9453125
+
+[[light]]
+node = "#12 .status-command"
+x = 261.34375
+y = 19.5
+width = 61.21875
+height = 18.0
+
+[[light]]
+node = "#13 .status-key"
+x = 261.34375
+y = 19.5
+width = 23.289063
+height = 18.0
+
+[[light]]
+node = "#14 text"
+x = 266.34375
+y = 20.523438
+width = 13.2890625
+height = 15.9453125
+
+[[light]]
+node = "#15 text"
+x = 288.6328
+y = 20.523438
+width = 33.929688
+height = 15.9453125
+
+[[light]]
+node = "#16 .status-spacer"
+x = 338.5625
+y = 28.5
+width = 181.91406
+height = 0.0
+
+[[light]]
+node = "#17 text"
+x = 536.47656
+y = 20.523438
+width = 91.52344
+height = 15.9453125
+
+[[light]]
+node = "#18 .statusbar"
+x = 0.0
+y = 56.0
+width = 640.0
+height = 24.0
+
+[[light]]
+node = "#19 text"
+x = 12.0
+y = 60.523438
+width = 91.546875
+height = 15.9453125
+
+[[light]]
+node = "#20 .status-command"
+x = 119.546875
+y = 59.5
+width = 54.335938
+height = 18.0
+
+[[light]]
+node = "#21 .status-key"
+x = 119.546875
+y = 59.5
+width = 23.226563
+height = 18.0
+
+[[light]]
+node = "#22 text"
+x = 124.546875
+y = 60.523438
+width = 13.2265625
+height = 15.9453125
+
+[[light]]
+node = "#23 text"
+x = 146.77344
+y = 60.523438
+width = 27.109375
+height = 15.9453125
+
+[[light]]
+node = "#24 .status-command"
+x = 189.88281
+y = 59.5
+width = 55.460938
+height = 18.0
+
+[[light]]
+node = "#25 .status-key"
+x = 189.88281
+y = 59.5
+width = 23.273438
+height = 18.0
+
+[[light]]
+node = "#26 text"
+x = 194.88281
+y = 60.523438
+width = 13.2734375
+height = 15.9453125
+
+[[light]]
+node = "#27 text"
+x = 217.15625
+y = 60.523438
+width = 28.1875
+height = 15.9453125
+
+[[light]]
+node = "#28 .status-command"
+x = 261.34375
+y = 59.5
+width = 61.21875
+height = 18.0
+
+[[light]]
+node = "#29 .status-key"
+x = 261.34375
+y = 59.5
+width = 23.289063
+height = 18.0
+
+[[light]]
+node = "#30 text"
+x = 266.34375
+y = 60.523438
+width = 13.2890625
+height = 15.9453125
+
+[[light]]
+node = "#31 text"
+x = 288.6328
+y = 60.523438
+width = 33.929688
+height = 15.9453125
+
+[[light]]
+node = "#32 .status-spacer"
+x = 338.5625
+y = 68.5
+width = 181.91406
+height = 0.0
+
+[[light]]
+node = "#33 text"
+x = 536.47656
+y = 60.523438
+width = 91.52344
+height = 15.9453125
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 640.0
+height = 96.0
+
+[[dark]]
+node = "#1 .scaffold-bars"
+x = 0.0
+y = 0.0
+width = 640.0
+height = 96.0
+
+[[dark]]
+node = "#2 .statusbar"
+x = 0.0
+y = 16.0
+width = 640.0
+height = 24.0
+
+[[dark]]
+node = "#3 text"
+x = 12.0
+y = 20.523438
+width = 91.546875
+height = 15.9453125
+
+[[dark]]
+node = "#4 .status-command"
+x = 119.546875
+y = 19.5
+width = 54.335938
+height = 18.0
+
+[[dark]]
+node = "#5 .status-key"
+x = 119.546875
+y = 19.5
+width = 23.226563
+height = 18.0
+
+[[dark]]
+node = "#6 text"
+x = 124.546875
+y = 20.523438
+width = 13.2265625
+height = 15.9453125
+
+[[dark]]
+node = "#7 text"
+x = 146.77344
+y = 20.523438
+width = 27.109375
+height = 15.9453125
+
+[[dark]]
+node = "#8 .status-command"
+x = 189.88281
+y = 19.5
+width = 55.460938
+height = 18.0
+
+[[dark]]
+node = "#9 .status-key"
+x = 189.88281
+y = 19.5
+width = 23.273438
+height = 18.0
+
+[[dark]]
+node = "#10 text"
+x = 194.88281
+y = 20.523438
+width = 13.2734375
+height = 15.9453125
+
+[[dark]]
+node = "#11 text"
+x = 217.15625
+y = 20.523438
+width = 28.1875
+height = 15.9453125
+
+[[dark]]
+node = "#12 .status-command"
+x = 261.34375
+y = 19.5
+width = 61.21875
+height = 18.0
+
+[[dark]]
+node = "#13 .status-key"
+x = 261.34375
+y = 19.5
+width = 23.289063
+height = 18.0
+
+[[dark]]
+node = "#14 text"
+x = 266.34375
+y = 20.523438
+width = 13.2890625
+height = 15.9453125
+
+[[dark]]
+node = "#15 text"
+x = 288.6328
+y = 20.523438
+width = 33.929688
+height = 15.9453125
+
+[[dark]]
+node = "#16 .status-spacer"
+x = 338.5625
+y = 28.5
+width = 181.91406
+height = 0.0
+
+[[dark]]
+node = "#17 text"
+x = 536.47656
+y = 20.523438
+width = 91.52344
+height = 15.9453125
+
+[[dark]]
+node = "#18 .statusbar"
+x = 0.0
+y = 56.0
+width = 640.0
+height = 24.0
+
+[[dark]]
+node = "#19 text"
+x = 12.0
+y = 60.523438
+width = 91.546875
+height = 15.9453125
+
+[[dark]]
+node = "#20 .status-command"
+x = 119.546875
+y = 59.5
+width = 54.335938
+height = 18.0
+
+[[dark]]
+node = "#21 .status-key"
+x = 119.546875
+y = 59.5
+width = 23.226563
+height = 18.0
+
+[[dark]]
+node = "#22 text"
+x = 124.546875
+y = 60.523438
+width = 13.2265625
+height = 15.9453125
+
+[[dark]]
+node = "#23 text"
+x = 146.77344
+y = 60.523438
+width = 27.109375
+height = 15.9453125
+
+[[dark]]
+node = "#24 .status-command"
+x = 189.88281
+y = 59.5
+width = 55.460938
+height = 18.0
+
+[[dark]]
+node = "#25 .status-key"
+x = 189.88281
+y = 59.5
+width = 23.273438
+height = 18.0
+
+[[dark]]
+node = "#26 text"
+x = 194.88281
+y = 60.523438
+width = 13.2734375
+height = 15.9453125
+
+[[dark]]
+node = "#27 text"
+x = 217.15625
+y = 60.523438
+width = 28.1875
+height = 15.9453125
+
+[[dark]]
+node = "#28 .status-command"
+x = 261.34375
+y = 59.5
+width = 61.21875
+height = 18.0
+
+[[dark]]
+node = "#29 .status-key"
+x = 261.34375
+y = 59.5
+width = 23.289063
+height = 18.0
+
+[[dark]]
+node = "#30 text"
+x = 266.34375
+y = 60.523438
+width = 13.2890625
+height = 15.9453125
+
+[[dark]]
+node = "#31 text"
+x = 288.6328
+y = 60.523438
+width = 33.929688
+height = 15.9453125
+
+[[dark]]
+node = "#32 .status-spacer"
+x = 338.5625
+y = 68.5
+width = 181.91406
+height = 0.0
+
+[[dark]]
+node = "#33 text"
+x = 536.47656
+y = 60.523438
+width = 91.52344
+height = 15.9453125
