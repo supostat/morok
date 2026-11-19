@@ -1,0 +1,1567 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 452.0
+height = 372.0
+
+[[light]]
+node = "#1 .table-stage"
+x = 0.0
+y = 0.0
+width = 452.0
+height = 372.0
+
+[[light]]
+node = "#2 .scroll-view.table"
+x = 16.0
+y = 16.0
+width = 420.0
+height = 162.0
+
+[[light]]
+node = "#3 .scroll-viewport"
+x = 17.0
+y = 17.0
+width = 418.0
+height = 160.0
+
+[[light]]
+node = "#4 .table-content"
+x = 17.0
+y = 17.0
+width = 418.0
+height = 158.0
+
+[[light]]
+node = "#5 element"
+x = 17.0
+y = 45.0
+width = 418.0
+height = 130.0
+
+[[light]]
+node = "#6 element"
+x = 17.0
+y = 45.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#7 .table-row"
+x = 17.0
+y = 45.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#8 .table-cell"
+x = 17.0
+y = 45.0
+width = 160.0
+height = 26.0
+
+[[light]]
+node = "#9 .table-cell.end-aligned"
+x = 177.0
+y = 45.0
+width = 80.0
+height = 26.0
+
+[[light]]
+node = "#10 .table-cell"
+x = 257.0
+y = 45.0
+width = 100.0
+height = 26.0
+
+[[light]]
+node = "#11 .table-cell"
+x = 357.0
+y = 45.0
+width = 70.0
+height = 26.0
+
+[[light]]
+node = "#12 element"
+x = 17.0
+y = 71.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#13 .table-row.striped"
+x = 17.0
+y = 71.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#14 .table-cell"
+x = 17.0
+y = 71.0
+width = 160.0
+height = 26.0
+
+[[light]]
+node = "#15 .table-cell.end-aligned"
+x = 177.0
+y = 71.0
+width = 80.0
+height = 26.0
+
+[[light]]
+node = "#16 .table-cell"
+x = 257.0
+y = 71.0
+width = 100.0
+height = 26.0
+
+[[light]]
+node = "#17 .table-cell"
+x = 357.0
+y = 71.0
+width = 70.0
+height = 26.0
+
+[[light]]
+node = "#18 element"
+x = 17.0
+y = 97.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#19 .table-row"
+x = 17.0
+y = 97.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#20 .table-cell"
+x = 17.0
+y = 97.0
+width = 160.0
+height = 26.0
+
+[[light]]
+node = "#21 .table-cell.end-aligned"
+x = 177.0
+y = 97.0
+width = 80.0
+height = 26.0
+
+[[light]]
+node = "#22 .table-cell"
+x = 257.0
+y = 97.0
+width = 100.0
+height = 26.0
+
+[[light]]
+node = "#23 .table-cell"
+x = 357.0
+y = 97.0
+width = 70.0
+height = 26.0
+
+[[light]]
+node = "#24 element"
+x = 17.0
+y = 123.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#25 .table-row.striped"
+x = 17.0
+y = 123.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#26 .table-cell"
+x = 17.0
+y = 123.0
+width = 160.0
+height = 26.0
+
+[[light]]
+node = "#27 .table-cell.end-aligned"
+x = 177.0
+y = 123.0
+width = 80.0
+height = 26.0
+
+[[light]]
+node = "#28 .table-cell"
+x = 257.0
+y = 123.0
+width = 100.0
+height = 26.0
+
+[[light]]
+node = "#29 .table-cell"
+x = 357.0
+y = 123.0
+width = 70.0
+height = 26.0
+
+[[light]]
+node = "#30 element"
+x = 17.0
+y = 149.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#31 .table-row"
+x = 17.0
+y = 149.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#32 .table-cell"
+x = 17.0
+y = 149.0
+width = 160.0
+height = 26.0
+
+[[light]]
+node = "#33 .table-cell.end-aligned"
+x = 177.0
+y = 149.0
+width = 80.0
+height = 26.0
+
+[[light]]
+node = "#34 .table-cell"
+x = 257.0
+y = 149.0
+width = 100.0
+height = 26.0
+
+[[light]]
+node = "#35 .table-cell"
+x = 357.0
+y = 149.0
+width = 70.0
+height = 26.0
+
+[[light]]
+node = "#36 .table-header"
+x = 17.0
+y = 17.0
+width = 418.0
+height = 28.0
+
+[[light]]
+node = "#37 .table-header-cell"
+x = 17.0
+y = 17.0
+width = 160.0
+height = 27.0
+
+[[light]]
+node = "#38 text"
+x = 25.0
+y = 23.5
+width = 33.445313
+height = 14.0
+
+[[light]]
+node = "#39 .table-sort"
+x = 62.445313
+y = 24.5
+width = 12.0
+height = 12.0
+
+[[light]]
+node = "#40 .table-resizer"
+x = 168.0
+y = 17.0
+width = 9.0
+height = 27.0
+
+[[light]]
+node = "#41 .table-header-cell.end-aligned.sorted"
+x = 177.0
+y = 17.0
+width = 80.0
+height = 27.0
+
+[[light]]
+node = "#42 text"
+x = 224.6875
+y = 23.5
+width = 24.3125
+height = 14.0
+
+[[light]]
+node = "#43 .table-sort.descending"
+x = 208.6875
+y = 24.5
+width = 12.0
+height = 12.0
+
+[[light]]
+node = "#44 .table-resizer"
+x = 248.0
+y = 17.0
+width = 9.0
+height = 27.0
+
+[[light]]
+node = "#45 .table-header-cell"
+x = 257.0
+y = 17.0
+width = 100.0
+height = 27.0
+
+[[light]]
+node = "#46 text"
+x = 265.0
+y = 23.5
+width = 50.609375
+height = 14.0
+
+[[light]]
+node = "#47 .table-sort"
+x = 319.60938
+y = 24.5
+width = 12.0
+height = 12.0
+
+[[light]]
+node = "#48 .table-resizer"
+x = 348.0
+y = 17.0
+width = 9.0
+height = 27.0
+
+[[light]]
+node = "#49 .table-header-cell"
+x = 357.0
+y = 17.0
+width = 70.0
+height = 27.0
+
+[[light]]
+node = "#50 text"
+x = 365.0
+y = 23.5
+width = 25.929688
+height = 14.0
+
+[[light]]
+node = "#51 .table-sort"
+x = 394.9297
+y = 24.5
+width = 12.0
+height = 12.0
+
+[[light]]
+node = "#52 .table-resizer"
+x = 418.0
+y = 17.0
+width = 9.0
+height = 27.0
+
+[[light]]
+node = "#53 .scroll-bar.vertical"
+x = 424.0
+y = 17.0
+width = 11.0
+height = 160.0
+
+[[light]]
+node = "#54 .scroll-thumb"
+x = 426.0
+y = 19.0
+width = 7.0
+height = 0.0
+
+[[light]]
+node = "#55 .scroll-bar.horizontal"
+x = 17.0
+y = 166.0
+width = 418.0
+height = 11.0
+
+[[light]]
+node = "#56 .scroll-thumb"
+x = 19.0
+y = 168.0
+width = 0.0
+height = 7.0
+
+[[light]]
+node = "#57 .scroll-view.table"
+x = 16.0
+y = 194.0
+width = 420.0
+height = 162.0
+
+[[light]]
+node = "#58 .scroll-viewport"
+x = 17.0
+y = 195.0
+width = 418.0
+height = 160.0
+
+[[light]]
+node = "#59 .table-content"
+x = 17.0
+y = 195.0
+width = 418.0
+height = 158.0
+
+[[light]]
+node = "#60 element"
+x = 17.0
+y = 223.0
+width = 418.0
+height = 130.0
+
+[[light]]
+node = "#61 element"
+x = 17.0
+y = 223.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#62 .table-row"
+x = 17.0
+y = 223.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#63 .table-cell"
+x = 17.0
+y = 223.0
+width = 160.0
+height = 26.0
+
+[[light]]
+node = "#64 .table-cell.end-aligned"
+x = 177.0
+y = 223.0
+width = 80.0
+height = 26.0
+
+[[light]]
+node = "#65 .table-cell"
+x = 257.0
+y = 223.0
+width = 100.0
+height = 26.0
+
+[[light]]
+node = "#66 .table-cell"
+x = 357.0
+y = 223.0
+width = 70.0
+height = 26.0
+
+[[light]]
+node = "#67 element"
+x = 17.0
+y = 249.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#68 .table-row.striped"
+x = 17.0
+y = 249.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#69 .table-cell"
+x = 17.0
+y = 249.0
+width = 160.0
+height = 26.0
+
+[[light]]
+node = "#70 .table-cell.end-aligned"
+x = 177.0
+y = 249.0
+width = 80.0
+height = 26.0
+
+[[light]]
+node = "#71 .table-cell"
+x = 257.0
+y = 249.0
+width = 100.0
+height = 26.0
+
+[[light]]
+node = "#72 .table-cell"
+x = 357.0
+y = 249.0
+width = 70.0
+height = 26.0
+
+[[light]]
+node = "#73 element"
+x = 17.0
+y = 275.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#74 .table-row"
+x = 17.0
+y = 275.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#75 .table-cell"
+x = 17.0
+y = 275.0
+width = 160.0
+height = 26.0
+
+[[light]]
+node = "#76 .table-cell.end-aligned"
+x = 177.0
+y = 275.0
+width = 80.0
+height = 26.0
+
+[[light]]
+node = "#77 .table-cell"
+x = 257.0
+y = 275.0
+width = 100.0
+height = 26.0
+
+[[light]]
+node = "#78 .table-cell"
+x = 357.0
+y = 275.0
+width = 70.0
+height = 26.0
+
+[[light]]
+node = "#79 element"
+x = 17.0
+y = 301.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#80 .table-row.striped"
+x = 17.0
+y = 301.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#81 .table-cell"
+x = 17.0
+y = 301.0
+width = 160.0
+height = 26.0
+
+[[light]]
+node = "#82 .table-cell.end-aligned"
+x = 177.0
+y = 301.0
+width = 80.0
+height = 26.0
+
+[[light]]
+node = "#83 .table-cell"
+x = 257.0
+y = 301.0
+width = 100.0
+height = 26.0
+
+[[light]]
+node = "#84 .table-cell"
+x = 357.0
+y = 301.0
+width = 70.0
+height = 26.0
+
+[[light]]
+node = "#85 element"
+x = 17.0
+y = 327.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#86 .table-row"
+x = 17.0
+y = 327.0
+width = 418.0
+height = 26.0
+
+[[light]]
+node = "#87 .table-cell"
+x = 17.0
+y = 327.0
+width = 160.0
+height = 26.0
+
+[[light]]
+node = "#88 .table-cell.end-aligned"
+x = 177.0
+y = 327.0
+width = 80.0
+height = 26.0
+
+[[light]]
+node = "#89 .table-cell"
+x = 257.0
+y = 327.0
+width = 100.0
+height = 26.0
+
+[[light]]
+node = "#90 .table-cell"
+x = 357.0
+y = 327.0
+width = 70.0
+height = 26.0
+
+[[light]]
+node = "#91 .table-header"
+x = 17.0
+y = 195.0
+width = 418.0
+height = 28.0
+
+[[light]]
+node = "#92 .table-header-cell.sorted"
+x = 17.0
+y = 195.0
+width = 160.0
+height = 27.0
+
+[[light]]
+node = "#93 text"
+x = 25.0
+y = 201.5
+width = 33.445313
+height = 14.0
+
+[[light]]
+node = "#94 .table-sort.ascending"
+x = 62.445313
+y = 202.5
+width = 12.0
+height = 12.0
+
+[[light]]
+node = "#95 .table-resizer"
+x = 168.0
+y = 195.0
+width = 9.0
+height = 27.0
+
+[[light]]
+node = "#96 .table-header-cell.end-aligned"
+x = 177.0
+y = 195.0
+width = 80.0
+height = 27.0
+
+[[light]]
+node = "#97 text"
+x = 224.6875
+y = 201.5
+width = 24.3125
+height = 14.0
+
+[[light]]
+node = "#98 .table-sort"
+x = 208.6875
+y = 202.5
+width = 12.0
+height = 12.0
+
+[[light]]
+node = "#99 .table-resizer"
+x = 248.0
+y = 195.0
+width = 9.0
+height = 27.0
+
+[[light]]
+node = "#100 .table-header-cell"
+x = 257.0
+y = 195.0
+width = 100.0
+height = 27.0
+
+[[light]]
+node = "#101 text"
+x = 265.0
+y = 201.5
+width = 50.609375
+height = 14.0
+
+[[light]]
+node = "#102 .table-sort"
+x = 319.60938
+y = 202.5
+width = 12.0
+height = 12.0
+
+[[light]]
+node = "#103 .table-resizer"
+x = 348.0
+y = 195.0
+width = 9.0
+height = 27.0
+
+[[light]]
+node = "#104 .table-header-cell.dragged"
+x = 357.0
+y = 195.0
+width = 70.0
+height = 27.0
+
+[[light]]
+node = "#105 text"
+x = 365.0
+y = 201.5
+width = 25.929688
+height = 14.0
+
+[[light]]
+node = "#106 .table-sort"
+x = 394.9297
+y = 202.5
+width = 12.0
+height = 12.0
+
+[[light]]
+node = "#107 .table-resizer"
+x = 418.0
+y = 195.0
+width = 9.0
+height = 27.0
+
+[[light]]
+node = "#108 .scroll-bar.vertical"
+x = 424.0
+y = 195.0
+width = 11.0
+height = 160.0
+
+[[light]]
+node = "#109 .scroll-thumb"
+x = 426.0
+y = 197.0
+width = 7.0
+height = 0.0
+
+[[light]]
+node = "#110 .scroll-bar.horizontal"
+x = 17.0
+y = 344.0
+width = 418.0
+height = 11.0
+
+[[light]]
+node = "#111 .scroll-thumb"
+x = 19.0
+y = 346.0
+width = 0.0
+height = 7.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 452.0
+height = 372.0
+
+[[dark]]
+node = "#1 .table-stage"
+x = 0.0
+y = 0.0
+width = 452.0
+height = 372.0
+
+[[dark]]
+node = "#2 .scroll-view.table"
+x = 16.0
+y = 16.0
+width = 420.0
+height = 162.0
+
+[[dark]]
+node = "#3 .scroll-viewport"
+x = 17.0
+y = 17.0
+width = 418.0
+height = 160.0
+
+[[dark]]
+node = "#4 .table-content"
+x = 17.0
+y = 17.0
+width = 418.0
+height = 158.0
+
+[[dark]]
+node = "#5 element"
+x = 17.0
+y = 45.0
+width = 418.0
+height = 130.0
+
+[[dark]]
+node = "#6 element"
+x = 17.0
+y = 45.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#7 .table-row"
+x = 17.0
+y = 45.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#8 .table-cell"
+x = 17.0
+y = 45.0
+width = 160.0
+height = 26.0
+
+[[dark]]
+node = "#9 .table-cell.end-aligned"
+x = 177.0
+y = 45.0
+width = 80.0
+height = 26.0
+
+[[dark]]
+node = "#10 .table-cell"
+x = 257.0
+y = 45.0
+width = 100.0
+height = 26.0
+
+[[dark]]
+node = "#11 .table-cell"
+x = 357.0
+y = 45.0
+width = 70.0
+height = 26.0
+
+[[dark]]
+node = "#12 element"
+x = 17.0
+y = 71.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#13 .table-row.striped"
+x = 17.0
+y = 71.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#14 .table-cell"
+x = 17.0
+y = 71.0
+width = 160.0
+height = 26.0
+
+[[dark]]
+node = "#15 .table-cell.end-aligned"
+x = 177.0
+y = 71.0
+width = 80.0
+height = 26.0
+
+[[dark]]
+node = "#16 .table-cell"
+x = 257.0
+y = 71.0
+width = 100.0
+height = 26.0
+
+[[dark]]
+node = "#17 .table-cell"
+x = 357.0
+y = 71.0
+width = 70.0
+height = 26.0
+
+[[dark]]
+node = "#18 element"
+x = 17.0
+y = 97.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#19 .table-row"
+x = 17.0
+y = 97.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#20 .table-cell"
+x = 17.0
+y = 97.0
+width = 160.0
+height = 26.0
+
+[[dark]]
+node = "#21 .table-cell.end-aligned"
+x = 177.0
+y = 97.0
+width = 80.0
+height = 26.0
+
+[[dark]]
+node = "#22 .table-cell"
+x = 257.0
+y = 97.0
+width = 100.0
+height = 26.0
+
+[[dark]]
+node = "#23 .table-cell"
+x = 357.0
+y = 97.0
+width = 70.0
+height = 26.0
+
+[[dark]]
+node = "#24 element"
+x = 17.0
+y = 123.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#25 .table-row.striped"
+x = 17.0
+y = 123.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#26 .table-cell"
+x = 17.0
+y = 123.0
+width = 160.0
+height = 26.0
+
+[[dark]]
+node = "#27 .table-cell.end-aligned"
+x = 177.0
+y = 123.0
+width = 80.0
+height = 26.0
+
+[[dark]]
+node = "#28 .table-cell"
+x = 257.0
+y = 123.0
+width = 100.0
+height = 26.0
+
+[[dark]]
+node = "#29 .table-cell"
+x = 357.0
+y = 123.0
+width = 70.0
+height = 26.0
+
+[[dark]]
+node = "#30 element"
+x = 17.0
+y = 149.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#31 .table-row"
+x = 17.0
+y = 149.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#32 .table-cell"
+x = 17.0
+y = 149.0
+width = 160.0
+height = 26.0
+
+[[dark]]
+node = "#33 .table-cell.end-aligned"
+x = 177.0
+y = 149.0
+width = 80.0
+height = 26.0
+
+[[dark]]
+node = "#34 .table-cell"
+x = 257.0
+y = 149.0
+width = 100.0
+height = 26.0
+
+[[dark]]
+node = "#35 .table-cell"
+x = 357.0
+y = 149.0
+width = 70.0
+height = 26.0
+
+[[dark]]
+node = "#36 .table-header"
+x = 17.0
+y = 17.0
+width = 418.0
+height = 28.0
+
+[[dark]]
+node = "#37 .table-header-cell"
+x = 17.0
+y = 17.0
+width = 160.0
+height = 27.0
+
+[[dark]]
+node = "#38 text"
+x = 25.0
+y = 23.5
+width = 33.445313
+height = 14.0
+
+[[dark]]
+node = "#39 .table-sort"
+x = 62.445313
+y = 24.5
+width = 12.0
+height = 12.0
+
+[[dark]]
+node = "#40 .table-resizer"
+x = 168.0
+y = 17.0
+width = 9.0
+height = 27.0
+
+[[dark]]
+node = "#41 .table-header-cell.end-aligned.sorted"
+x = 177.0
+y = 17.0
+width = 80.0
+height = 27.0
+
+[[dark]]
+node = "#42 text"
+x = 224.6875
+y = 23.5
+width = 24.3125
+height = 14.0
+
+[[dark]]
+node = "#43 .table-sort.descending"
+x = 208.6875
+y = 24.5
+width = 12.0
+height = 12.0
+
+[[dark]]
+node = "#44 .table-resizer"
+x = 248.0
+y = 17.0
+width = 9.0
+height = 27.0
+
+[[dark]]
+node = "#45 .table-header-cell"
+x = 257.0
+y = 17.0
+width = 100.0
+height = 27.0
+
+[[dark]]
+node = "#46 text"
+x = 265.0
+y = 23.5
+width = 50.609375
+height = 14.0
+
+[[dark]]
+node = "#47 .table-sort"
+x = 319.60938
+y = 24.5
+width = 12.0
+height = 12.0
+
+[[dark]]
+node = "#48 .table-resizer"
+x = 348.0
+y = 17.0
+width = 9.0
+height = 27.0
+
+[[dark]]
+node = "#49 .table-header-cell"
+x = 357.0
+y = 17.0
+width = 70.0
+height = 27.0
+
+[[dark]]
+node = "#50 text"
+x = 365.0
+y = 23.5
+width = 25.929688
+height = 14.0
+
+[[dark]]
+node = "#51 .table-sort"
+x = 394.9297
+y = 24.5
+width = 12.0
+height = 12.0
+
+[[dark]]
+node = "#52 .table-resizer"
+x = 418.0
+y = 17.0
+width = 9.0
+height = 27.0
+
+[[dark]]
+node = "#53 .scroll-bar.vertical"
+x = 424.0
+y = 17.0
+width = 11.0
+height = 160.0
+
+[[dark]]
+node = "#54 .scroll-thumb"
+x = 426.0
+y = 19.0
+width = 7.0
+height = 0.0
+
+[[dark]]
+node = "#55 .scroll-bar.horizontal"
+x = 17.0
+y = 166.0
+width = 418.0
+height = 11.0
+
+[[dark]]
+node = "#56 .scroll-thumb"
+x = 19.0
+y = 168.0
+width = 0.0
+height = 7.0
+
+[[dark]]
+node = "#57 .scroll-view.table"
+x = 16.0
+y = 194.0
+width = 420.0
+height = 162.0
+
+[[dark]]
+node = "#58 .scroll-viewport"
+x = 17.0
+y = 195.0
+width = 418.0
+height = 160.0
+
+[[dark]]
+node = "#59 .table-content"
+x = 17.0
+y = 195.0
+width = 418.0
+height = 158.0
+
+[[dark]]
+node = "#60 element"
+x = 17.0
+y = 223.0
+width = 418.0
+height = 130.0
+
+[[dark]]
+node = "#61 element"
+x = 17.0
+y = 223.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#62 .table-row"
+x = 17.0
+y = 223.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#63 .table-cell"
+x = 17.0
+y = 223.0
+width = 160.0
+height = 26.0
+
+[[dark]]
+node = "#64 .table-cell.end-aligned"
+x = 177.0
+y = 223.0
+width = 80.0
+height = 26.0
+
+[[dark]]
+node = "#65 .table-cell"
+x = 257.0
+y = 223.0
+width = 100.0
+height = 26.0
+
+[[dark]]
+node = "#66 .table-cell"
+x = 357.0
+y = 223.0
+width = 70.0
+height = 26.0
+
+[[dark]]
+node = "#67 element"
+x = 17.0
+y = 249.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#68 .table-row.striped"
+x = 17.0
+y = 249.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#69 .table-cell"
+x = 17.0
+y = 249.0
+width = 160.0
+height = 26.0
+
+[[dark]]
+node = "#70 .table-cell.end-aligned"
+x = 177.0
+y = 249.0
+width = 80.0
+height = 26.0
+
+[[dark]]
+node = "#71 .table-cell"
+x = 257.0
+y = 249.0
+width = 100.0
+height = 26.0
+
+[[dark]]
+node = "#72 .table-cell"
+x = 357.0
+y = 249.0
+width = 70.0
+height = 26.0
+
+[[dark]]
+node = "#73 element"
+x = 17.0
+y = 275.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#74 .table-row"
+x = 17.0
+y = 275.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#75 .table-cell"
+x = 17.0
+y = 275.0
+width = 160.0
+height = 26.0
+
+[[dark]]
+node = "#76 .table-cell.end-aligned"
+x = 177.0
+y = 275.0
+width = 80.0
+height = 26.0
+
+[[dark]]
+node = "#77 .table-cell"
+x = 257.0
+y = 275.0
+width = 100.0
+height = 26.0
+
+[[dark]]
+node = "#78 .table-cell"
+x = 357.0
+y = 275.0
+width = 70.0
+height = 26.0
+
+[[dark]]
+node = "#79 element"
+x = 17.0
+y = 301.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#80 .table-row.striped"
+x = 17.0
+y = 301.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#81 .table-cell"
+x = 17.0
+y = 301.0
+width = 160.0
+height = 26.0
+
+[[dark]]
+node = "#82 .table-cell.end-aligned"
+x = 177.0
+y = 301.0
+width = 80.0
+height = 26.0
+
+[[dark]]
+node = "#83 .table-cell"
+x = 257.0
+y = 301.0
+width = 100.0
+height = 26.0
+
+[[dark]]
+node = "#84 .table-cell"
+x = 357.0
+y = 301.0
+width = 70.0
+height = 26.0
+
+[[dark]]
+node = "#85 element"
+x = 17.0
+y = 327.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#86 .table-row"
+x = 17.0
+y = 327.0
+width = 418.0
+height = 26.0
+
+[[dark]]
+node = "#87 .table-cell"
+x = 17.0
+y = 327.0
+width = 160.0
+height = 26.0
+
+[[dark]]
+node = "#88 .table-cell.end-aligned"
+x = 177.0
+y = 327.0
+width = 80.0
+height = 26.0
+
+[[dark]]
+node = "#89 .table-cell"
+x = 257.0
+y = 327.0
+width = 100.0
+height = 26.0
+
+[[dark]]
+node = "#90 .table-cell"
+x = 357.0
+y = 327.0
+width = 70.0
+height = 26.0
+
+[[dark]]
+node = "#91 .table-header"
+x = 17.0
+y = 195.0
+width = 418.0
+height = 28.0
+
+[[dark]]
+node = "#92 .table-header-cell.sorted"
+x = 17.0
+y = 195.0
+width = 160.0
+height = 27.0
+
+[[dark]]
+node = "#93 text"
+x = 25.0
+y = 201.5
+width = 33.445313
+height = 14.0
+
+[[dark]]
+node = "#94 .table-sort.ascending"
+x = 62.445313
+y = 202.5
+width = 12.0
+height = 12.0
+
+[[dark]]
+node = "#95 .table-resizer"
+x = 168.0
+y = 195.0
+width = 9.0
+height = 27.0
+
+[[dark]]
+node = "#96 .table-header-cell.end-aligned"
+x = 177.0
+y = 195.0
+width = 80.0
+height = 27.0
+
+[[dark]]
+node = "#97 text"
+x = 224.6875
+y = 201.5
+width = 24.3125
+height = 14.0
+
+[[dark]]
+node = "#98 .table-sort"
+x = 208.6875
+y = 202.5
+width = 12.0
+height = 12.0
+
+[[dark]]
+node = "#99 .table-resizer"
+x = 248.0
+y = 195.0
+width = 9.0
+height = 27.0
+
+[[dark]]
+node = "#100 .table-header-cell"
+x = 257.0
+y = 195.0
+width = 100.0
+height = 27.0
+
+[[dark]]
+node = "#101 text"
+x = 265.0
+y = 201.5
+width = 50.609375
+height = 14.0
+
+[[dark]]
+node = "#102 .table-sort"
+x = 319.60938
+y = 202.5
+width = 12.0
+height = 12.0
+
+[[dark]]
+node = "#103 .table-resizer"
+x = 348.0
+y = 195.0
+width = 9.0
+height = 27.0
+
+[[dark]]
+node = "#104 .table-header-cell.dragged"
+x = 357.0
+y = 195.0
+width = 70.0
+height = 27.0
+
+[[dark]]
+node = "#105 text"
+x = 365.0
+y = 201.5
+width = 25.929688
+height = 14.0
+
+[[dark]]
+node = "#106 .table-sort"
+x = 394.9297
+y = 202.5
+width = 12.0
+height = 12.0
+
+[[dark]]
+node = "#107 .table-resizer"
+x = 418.0
+y = 195.0
+width = 9.0
+height = 27.0
+
+[[dark]]
+node = "#108 .scroll-bar.vertical"
+x = 424.0
+y = 195.0
+width = 11.0
+height = 160.0
+
+[[dark]]
+node = "#109 .scroll-thumb"
+x = 426.0
+y = 197.0
+width = 7.0
+height = 0.0
+
+[[dark]]
+node = "#110 .scroll-bar.horizontal"
+x = 17.0
+y = 344.0
+width = 418.0
+height = 11.0
+
+[[dark]]
+node = "#111 .scroll-thumb"
+x = 19.0
+y = 346.0
+width = 0.0
+height = 7.0

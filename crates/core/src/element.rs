@@ -1,4 +1,4 @@
-use morok_style::{Class, States};
+use morok_style::{Class, Overflow, States};
 use taffy::{Cache, DetailedLayoutInfo, Layout};
 
 use crate::accessibility::semantics::Semantics;
@@ -17,6 +17,8 @@ use crate::scroll::scroll_state::ScrollState;
 use crate::style::computed_style::ComputedStyle;
 use crate::style::inline_style::InlineStyle;
 use crate::style::positioning::Positioning;
+use crate::style::resolved_length::ResolvedLength;
+use crate::style::resolved_length_or_auto::ResolvedLengthOrAuto;
 use crate::style::selector_target::SelectorTarget;
 use crate::style::style_lists::StyleLists;
 use crate::text::text_layout::TextLayout;
@@ -69,6 +71,9 @@ pub(crate) struct Element {
     pub(crate) shift: Point,
     /// Whether the element is the thumb of a scroll bar, which the tree moves along its bar.
     pub(crate) is_scroll_thumb: bool,
+    /// How far a component moves the element from where layout placed it; none for an element
+    /// no component ever moved.
+    pub(crate) displacement: Option<Point>,
 }
 
 impl Element {
@@ -101,13 +106,40 @@ impl Element {
             scroll: (role == Role::Scroll).then(Box::default),
             shift: Point::default(),
             is_scroll_thumb: false,
+            displacement: None,
         }
     }
 
-    /// Whether the frame may move the element from where layout placed it; such an element
-    /// paints as a group, so that it moves as one.
+    /// Whether the frame or a component may move the element from where layout placed it; such
+    /// an element paints as a group, so that it moves as one.
     pub(crate) fn is_shifted(&self) -> bool {
-        self.is_scroll_thumb || self.style.layout.positioning == Positioning::Sticky
+        self.is_scroll_thumb || self.displacement.is_some() || self.style.layout.positioning == Positioning::Sticky
+    }
+
+    /// How far the element stands from where layout placed it.
+    pub(crate) fn moved_by(&self) -> Point {
+        let displacement = self.displacement.unwrap_or_default();
+        Point {
+            x: self.shift.x + displacement.x,
+            y: self.shift.y + displacement.y,
+        }
+    }
+
+    /// Whether the boxes of the tree stay as they are whatever text the element holds: its width
+    /// and its height are lengths, and its parent hides what overflows it, so that no scroll is
+    /// as long as the text.
+    pub(crate) fn keeps_its_box_for_any_text(&self, parent: &Self) -> bool {
+        let is_length = |size: ResolvedLengthOrAuto| {
+            matches!(
+                size,
+                ResolvedLengthOrAuto::Length(ResolvedLength { fraction: None, .. })
+            )
+        };
+        let hides_overflow = |overflow: Overflow| overflow == Overflow::Hidden;
+        is_length(self.style.layout.width)
+            && is_length(self.style.layout.height)
+            && hides_overflow(parent.style.layout.overflow_x)
+            && hides_overflow(parent.style.layout.overflow_y)
     }
 
     pub(crate) fn selector_target(&self) -> SelectorTarget<'_> {

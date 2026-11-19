@@ -1,15 +1,18 @@
 use std::fmt::Write;
 
+use morok_core::Point;
 use morok_style::{Declaration, LengthPercentage, LengthPercentageAuto, Position, Side};
 
 /// The declarations set on an element directly, written as the value of its `style` attribute.
 /// The stand writes the geometry a component places by its state: positions, sizes, insets and
-/// paddings in pixels and percentages.
+/// paddings in pixels and percentages. How far a component moved the element from where layout
+/// placed it is its `translate`, which like the displacement moves the element after its
+/// `transform`.
 ///
 /// # Panics
 ///
 /// When a declaration is one the stand writes no CSS for, or refers to a token.
-pub(crate) fn style_attribute(declarations: &[Declaration]) -> String {
+pub(crate) fn style_attribute(declarations: &[Declaration], displacement: Option<Point>) -> String {
     let mut style = String::new();
     for declaration in declarations {
         let (property, value) = match declaration {
@@ -27,6 +30,12 @@ pub(crate) fn style_attribute(declarations: &[Declaration]) -> String {
             style.push(' ');
         }
         let _ = write!(style, "{property}: {value};");
+    }
+    if let Some(displacement) = displacement {
+        if !style.is_empty() {
+            style.push(' ');
+        }
+        let _ = write!(style, "translate: {}px {}px;", displacement.x, displacement.y);
     }
     style
 }
@@ -90,6 +99,7 @@ fn css_length(value: &LengthPercentageAuto) -> String {
 mod tests {
     use std::borrow::Cow;
 
+    use morok_core::Point;
     use morok_style::{Declaration, LengthPercentage, LengthPercentageAuto, Pixels, Side};
 
     use super::style_attribute;
@@ -104,13 +114,28 @@ mod tests {
 
     #[test]
     fn sizes_and_insets_are_written_in_pixels_percentages_and_their_sums() {
-        let style = style_attribute(&[
-            Declaration::Width(length(0.0, Some(0.25))),
-            Declaration::Inset(Side::Left, length(-9.0, Some(0.5))),
-            Declaration::Height(length(12.0, None)),
-            Declaration::Inset(Side::Top, LengthPercentageAuto::Auto),
-        ]);
+        let style = style_attribute(
+            &[
+                Declaration::Width(length(0.0, Some(0.25))),
+                Declaration::Inset(Side::Left, length(-9.0, Some(0.5))),
+                Declaration::Height(length(12.0, None)),
+                Declaration::Inset(Side::Top, LengthPercentageAuto::Auto),
+            ],
+            None,
+        );
 
         assert_eq!(style, "width: 25%; left: calc(50% - 9px); height: 12px; top: auto;");
+    }
+
+    #[test]
+    fn a_displacement_is_written_as_a_translation_after_the_declarations() {
+        let moved = Some(Point { x: 120.0, y: 52.0 });
+
+        assert_eq!(
+            style_attribute(&[Declaration::Height(length(26.0, None))], moved),
+            "height: 26px; translate: 120px 52px;"
+        );
+        assert_eq!(style_attribute(&[], moved), "translate: 120px 52px;");
+        assert_eq!(style_attribute(&[], None), "");
     }
 }

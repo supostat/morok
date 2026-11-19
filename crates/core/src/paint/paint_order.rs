@@ -180,10 +180,11 @@ impl PaintOrder<'_> {
         }
     }
 
-    /// Opens, outermost first, the clips of the ancestors of a positioned element and the
-    /// scrolls of its `Scroll` ancestors inside `context`; the stacking context opened those
-    /// outside it. An absolutely positioned element is clipped only from its containing block
-    /// up: the ancestors between the two do not contain it.
+    /// Opens, outermost first, the clips and the scrolls of the ancestors of a positioned
+    /// element from `context` inwards; whoever opened the stacking context opened those around
+    /// it, in the coordinates the context is placed in. An absolutely positioned element is
+    /// clipped only from its containing block up: the ancestors between the two do not contain
+    /// it.
     fn open_ancestors(&mut self, positioned: ElementId, context: ElementId) {
         self.collect_ancestors(positioned, context);
         for &(ancestor, clips, scrolls) in self.ancestor_layers.iter().rev() {
@@ -209,13 +210,12 @@ impl PaintOrder<'_> {
         }
     }
 
-    /// The ancestors of a positioned element that clip it or scroll it, innermost first, each
-    /// with whether it clips and whether it scrolls.
+    /// The ancestors of a positioned element, up to `context`, that clip it or scroll it,
+    /// innermost first, each with whether it clips and whether it scrolls.
     fn collect_ancestors(&mut self, positioned: ElementId, context: ElementId) {
         let element = &self.elements[positioned];
         let containing_block = element.containing_block;
         let mut is_contained = element.style.layout.positioning != Positioning::Absolute;
-        let mut is_inside_context = positioned != context;
         let mut ancestor = element.parent;
         self.ancestor_layers.clear();
         while let Some(current) = ancestor {
@@ -224,12 +224,12 @@ impl PaintOrder<'_> {
             }
             let element = &self.elements[current];
             let clips = is_contained && element.style.layout.clips_overflow();
-            let scrolls = is_inside_context && element.scroll.is_some();
+            let scrolls = element.scroll.is_some();
             if clips || scrolls {
                 self.ancestor_layers.push((current, clips, scrolls));
             }
             if current == context {
-                is_inside_context = false;
+                break;
             }
             ancestor = element.parent;
         }

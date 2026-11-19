@@ -388,9 +388,37 @@ impl ElementTree {
         }
         held.dirty.insert(Dirty::PAINT);
         let is_attached = held.is_attached;
+        let keeps_its_box = held
+            .parent
+            .is_some_and(|parent| self.elements[element].keeps_its_box_for_any_text(&self.elements[parent]));
         self.elements.invalidate_text(element);
         if is_attached {
-            self.elements.invalidate_layout(element);
+            if !keeps_its_box {
+                self.elements.invalidate_layout(element);
+            }
+            self.has_unpainted_changes = true;
+            self.request_frame();
+        }
+    }
+
+    /// How far a component moved the element from where layout placed it; none for an element
+    /// no component ever moved.
+    pub fn displacement(&self, element: ElementId) -> Option<Point> {
+        self.elements[element].displacement
+    }
+
+    /// Moves the element, with everything inside it, by `displacement` from where layout placed
+    /// it, as a picture: no style is resolved and no box is laid out. An element moved once
+    /// paints as a group from then on, a displacement of nothing included.
+    pub fn set_displacement(&mut self, element: ElementId, displacement: Point) {
+        let held = &mut self.elements[element];
+        let before = held.displacement.replace(displacement);
+        if before == Some(displacement) {
+            return;
+        }
+        held.dirty.insert(Dirty::PAINT);
+        if held.is_attached {
+            self.paint_order_is_stale |= before.is_none();
             self.has_unpainted_changes = true;
             self.request_frame();
         }

@@ -4,6 +4,7 @@ use morok_style::{Declaration, Position, Side};
 
 use crate::length_in_pixels::pixels;
 use crate::scroll_frame::ScrollFrame;
+use crate::slot_window::SlotWindow;
 use crate::view::{Mount, ScrollArea};
 
 /// How many rows a view keeps from the start, before its first frame tells how many its
@@ -14,29 +15,61 @@ const FIRST_POOL: usize = 32;
 const OVERSCAN: usize = 4;
 
 /// Rows of one height in a view whose content scrolls, of which only those the viewport shows
-/// have elements: a pool of row slots, each placed at the row it shows. A scroll binds the slots
+/// have elements: a pool of row slots, each moved to the row it shows. A scroll binds the slots
 /// that leave the viewport to the rows that come into it; the other slots keep their rows, and
 /// no slot is built again. The number of elements depends on the viewport, never on the rows.
+///
+/// Every slot is laid out at the top of the rows and moved to its row as a picture, so a scroll
+/// lays out no box, and what a slot holds keeps the small coordinates layout gave it however
+/// far down its row lies.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct VirtualRows {
     pub(crate) frame: ScrollFrame,
     /// How far the viewport is scrolled and how large it is, as the last frame found them.
     pub(crate) area: Signal<ScrollArea>,
     row_height: f32,
+    /// How much of the top of the viewport something that stays there covers: a header.
+    covered_top: f32,
 }
 
 impl VirtualRows {
-    /// Builds the view of `count` rows `row_height` high: `row` builds the content of a slot,
-    /// given the index of the row the slot shows.
+    /// Builds the view of `count` rows `row_height` high, the rows being all its content:
+    /// `row` builds the content of a slot, given the index of the row the slot shows.
     pub(crate) fn mount(
         mount: &mut Mount<'_>,
         count: Source<usize>,
         row_height: f32,
         row: impl Fn(&mut Mount<'_>, Memo<usize>) -> ElementId + 'static,
     ) -> Self {
-        let rows = mount.element().inline(Declaration::Position(Position::Relative)).id();
+        let rows = mount.element().id();
         let frame = ScrollFrame::mount(mount, rows);
-        let area = mount.follow_scroll(frame.viewport);
+        let view = Self::of_frame(mount, frame, row_height, 0.0);
+        view.fill(mount, rows, count, row);
+        view
+    }
+
+    /// The rows of the view of `frame`, each `row_height` high. They begin `covered_top` below
+    /// the top of the content, under something that stays at the top of the viewport.
+    pub(crate) fn of_frame(mount: &mut Mount<'_>, frame: ScrollFrame, row_height: f32, covered_top: f32) -> Self {
+        Self {
+            frame,
+            area: mount.follow_scroll(frame.viewport),
+            row_height,
+            covered_top,
+        }
+    }
+
+    /// Fills `rows`, an element of the content of the view, with the slots of `count` rows and
+    /// makes it as high as all of them: `row` builds the content of a slot, given the index of
+    /// the row the slot shows.
+    pub(crate) fn fill(
+        self,
+        mount: &mut Mount<'_>,
+        rows: ElementId,
+        count: Source<usize>,
+        row: impl Fn(&mut Mount<'_>, Memo<usize>) -> ElementId + 'static,
+    ) {
+        let Self { area, row_height, .. } = self;
         let runtime = mount.runtime();
         let window = runtime.memo(move |runtime| {
             let area = runtime.get(area);
@@ -45,38 +78,41 @@ impl VirtualRows {
                 .max(FIRST_POOL)
                 .min(count);
             let first = whole_rows_in(area.offset.y.max(0.0), row_height).min(count - pool);
-            RowWindow { first, pool }
+            SlotWindow { first, pool }
         });
-        let slots = runtime.memo(move |runtime| (0..runtime.get(window).pool).collect::<Vec<usize>>());
+        let pool = runtime.memo(move |runtime| runtime.get(window).pool);
+        let slots = runtime.memo(move |runtime| (0..runtime.get(pool)).collect::<Vec<usize>>());
         let height =
             runtime.memo(move |runtime| Declaration::Height(pixels(length_of(runtime.get(count), row_height))));
-        mount.build(rows).inline(height).for_each(
-            slots,
-            |slot| *slot,
-            move |mount, slot| {
-                let slot = *slot;
-                let runtime = mount.runtime();
-                let index = runtime.memo(move |runtime| runtime.get(window).row_of_slot(slot));
-                let place = runtime.memo(move |runtime| {
-                    Declaration::Inset(Side::Top, pixels(length_of(runtime.get(index), row_height)))
-                });
-                let content = row(mount, index);
-                mount
-                    .element()
-                    .inline(Declaration::Position(Position::Absolute))
-                    .inline(Declaration::Inset(Side::Left, pixels(0.0)))
-                    .inline(Declaration::Inset(Side::Right, pixels(0.0)))
-                    .inline(Declaration::Height(pixels(row_height)))
-                    .inline(place)
-                    .child(content)
-                    .id()
-            },
-        );
-        Self {
-            frame,
-            area,
-            row_height,
-        }
+        mount
+            .build(rows)
+            .inline(Declaration::Position(Position::Relative))
+            .inline(height)
+            .for_each(
+                slots,
+                |slot| *slot,
+                move |mount, slot| {
+                    let slot = *slot;
+                    let index = mount
+                        .runtime()
+                        .memo(move |runtime| runtime.get(window).item_of_slot(slot));
+                    let content = row(mount, index);
+                    let slot_element = mount
+                        .element()
+                        .inline(Declaration::Position(Position::Absolute))
+                        .inline(Declaration::Inset(Side::Top, pixels(0.0)))
+                        .inline(Declaration::Inset(Side::Left, pixels(0.0)))
+                        .inline(Declaration::Inset(Side::Right, pixels(0.0)))
+                        .inline(Declaration::Height(pixels(row_height)))
+                        .child(content)
+                        .id();
+                    mount.effect(move |runtime, tree| {
+                        let row_top = length_of(runtime.get(index), row_height);
+                        tree.set_displacement(slot_element, Point { x: 0.0, y: row_top });
+                    });
+                    slot_element
+                },
+            );
     }
 
     /// Scrolls the view as little as brings the row into view whenever `row` changes: the row
@@ -86,11 +122,13 @@ impl VirtualRows {
             frame,
             area,
             row_height,
+            covered_top,
         } = self;
         mount.effect(move |runtime, tree| {
             let top = length_of(runtime.get(row), row_height);
             let area = runtime.untracked(|runtime| runtime.get(area));
-            let (offset, height) = (area.offset.y, area.viewport.height);
+            let offset = area.offset.y;
+            let height = area.viewport.height - covered_top;
             let goal = if height <= 0.0 {
                 None
             } else if top < offset {
@@ -110,25 +148,6 @@ impl VirtualRows {
                 );
             }
         });
-    }
-}
-
-/// The rows a view has slots for: as many as the pool holds, from `first` on.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-struct RowWindow {
-    first: usize,
-    pool: usize,
-}
-
-impl RowWindow {
-    /// The row a slot shows: each the row of the window that leaves the number of the slot
-    /// when divided by the size of the pool, so that a scroll rebinds only the slots whose
-    /// rows left the window.
-    fn row_of_slot(self, slot: usize) -> usize {
-        // A slot about to go with a pool that shrank to nothing reads the window once more.
-        self.first.checked_rem(self.pool).map_or(self.first, |first_slot| {
-            self.first + (slot + self.pool - first_slot) % self.pool
-        })
     }
 }
 

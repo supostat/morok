@@ -139,6 +139,19 @@ impl Scene {
         self.tree_mut().set_state(element, states, true);
     }
 
+    /// Gives the element a class a component gives it only while the user does something.
+    ///
+    /// # Panics
+    ///
+    /// When the stylesheets of the suite name no such class.
+    pub fn add_class(&mut self, element: ElementId, class_name: &str) {
+        let class = self
+            .style_sheet
+            .class_named(class_name)
+            .unwrap_or_else(|| panic!("the stylesheets of the suite name no class `{class_name}`"));
+        self.tree_mut().add_class(element, class);
+    }
+
     /// The elements that have the class, in document order.
     pub fn elements_with_class(&self, class_name: &str) -> Vec<ElementId> {
         let class = self

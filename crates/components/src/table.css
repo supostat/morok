@@ -1,0 +1,134 @@
+/* A table: rows of cells in columns under a header that stays at the top, in a view that
+   scrolls, the selected rows marked, in every state. A header cell shows the arrow of the order
+   its column sorts the rows in, and ends in the edge that resizes the column. */
+
+.table {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background-color: var(--color-surface);
+}
+
+.table:focus-within {
+  outline: 2px solid var(--color-focus);
+}
+
+/* The header comes after the rows, so that it is painted over them, and stands above them. */
+.table-content {
+  display: flex;
+  flex-direction: column-reverse;
+  min-width: 100%;
+}
+
+.table-header {
+  position: sticky;
+  top: 0;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--color-line);
+  background-color: var(--color-surface-2);
+}
+
+.table-header-cell {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  overflow: hidden;
+  color: var(--color-text-2);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: var(--text-weight-medium);
+  white-space: nowrap;
+}
+
+/* The title of a column of numbers stands at the right edge, over their last digits. */
+.table-header-cell.end-aligned {
+  flex-direction: row-reverse;
+}
+
+.table-header-cell:hover,
+.table-header-cell:active {
+  background-color: var(--color-surface-sunken);
+}
+
+.table-header-cell.sorted {
+  color: var(--color-text);
+}
+
+.table-header-cell.dragged {
+  background-color: var(--color-accent-soft);
+  color: var(--color-text);
+}
+
+/* The arrow keeps its place while its column sorts nothing, so that a title does not move
+   when its column comes to sort the rows. */
+.table-sort {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  color: transparent;
+}
+
+.table-sort.ascending {
+  color: var(--color-text);
+}
+
+.table-sort.descending {
+  color: var(--color-text);
+  transform: rotate(180deg);
+}
+
+.table-resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 9px;
+  border-right: 1px solid var(--color-line);
+}
+
+.table-resizer:hover,
+.table-resizer:active {
+  border-right-color: var(--color-accent);
+}
+
+.table-row {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--text-leading);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table-row.striped {
+  background-color: var(--color-surface-2);
+}
+
+.table-row:hover,
+.table-row:active {
+  background-color: var(--color-surface-sunken);
+}
+
+.table-row:checked {
+  background-color: var(--color-selection);
+}
+
+.table-cell {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 3.5px var(--space-2) 0;
+}
+
+.table-cell.end-aligned {
+  text-align: right;
+}

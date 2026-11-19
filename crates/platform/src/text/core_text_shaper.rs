@@ -1,3 +1,4 @@
+use std::mem;
 use std::ptr::{self, NonNull};
 
 use morok_core::{
@@ -11,7 +12,7 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use crate::text::font_library::font_library;
 use crate::text::measure_cache::{MeasureCache, MeasureKey};
-use crate::text::typeset_text::TypesetText;
+use crate::text::typeset_text::{TypesetScratch, TypesetText};
 
 /// A line as wide as the width it is cut to needs no ellipsis; widths come out of sums of floats.
 const FIT_TOLERANCE: f32 = 0.01;
@@ -25,6 +26,7 @@ pub struct CoreTextShaper {
     /// Scratch space for the glyphs and positions of a run.
     run_glyphs: Vec<CGGlyph>,
     run_positions: Vec<CGPoint>,
+    typeset_scratch: TypesetScratch,
 }
 
 impl CoreTextShaper {
@@ -118,12 +120,18 @@ impl TextShaper for CoreTextShaper {
         if let Some(extent) = self.measurements.get(key, request.text) {
             return extent;
         }
-        let typeset = TypesetText::new(request.text, &font, request.letter_spacing);
+        let typeset = TypesetText::new(
+            request.text,
+            &font,
+            request.letter_spacing,
+            request.width,
+            &mut self.typeset_scratch,
+        );
         let extent = if request.width == WidthConstraint::MinContent {
             typeset.unbreakable_extent()
         } else {
             let mut extent = TextExtent::default();
-            typeset.for_each_line(request.width, |line| {
+            typeset.for_each_line(|line| {
                 extent.width = extent.width.max(line_width(line));
                 extent.line_count += 1;
             });
@@ -139,8 +147,15 @@ impl TextShaper for CoreTextShaper {
             return;
         }
         let (_, font) = resolved(&request.font);
-        let typeset = TypesetText::new(request.text, &font, request.letter_spacing);
-        typeset.for_each_line(request.width, |line| {
+        let mut typeset_scratch = mem::take(&mut self.typeset_scratch);
+        let typeset = TypesetText::new(
+            request.text,
+            &font,
+            request.letter_spacing,
+            request.width,
+            &mut typeset_scratch,
+        );
+        typeset.for_each_line(|line| {
             let cut = ellipsis_width
                 .filter(|width| line_width(line) > width + FIT_TOLERANCE)
                 .and_then(|width| {
@@ -155,6 +170,8 @@ impl TextShaper for CoreTextShaper {
                 });
             self.append_line(cut.as_deref().unwrap_or(line), shaped);
         });
+        drop(typeset);
+        self.typeset_scratch = typeset_scratch;
     }
 
     fn shape_editable(&mut self, request: &TextRequest<'_>, shaped: &mut ShapedText, carets: &mut CaretLines) {
@@ -164,9 +181,16 @@ impl TextShaper for CoreTextShaper {
             return;
         }
         let (_, font) = resolved(&request.font);
-        let typeset = TypesetText::new(request.text, &font, request.letter_spacing);
+        let mut typeset_scratch = mem::take(&mut self.typeset_scratch);
+        let typeset = TypesetText::new(
+            request.text,
+            &font,
+            request.letter_spacing,
+            request.width,
+            &mut typeset_scratch,
+        );
         let mut line_start = 0;
-        typeset.for_each_line(request.width, |line| {
+        typeset.for_each_line(|line| {
             // SAFETY: the line is valid.
             let utf16_length = unsafe { line.string_range() }.length as usize;
             let line_end = byte_after_utf16(request.text, line_start, utf16_length);
@@ -174,6 +198,8 @@ impl TextShaper for CoreTextShaper {
             self.append_line(line, shaped);
             line_start = line_end;
         });
+        drop(typeset);
+        self.typeset_scratch = typeset_scratch;
     }
 }
 

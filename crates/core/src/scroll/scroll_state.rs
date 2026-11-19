@@ -32,6 +32,10 @@ pub(crate) struct ScrollState {
     pub(crate) is_in_gesture: bool,
     /// Whether the offset moved in the last frame, so that its scroll bars show.
     pub(crate) moved_in_last_frame: bool,
+    /// What the scrolls of each axis moved the content by that its offset cannot tell: far
+    /// down a long content an offset has steps of more than a pixel. It joins the next scroll,
+    /// so that small scrolls add up.
+    carried: [f64; 2],
 }
 
 impl ScrollState {
@@ -51,6 +55,7 @@ impl ScrollState {
     pub(crate) fn move_to(&mut self, offset: Point) {
         self.offset = self.clamped(offset);
         self.unresisted = self.offset;
+        self.carried = [0.0; 2];
     }
 
     /// Moves the content by a scroll of the phase: a scroll of no gesture stops at the limits,
@@ -61,15 +66,31 @@ impl ScrollState {
             x: if scrolls_x { delta.x } else { 0.0 },
             y: if scrolls_y { delta.y } else { 0.0 },
         };
+        let [carried_x, carried_y] = &mut self.carried;
         if !phase.is_of_gesture() {
-            self.move_to(Point {
-                x: self.offset.x + delta.x,
-                y: self.offset.y + delta.y,
-            });
+            let goal = Point {
+                x: advanced(self.offset.x, delta.x, carried_x),
+                y: advanced(self.offset.y, delta.y, carried_y),
+            };
+            let [left_over_x, left_over_y] = self.carried;
+            self.move_to(goal);
+            // An axis stopped by its limit has nothing left to carry.
+            self.carried = [
+                if self.offset.x.to_bits() == goal.x.to_bits() {
+                    left_over_x
+                } else {
+                    0.0
+                },
+                if self.offset.y.to_bits() == goal.y.to_bits() {
+                    left_over_y
+                } else {
+                    0.0
+                },
+            ];
             return;
         }
-        self.unresisted.x += delta.x;
-        self.unresisted.y += delta.y;
+        self.unresisted.x = advanced(self.unresisted.x, delta.x, carried_x);
+        self.unresisted.y = advanced(self.unresisted.y, delta.y, carried_y);
         self.offset = Point {
             x: shown_offset(self.unresisted.x, self.limit.x, self.viewport.width),
             y: shown_offset(self.unresisted.y, self.limit.y, self.viewport.height),
@@ -79,9 +100,23 @@ impl ScrollState {
     /// Takes the gesture back from where the content is now, past a limit or not: a spring
     /// that was taking it back has been stopped.
     pub(crate) fn resume_gesture(&mut self) {
+        self.carried = [0.0; 2];
         self.unresisted = Point {
             x: unresisted_offset(self.offset.x, self.limit.x, self.viewport.width),
             y: unresisted_offset(self.offset.y, self.limit.y, self.viewport.height),
         };
     }
+}
+
+/// The offset `delta` further than `offset`, as near as an offset of its magnitude tells it;
+/// what is left over is carried to the next scroll of the axis.
+fn advanced(offset: f32, delta: f32, carried: &mut f64) -> f32 {
+    let precise = f64::from(offset) + f64::from(delta) + *carried;
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "offsets are single precision; the rest is carried"
+    )]
+    let advanced = precise as f32;
+    *carried = precise - f64::from(advanced);
+    advanced
 }

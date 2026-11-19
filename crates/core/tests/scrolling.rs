@@ -9,6 +9,7 @@ use support::{InputLog, Scene};
 const STAGE: &str = ".viewport { overflow: auto; position: relative; width: 200px; height: 100px; }\n\
     .row { height: 40px; }\n\
     .wide { width: 500px; height: 10px; }\n\
+    .endless { height: 30000000px; }\n\
     .section { height: 120px; }\n\
     .header { position: sticky; top: 0; height: 20px; }\n\
     .bar { position: absolute; left: 200px; top: 0; width: 8px; height: 100px; }\n\
@@ -347,5 +348,71 @@ fn a_thumb_is_as_long_as_the_share_the_viewport_shows_and_travels_with_the_offse
     assert!(
         !list.scene.tree.classes(thumb).contains(&showing),
         "it hides once the content rests"
+    );
+}
+
+#[test]
+fn small_scrolls_far_down_a_long_content_add_up() {
+    let mut scene = Scene::new(STAGE);
+    let viewport = scene.add(scene.root(), Role::Scroll, &["viewport"]);
+    scene.add(viewport, Role::Element, &["endless"]);
+    scene.frame();
+    let far_down = 20_000_000.0;
+    scene.tree.scroll_to(viewport, Point { x: 0.0, y: far_down });
+    scene.frame();
+    assert_near(
+        scene.tree.scroll_offset(viewport).y,
+        far_down,
+        "the content is scrolled far down",
+    );
+    let mut scroll = |delta_y: f32, phase: ScrollPhase| {
+        scene.tree.scroll_input(&ScrollInput {
+            position: Point { x: 100.0, y: 50.0 },
+            delta: Point { x: 0.0, y: delta_y },
+            phase,
+        });
+        scene.tree.scroll_offset(viewport).y
+    };
+
+    let mut offset = far_down;
+    for _ in 0..8 {
+        offset = scroll(0.5, ScrollPhase::Discrete);
+    }
+    assert_near(
+        offset,
+        far_down + 4.0,
+        "eight turns of half a pixel, where an offset has steps of two",
+    );
+
+    scroll(0.5, ScrollPhase::GestureBegan);
+    for _ in 0..7 {
+        offset = scroll(0.5, ScrollPhase::GestureChanged);
+    }
+    assert_near(offset, far_down + 8.0, "and so do the moves of a gesture");
+}
+
+#[test]
+fn an_element_a_component_moved_is_brought_into_view_where_it_stands() {
+    let mut list = ListScene::new();
+    let moved = list.rows[1];
+    list.scene
+        .tree
+        .set_accessible_role(moved, Some(AccessibleRole::ListItem));
+    list.scene.tree.set_displacement(moved, Point { x: 0.0, y: 200.0 });
+    list.scene.frame();
+
+    let request = ActionRequest {
+        action: Action::ScrollIntoView,
+        target_tree: TreeId::ROOT,
+        target_node: NodeId::from(moved),
+        data: None,
+    };
+    list.scene.tree.accessibility_action(&request, &mut InputLog::default());
+    list.scene.frame();
+
+    assert_near(
+        list.offset().y,
+        180.0,
+        "the row laid out from 40 to 80 stands from 240 to 280, and the viewport shows 100",
     );
 }

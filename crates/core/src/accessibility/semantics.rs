@@ -171,6 +171,21 @@ impl Semantics {
         if let Some(size) = self.item.size_of_set {
             node.set_size_of_set(size);
         }
+        if let Some(count) = self.item.row_count {
+            node.set_row_count(count);
+        }
+        if let Some(count) = self.item.column_count {
+            node.set_column_count(count);
+        }
+        if let Some(index) = self.item.row_index {
+            node.set_row_index(index);
+        }
+        if let Some(index) = self.item.column_index {
+            node.set_column_index(index);
+        }
+        if let Some(direction) = self.item.sort_direction {
+            node.set_sort_direction(direction);
+        }
         if facts.takes_focus {
             node.add_action(Action::Focus);
         }

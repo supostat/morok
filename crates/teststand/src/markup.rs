@@ -21,8 +21,8 @@ pub(crate) const SELECTION_START_ATTRIBUTE: &str = "data-selection-start";
 pub(crate) const SELECTION_END_ATTRIBUTE: &str = "data-selection-end";
 
 /// The markup Chrome lays the tree of the scene out from: one `div` per element, in document
-/// order, with the classes of the element, the marker classes of its states and the
-/// declarations set on it directly. A text holds
+/// order, with the classes of the element, the marker classes of its states, the
+/// declarations set on it directly and the displacement a component gave it. A text holds
 /// its characters; an icon is its SVG inline, so that `currentColor` is the color of the
 /// element; an image is an `img` with its file as a data URL. An edited text holds its
 /// characters, or while it is empty its placeholder; a focused one tells the page where its
@@ -57,9 +57,9 @@ fn write_element(scene: &Scene, element: ElementId, markup: &mut String) {
     } else {
         format!(" class=\"{}\"", classes.join(" "))
     };
-    let inline_declarations = tree.inline_declarations(element);
-    if !inline_declarations.is_empty() {
-        let _ = write!(attributes, " style=\"{}\"", style_attribute(inline_declarations));
+    let style = style_attribute(tree.inline_declarations(element), tree.displacement(element));
+    if !style.is_empty() {
+        let _ = write!(attributes, " style=\"{style}\"");
     }
     attributes.push_str(&scroll_attributes(scene, element));
     match role {

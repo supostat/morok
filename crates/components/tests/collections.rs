@@ -3,7 +3,7 @@ mod support;
 use std::borrow::Cow;
 
 use morok_components::view::Mount;
-use morok_components::{List, ListSelection, Tabs, Tree, TreeItem};
+use morok_components::{List, RowSelection, Tabs, Tree, TreeItem};
 use morok_core::accesskit::Role as AccessibleRole;
 use morok_core::{ElementId, Key, Modifiers};
 use morok_reactive::Signal;
@@ -34,7 +34,7 @@ fn rows_of(stage: &Stage, view: ElementId) -> Vec<ElementId> {
     slots.into_iter().map(|slot| stage.children(slot)[0]).collect()
 }
 
-fn list(selection: ListSelection) -> (Stage, ElementId, Signal<Vec<usize>>) {
+fn list(selection: RowSelection) -> (Stage, ElementId, Signal<Vec<usize>>) {
     let mut stage = Stage::new();
     let selected = stage.runtime.signal(Vec::new());
     let view = stage.mount(move |mount| {
@@ -50,7 +50,7 @@ fn list(selection: ListSelection) -> (Stage, ElementId, Signal<Vec<usize>>) {
 
 #[test]
 fn a_click_and_the_arrow_keys_select_one_row_of_a_list() {
-    let (mut stage, view, selected) = list(ListSelection::Single);
+    let (mut stage, view, selected) = list(RowSelection::Single);
     let rows = rows_of(&stage, view);
     let viewport = stage.children(view)[0];
 
@@ -73,7 +73,7 @@ fn a_click_and_the_arrow_keys_select_one_row_of_a_list() {
 
 #[test]
 fn shift_and_space_select_more_rows_of_a_list_that_takes_many() {
-    let (mut stage, view, selected) = list(ListSelection::Multiple);
+    let (mut stage, view, selected) = list(RowSelection::Multiple);
     let viewport = stage.children(view)[0];
     stage.click(rows_of(&stage, view)[1]);
     assert!(stage.focus(viewport));

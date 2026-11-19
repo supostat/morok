@@ -1,5 +1,5 @@
 use morok_components::view::Mount;
-use morok_components::{List, ListSelection, Tabs, Tree, TreeItem};
+use morok_components::{List, RowSelection, Tabs, Tree, TreeItem};
 use morok_core::{ElementId, Size};
 use morok_css::SourceFile;
 use morok_style::States;
@@ -70,7 +70,7 @@ fn viewport_of(scene: &Scene, view: ElementId) -> ElementId {
 /// takes many rows, two of them selected, with the focus the keyboard gave.
 fn list_states(scene: &mut Scene) {
     let stage = scene.add(scene.root(), &["collections-stage"]);
-    let list = |selected: Vec<usize>, selection: ListSelection| {
+    let list = |selected: Vec<usize>, selection: RowSelection| {
         move |mount: &mut Mount<'_>| {
             let selected = mount.runtime().signal(selected);
             List::new(12, |index| format!("Document {}", index + 1), selected)
@@ -78,11 +78,11 @@ fn list_states(scene: &mut Scene) {
                 .mount(mount)
         }
     };
-    let pointed = scene.mount(stage, list(vec![1], ListSelection::Single));
+    let pointed = scene.mount(stage, list(vec![1], RowSelection::Single));
     let rows = rows_of(scene, pointed);
     scene.set_state(rows[3], States::HOVER);
     scene.set_state(rows[4], PRESSED);
-    let focused = scene.mount(stage, list(vec![0, 2], ListSelection::Multiple));
+    let focused = scene.mount(stage, list(vec![0, 2], RowSelection::Multiple));
     scene.set_state(viewport_of(scene, focused), KEYBOARD_FOCUS);
 }
 

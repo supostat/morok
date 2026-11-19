@@ -23,6 +23,11 @@ impl Verdict {
         }
     }
 
+    /// Holds one more measured value of the scenario against its budget.
+    pub fn check(&mut self, check: Check) {
+        self.checks.push(check);
+    }
+
     /// Whether every check holds.
     pub fn holds(&self) -> bool {
         self.checks.iter().all(|check| check.holds)

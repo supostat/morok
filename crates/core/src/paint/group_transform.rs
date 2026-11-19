@@ -5,9 +5,11 @@ use crate::geometry::transform::Transform;
 use crate::motion::transform_step::transform_of;
 
 /// The transform of an element in the coordinates it was laid out in: the steps of its
-/// `transform` applied about its `transform-origin`, then the shift the frame gives it.
+/// `transform` applied about its `transform-origin`, then the shift the frame gives it and the
+/// displacement a component gave it.
 pub(crate) fn local_transform(element: &Element) -> Transform {
-    let shift = Transform::translation(element.shift.x, element.shift.y);
+    let moved_by = element.moved_by();
+    let shift = Transform::translation(moved_by.x, moved_by.y);
     if element.lists.transform.is_empty() {
         return shift;
     }

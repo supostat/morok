@@ -2,7 +2,7 @@ mod support;
 
 use std::borrow::Cow;
 
-use morok_components::{List, ListSelection};
+use morok_components::{List, RowSelection};
 use morok_core::{ElementId, Point, ScrollInput, ScrollPhase};
 use morok_style::{Declaration, LengthPercentage, LengthPercentageAuto, Pixels};
 use support::Stage;
@@ -36,7 +36,7 @@ impl MillionRows {
         let view = stage.mount(move |mount| {
             let selected = mount.runtime().signal(Vec::new());
             let view = List::new(ROWS, |index| format!("Row {index}"), selected)
-                .selection(ListSelection::Multiple)
+                .selection(RowSelection::Multiple)
                 .mount(mount);
             mount
                 .build(view)
@@ -95,14 +95,14 @@ impl MillionRows {
         self.stage.frame();
     }
 
-    /// Whether a row stands in a slot placed where its row lies along the content.
+    /// Whether a row stands in a slot the surface shows where its row lies along the content.
     fn shows_row_in_place(&self, index: usize) -> bool {
         let tree = self.stage.tree();
         let label = format!("Row {index}");
         self.slots().into_iter().any(|slot| {
             let row = tree.children(slot)[0];
             tree.text(tree.children(row)[0]) == label
-                && (tree.border_box(slot).y - tree.border_box(self.rows).y - index as f32 * ROW_HEIGHT).abs() < 0.5
+                && (tree.surface_box(slot).y - tree.surface_box(self.rows).y - index as f32 * ROW_HEIGHT).abs() < 0.5
         })
     }
 }

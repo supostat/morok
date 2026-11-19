@@ -13,6 +13,7 @@ use crate::input::key_event::KeyEvent;
 use crate::input::key_phase::KeyPhase;
 use crate::input::modifiers::Modifiers;
 use crate::motion::spring::Spring;
+use crate::paint::group_transform::local_transform;
 use crate::scroll::scroll_bars::ScrollBars;
 use crate::scroll::scroll_input::ScrollInput;
 use crate::scroll::scroll_phase::ScrollPhase;
@@ -456,9 +457,10 @@ impl ElementTree {
     }
 
     /// Scrolls every `Scroll` element around the element as little as brings the element into
-    /// its viewport, the innermost first; an element longer than a viewport shows its start.
+    /// its viewport, the innermost first; an element longer than a viewport shows its start. The
+    /// element is where its transform and those of the elements around it put it.
     fn reveal(&mut self, target: ElementId) {
-        let mut shown = self.elements[target].border_box;
+        let mut shown = local_transform(&self.elements[target]).bounds_of(&self.elements[target].border_box);
         let mut ancestor = self.elements[target].parent;
         while let Some(current) = ancestor {
             if self.elements[current].scroll.is_some() {
@@ -474,6 +476,7 @@ impl ElementTree {
                 shown = Rect::new(shown.x - offset.x, shown.y - offset.y, shown.width, shown.height);
                 self.stop_returns(current);
             }
+            shown = local_transform(&self.elements[current]).bounds_of(&shown);
             ancestor = self.elements[current].parent;
         }
     }

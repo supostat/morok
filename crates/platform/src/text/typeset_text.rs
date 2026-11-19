@@ -15,22 +15,38 @@ const FIT_TOLERANCE: f64 = 0.01;
 const UNBOUNDED_WIDTH: f64 = 1.0e9;
 const ELLIPSIS: &str = "\u{2026}";
 
-/// A text ready to be broken into lines: its attributed string, the typesetter of Core Text
-/// over it, and the places a line may break.
-pub(crate) struct TypesetText {
+/// What a text is typeset with from one text to the next, kept for its capacity: a shaper that
+/// sets one text after another allocates nothing for them.
+#[derive(Debug, Default)]
+pub(crate) struct TypesetScratch {
     code_units: Vec<u16>,
-    attributes: CFRetained<CFDictionary<CFString, CFType>>,
-    styled_text: CFRetained<CFAttributedString>,
-    typesetter: CFRetained<CTTypesetter>,
     /// The offsets, in UTF-16 code units, a line may end at, in rising order; the end of the
     /// text is the last.
     break_opportunities: Vec<CFIndex>,
 }
 
-impl TypesetText {
+/// A text ready to be broken into lines under a width constraint: its attributed string, the
+/// typesetter of Core Text over it, and the places a line may break.
+pub(crate) struct TypesetText<'a> {
+    width: WidthConstraint,
+    scratch: &'a mut TypesetScratch,
+    attributes: CFRetained<CFDictionary<CFString, CFType>>,
+    styled_text: CFRetained<CFAttributedString>,
+    typesetter: CFRetained<CTTypesetter>,
+}
+
+impl<'a> TypesetText<'a> {
     /// CSS letter spacing follows every character and takes ligatures apart; without it the
-    /// font keeps its own kerning and ligatures.
-    pub(crate) fn new(text: &str, font: &CTFont, letter_spacing: f32) -> Self {
+    /// font keeps its own kerning and ligatures. A text set at its max-content width breaks
+    /// only where it holds a line break, which Core Text finds by itself, so the places a line
+    /// may break are looked for under the other constraints alone.
+    pub(crate) fn new(
+        text: &str,
+        font: &CTFont,
+        letter_spacing: f32,
+        width: WidthConstraint,
+        scratch: &'a mut TypesetScratch,
+    ) -> Self {
         // SAFETY: the keys are constants of Core Text.
         let (font_key, kern_key, ligature_key) =
             unsafe { (kCTFontAttributeName, kCTKernAttributeName, kCTLigatureAttributeName) };
@@ -48,9 +64,15 @@ impl TypesetText {
         let styled_text = styled(&string, &attributes);
         // SAFETY: the attributed string is valid.
         let typesetter = unsafe { CTTypesetter::with_attributed_string(&styled_text) };
+        scratch.code_units.clear();
+        scratch.code_units.extend(text.encode_utf16());
+        scratch.break_opportunities.clear();
+        if width != WidthConstraint::MaxContent {
+            find_break_opportunities(&string, &mut scratch.break_opportunities);
+        }
         Self {
-            code_units: text.encode_utf16().collect(),
-            break_opportunities: break_opportunities(&string),
+            width,
+            scratch,
             attributes,
             styled_text,
             typesetter,
@@ -64,22 +86,24 @@ impl TypesetText {
     /// # Panics
     ///
     /// Under the min-content constraint: its lines are measured, never set.
-    pub(crate) fn for_each_line(&self, width: WidthConstraint, mut each: impl FnMut(&CTLine)) {
-        let width = match width {
+    pub(crate) fn for_each_line(&self, mut each: impl FnMut(&CTLine)) {
+        let breaks_where_the_text_does = self.width == WidthConstraint::MaxContent;
+        let width = match self.width {
             WidthConstraint::Definite(width) => f64::from(width) + FIT_TOLERANCE,
             WidthConstraint::MaxContent => UNBOUNDED_WIDTH,
             WidthConstraint::MinContent => panic!("the lines of a text are not set at its min-content width"),
         };
-        let length = string_index(self.code_units.len());
+        let length = string_index(self.scratch.code_units.len());
         let mut start = 0;
         while start < length {
             // SAFETY: `start` lies inside the string of the typesetter.
             let suggested = start + unsafe { self.typesetter.suggest_line_break(start, width) };
-            let end = if self.break_opportunities.binary_search(&suggested).is_ok() {
-                suggested
-            } else {
-                self.next_break_opportunity(start)
-            };
+            let end =
+                if breaks_where_the_text_does || self.scratch.break_opportunities.binary_search(&suggested).is_ok() {
+                    suggested
+                } else {
+                    self.next_break_opportunity(start)
+                };
             // SAFETY: the range lies inside the string of the typesetter.
             let line = unsafe {
                 self.typesetter.line(CFRange {
@@ -101,9 +125,9 @@ impl TypesetText {
         let offset = |index: CFIndex| unsafe { line.offset_for_string_index(index, ptr::null_mut()) };
         let mut extent = TextExtent::default();
         let mut start = 0;
-        for &opportunity in &self.break_opportunities {
+        for &opportunity in &self.scratch.break_opportunities {
             let end = opportunity as usize;
-            let visible_end = self.code_units[start..end]
+            let visible_end = self.scratch.code_units[start..end]
                 .iter()
                 .rposition(|unit| !is_white_space(*unit))
                 .map_or(start, |last| start + last + 1);
@@ -124,9 +148,10 @@ impl TypesetText {
 
     fn next_break_opportunity(&self, after: CFIndex) -> CFIndex {
         let position = self
+            .scratch
             .break_opportunities
             .partition_point(|opportunity| *opportunity <= after);
-        self.break_opportunities[position]
+        self.scratch.break_opportunities[position]
     }
 }
 
@@ -136,8 +161,8 @@ fn styled(string: &CFString, attributes: &CFDictionary<CFString, CFType>) -> CFR
         .expect("Core Foundation creates an attributed string")
 }
 
-/// Where Unicode line breaking lets a line end.
-fn break_opportunities(string: &CFString) -> Vec<CFIndex> {
+/// Adds the places Unicode line breaking lets a line end.
+fn find_break_opportunities(string: &CFString, opportunities: &mut Vec<CFIndex>) {
     let whole = CFRange {
         location: 0,
         length: string.length(),
@@ -145,7 +170,6 @@ fn break_opportunities(string: &CFString) -> Vec<CFIndex> {
     // SAFETY: the range is that of the string.
     let tokenizer = unsafe { CFStringTokenizer::new(None, Some(string), whole, kCFStringTokenizerUnitLineBreak, None) }
         .expect("Core Foundation creates a tokenizer");
-    let mut opportunities = Vec::new();
     while !tokenizer.advance_to_next_token().is_empty() {
         let token = tokenizer.current_token_range();
         opportunities.push(token.location + token.length);
@@ -153,7 +177,6 @@ fn break_opportunities(string: &CFString) -> Vec<CFIndex> {
     if opportunities.last() != Some(&whole.length) {
         opportunities.push(whole.length);
     }
-    opportunities
 }
 
 /// An offset into a text as Core Foundation counts it.

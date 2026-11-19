@@ -3,9 +3,10 @@ mod support;
 use std::collections::HashMap;
 
 use morok_core::accesskit::{
-    Action, ActionData, ActionRequest, Affine, Node, NodeId, Rect, Role as NodeRole, Toggled, TreeId, TreeUpdate,
+    Action, ActionData, ActionRequest, Affine, Node, NodeId, Rect, Role as NodeRole, SortDirection, Toggled, TreeId,
+    TreeUpdate,
 };
-use morok_core::{AccessibleActions, AccessibleValue, ElementId, Focusability, NumericValue, Role};
+use morok_core::{AccessibleActions, AccessibleItem, AccessibleValue, ElementId, Focusability, NumericValue, Role};
 use morok_style::States;
 use support::{InputLog, Scene};
 
@@ -213,6 +214,58 @@ fn a_node_carries_the_name_and_the_value_of_its_element() {
         .set_accessible_value(dialog.save, AccessibleValue::None);
     dialog.update();
     assert_eq!(dialog.mirror.node(dialog.save).value(), None);
+}
+
+#[test]
+fn the_nodes_of_a_table_tell_its_size_the_places_of_its_rows_and_cells_and_what_sorts_it() {
+    let mut dialog = DialogScene::new();
+    let tree = &mut dialog.scene.tree;
+    tree.set_accessible_role(dialog.panel, Some(NodeRole::Table));
+    tree.set_accessible_item(
+        dialog.panel,
+        AccessibleItem {
+            row_count: Some(1_000_000),
+            column_count: Some(4),
+            ..AccessibleItem::default()
+        },
+    );
+    tree.set_accessible_role(dialog.row, Some(NodeRole::Row));
+    tree.set_accessible_item(
+        dialog.row,
+        AccessibleItem {
+            row_index: Some(499_999),
+            ..AccessibleItem::default()
+        },
+    );
+    tree.set_accessible_role(dialog.save, Some(NodeRole::Cell));
+    tree.set_accessible_item(
+        dialog.save,
+        AccessibleItem {
+            column_index: Some(2),
+            ..AccessibleItem::default()
+        },
+    );
+    tree.set_accessible_role(dialog.cancel, Some(NodeRole::ColumnHeader));
+    tree.set_accessible_item(
+        dialog.cancel,
+        AccessibleItem {
+            column_index: Some(3),
+            sort_direction: Some(SortDirection::Descending),
+            ..AccessibleItem::default()
+        },
+    );
+    dialog.update();
+
+    let table = dialog.mirror.node(dialog.panel);
+    assert_eq!((table.row_count(), table.column_count()), (Some(1_000_000), Some(4)));
+    assert_eq!(dialog.mirror.node(dialog.row).row_index(), Some(499_999));
+    let cell = dialog.mirror.node(dialog.save);
+    assert_eq!((cell.column_index(), cell.sort_direction()), (Some(2), None));
+    let header = dialog.mirror.node(dialog.cancel);
+    assert_eq!(
+        (header.column_index(), header.sort_direction()),
+        (Some(3), Some(SortDirection::Descending))
+    );
 }
 
 #[test]

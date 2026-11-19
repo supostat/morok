@@ -247,16 +247,16 @@ impl Stage {
         }
     }
 
-    /// The middle of the box the last frame gave the element.
+    /// The middle of the box the surface showed the element in after the last frame.
     pub(crate) fn middle_of(&self, element: ElementId) -> Point {
-        let border_box = self.tree().border_box(element);
+        let border_box = self.tree().surface_box(element);
         Point {
             x: border_box.x + border_box.width / 2.0,
             y: border_box.y + border_box.height / 2.0,
         }
     }
 
-    /// Clicks in the middle of the box the last frame gave the element.
+    /// Clicks in the middle of the box the surface showed the element in after the last frame.
     pub(crate) fn click(&mut self, element: ElementId) {
         self.click_at(self.middle_of(element));
     }
