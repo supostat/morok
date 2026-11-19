@@ -4,10 +4,11 @@ use std::ops::Range;
 use std::time::Duration;
 
 use morok_core::{
-    AccessibilityAction, CaretLine, CaretLines, CaretStop, ElementId, ElementTree, FontId, FontMetrics, FontRequest,
-    InputHandler, ItemRange, Key, KeyEvent, KeyPhase, Modifiers, Point, PointerButton, PointerEvent, PointerEventKind,
-    PointerInput, PointerInputKind, Propagation, Rect, Role, ShapedGlyph, ShapedLine, ShapedRun, ShapedText,
-    ShortcutId, Size, TextExtent, TextRequest, TextShaper, WidthConstraint,
+    AccessibilityAction, CaretLine, CaretLines, CaretStop, DragEvent, DragEventKind, DragOutcome, DragStart, ElementId,
+    ElementTree, FontId, FontMetrics, FontRequest, InputHandler, ItemRange, Key, KeyEvent, KeyPhase, Modifiers,
+    Payload, Point, PointerButton, PointerEvent, PointerEventKind, PointerInput, PointerInputKind, Propagation, Rect,
+    Role, ShapedGlyph, ShapedLine, ShapedRun, ShapedText, ShortcutId, Size, TextExtent, TextRequest, TextShaper,
+    WidthConstraint,
 };
 use morok_css::{CompiledTokens, SourceFile, TokenId, compile_stylesheets, compile_tokens};
 use morok_style::{Class, Color, FontStyle, FontVariantNumeric, FontWeight, StyleSheet, Theme};
@@ -422,6 +423,15 @@ pub(crate) struct InputLog {
     pub(crate) text_changes: Vec<(ElementId, String)>,
     /// The elements that use every event routed to them.
     pub(crate) consumers: Vec<ElementId>,
+    /// What a drag source answers the pointer that begins to drag it; none starts no drag.
+    pub(crate) drag_start: Option<DragStart>,
+    /// The drag sources the pointer began to drag.
+    pub(crate) dragged_sources: Vec<ElementId>,
+    pub(crate) drag_events: Vec<(ElementId, DragEventKind)>,
+    /// What each drag event of `drag_events` told its target the drag carries.
+    pub(crate) drag_event_payloads: Vec<Payload>,
+    /// The drag sources that heard their drag was over, each with how it ended.
+    pub(crate) ended_drags: Vec<(ElementId, DragOutcome)>,
 }
 
 impl InputLog {
@@ -470,5 +480,19 @@ impl InputHandler for InputLog {
 
     fn text_changed(&mut self, element: ElementId, text: &str) {
         self.text_changes.push((element, text.to_owned()));
+    }
+
+    fn drag_started(&mut self, source: ElementId) -> Option<DragStart> {
+        self.dragged_sources.push(source);
+        self.drag_start.clone()
+    }
+
+    fn drag_event(&mut self, target: ElementId, event: &DragEvent<'_>) {
+        self.drag_events.push((target, event.kind));
+        self.drag_event_payloads.push(event.payload.clone());
+    }
+
+    fn drag_ended(&mut self, source: ElementId, outcome: DragOutcome) {
+        self.ended_drags.push((source, outcome));
     }
 }

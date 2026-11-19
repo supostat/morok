@@ -60,7 +60,9 @@ impl SplitDivider {
                 ElementEvent::Pointer(pointer) => self.pointer_event(runtime, pointer, &mut drag),
                 ElementEvent::Key(key) => self.key_event(runtime, key),
                 ElementEvent::Accessibility(action) => self.accessibility_action(runtime, *action),
-                ElementEvent::TextChanged(_) => Propagation::Continue,
+                ElementEvent::TextChanged(_) | ElementEvent::Drag(_) | ElementEvent::DragEnded(_) => {
+                    Propagation::Continue
+                }
             })
             .child(grip)
             .id()

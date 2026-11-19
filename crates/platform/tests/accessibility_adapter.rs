@@ -5,8 +5,8 @@ use std::time::Duration;
 
 use morok_core::accesskit::{ActionRequest, Role as NodeRole, TreeUpdate};
 use morok_core::{
-    AccessibilityAction, AccessibleActions, ElementId, ElementTree, Focusability, InputHandler, KeyEvent, PointerEvent,
-    PointerInput, Propagation, Rect, ScrollInput, ShortcutId, Size,
+    AccessibilityAction, AccessibleActions, DragEvent, DragOutcome, DragStart, ElementId, ElementTree, Focusability,
+    InputHandler, KeyEvent, PointerEvent, PointerInput, Propagation, Rect, ScrollInput, ShortcutId, Size,
 };
 use morok_platform::{Application, SurfaceContent, Window, WindowOptions};
 use morok_style::ColorScheme;
@@ -53,6 +53,14 @@ impl InputHandler for Asked {
     }
 
     fn text_changed(&mut self, _element: ElementId, _text: &str) {}
+
+    fn drag_started(&mut self, _source: ElementId) -> Option<DragStart> {
+        None
+    }
+
+    fn drag_event(&mut self, _target: ElementId, _event: &DragEvent<'_>) {}
+
+    fn drag_ended(&mut self, _source: ElementId, _outcome: DragOutcome) {}
 }
 
 /// A scene in a window that answers for the accessibility of its tree.

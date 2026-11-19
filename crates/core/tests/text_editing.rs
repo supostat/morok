@@ -1,6 +1,7 @@
 mod support;
 
 use std::cell::RefCell;
+use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -9,8 +10,8 @@ use morok_core::accesskit::{
     TreeId, TreeUpdate,
 };
 use morok_core::{
-    Clipboard, DisplayItem, ElementId, Focusability, Key, KeyEvent, KeyPhase, Modifiers, Point, PointerButton,
-    PointerInput, PointerInputKind, Rect, Role, TextSelection,
+    Clipboard, DisplayItem, ElementId, Focusability, Key, KeyEvent, KeyPhase, Modifiers, Payload, PayloadType, Point,
+    PointerButton, PointerInput, PointerInputKind, Rect, Role, TextSelection,
 };
 use morok_style::Color;
 use support::{CHARACTER_WIDTH, InputLog, LINE_HEIGHT, Scene};
@@ -35,15 +36,28 @@ const FAMILY: &str = "\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467}";
 
 /// What the clipboard of a test holds, shared with the tree.
 #[derive(Clone, Debug, Default)]
-struct SharedClipboard(Rc<RefCell<Option<String>>>);
+struct SharedClipboard(Rc<RefCell<Payload>>);
 
-impl Clipboard for SharedClipboard {
-    fn text(&mut self) -> Option<String> {
-        self.0.borrow().clone()
+impl SharedClipboard {
+    fn text(&self) -> Option<String> {
+        self.0.borrow().text.clone()
     }
 
-    fn set_text(&mut self, text: &str) {
-        *self.0.borrow_mut() = Some(text.to_owned());
+    fn set_text(&self, text: &str) {
+        *self.0.borrow_mut() = Payload::of_text(text);
+    }
+}
+
+impl Clipboard for SharedClipboard {
+    fn read(&mut self, types: &[PayloadType]) -> Payload {
+        Payload {
+            text: self.text().filter(|_| types.contains(&PayloadType::Text)),
+            ..Payload::default()
+        }
+    }
+
+    fn write(&mut self, payload: &Payload) {
+        *self.0.borrow_mut() = payload.clone();
     }
 }
 
@@ -602,6 +616,24 @@ fn a_tree_without_a_clipboard_leaves_the_keys_of_the_clipboard_to_others() {
     assert!(!scene.press_key(Key::Character('v'), COMMAND, &mut log));
     assert!(!scene.press_key(Key::Character('c'), COMMAND, &mut log));
     assert_eq!(scene.tree.text(input), "one");
+}
+
+#[test]
+fn the_clipboard_of_a_tree_takes_more_than_the_text_of_its_edited_texts() {
+    let mut editing = Editing::field("one");
+    let files = Payload {
+        files: vec![PathBuf::from("/tmp/report.pdf")],
+        ..Payload::default()
+    };
+    editing
+        .scene
+        .tree
+        .clipboard()
+        .expect("the tree was given a clipboard")
+        .write(&files);
+    assert_eq!(*editing.clipboard.0.borrow(), files);
+
+    assert!(Scene::new(RULES).tree.clipboard().is_none());
 }
 
 #[test]

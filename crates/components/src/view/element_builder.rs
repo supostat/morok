@@ -2,8 +2,8 @@ use std::time::Duration;
 
 use morok_core::accesskit::Role as AccessibleRole;
 use morok_core::{
-    AccessibleActions, AccessibleItem, AccessibleValue, ElementId, ElementTree, Focusability, KeyChord, MenuCommand,
-    NumericValue, Propagation, ShortcutScope,
+    AccessibleActions, AccessibleItem, AccessibleValue, DragStart, ElementId, ElementTree, Focusability, KeyChord,
+    MenuCommand, NumericValue, PayloadType, Propagation, ShortcutScope,
 };
 use morok_reactive::{Runtime, Signal, Source};
 use morok_style::{Class, Declaration, States};
@@ -233,6 +233,31 @@ impl ElementBuilder<'_, '_> {
             .surface
             .event_handlers
             .set_element_handler(self.element, Box::new(handler));
+        self
+    }
+
+    /// Lets the pointer drag the element. `start` is asked once the pointer has travelled a
+    /// few pixels with the primary button down on the element, or inside it on nothing that
+    /// used the press: it says what the drag carries and how far it goes, and none leaves the
+    /// press a press. The element hears how the drag ended as an
+    /// [`ElementEvent::DragEnded`].
+    pub fn drag_source(
+        &mut self,
+        start: impl FnMut(&mut Runtime<Surfaces>) -> Option<DragStart> + 'static,
+    ) -> &mut Self {
+        let surface = &mut *self.mount.surface;
+        surface.tree.set_drag_source(self.element, true);
+        surface
+            .event_handlers
+            .set_drag_source_handler(self.element, Box::new(start));
+        self
+    }
+
+    /// Makes the element a drop target of the drags that carry any of the types: it hears
+    /// what such a drag does over it as [`ElementEvent::Drag`], and it is hovered while the
+    /// drag is over it.
+    pub fn drop_target(&mut self, types: &[PayloadType]) -> &mut Self {
+        self.mount.surface.tree.set_drop_types(self.element, types);
         self
     }
 

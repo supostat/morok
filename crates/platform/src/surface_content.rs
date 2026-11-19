@@ -5,8 +5,8 @@ use std::time::Duration;
 
 use morok_core::accesskit::{ActionRequest, TreeUpdate};
 use morok_core::{
-    ElementTree, FrameScheduler, KeyEvent, NativeMenu, NativeMenuItem, OverlaySide, Point, PointerInput, Rect,
-    ScrollInput, Size, TextCommand,
+    DragOutcome, ElementTree, FrameScheduler, KeyEvent, Modifiers, NativeMenu, NativeMenuItem, OverlaySide, Payload,
+    PayloadType, Point, PointerInput, Rect, ScrollInput, Size, TextCommand,
 };
 use morok_style::ColorScheme;
 
@@ -14,6 +14,7 @@ use crate::focused_text::FocusedText;
 use crate::overlay::overlay_id::OverlayId;
 use crate::overlay::overlay_request::OverlayRequest;
 use crate::surface_settings::SurfaceSettings;
+use crate::system_drag_request::SystemDragRequest;
 
 /// What a window shows. The window asks its content for a frame whenever the tree of the
 /// content, or the window itself, asked the frame loop for one.
@@ -144,4 +145,51 @@ pub trait SurfaceContent {
 
     /// The user chose the command `id` of the menus the content gave the menu bar.
     fn menu_bar_command_chosen(&mut self, _id: usize) {}
+
+    /// The drag the content hands to the system, once: asked after the pointer moved with the
+    /// primary button down. The window begins the drag in the system, which carries it to
+    /// other windows and other applications, and tells how it ended through
+    /// [`system_drag_ended`](Self::system_drag_ended). A content that drags nothing out of its
+    /// surface keeps this.
+    fn system_drag(&mut self) -> Option<SystemDragRequest> {
+        None
+    }
+
+    /// The drag the window began in the system for the content is over.
+    fn system_drag_ended(&mut self, _outcome: DragOutcome) {}
+
+    /// How many times the payload types the content takes drags of the system in changed:
+    /// the window asks the system to offer it those drags anew when the number is another
+    /// than the one it saw last. Asked after every frame of the surface.
+    fn drop_types_revision(&mut self) -> u64 {
+        0
+    }
+
+    /// The payload types the content takes drags of the system in. A content that takes no
+    /// drag keeps this.
+    fn drop_types(&mut self) -> Vec<PayloadType> {
+        Vec::new()
+    }
+
+    /// A drag of the system came over the surface at `position`, in CSS pixels, carrying
+    /// `payload` in the types the content takes. Returns whether the content takes the drag
+    /// there.
+    fn system_drag_entered(&mut self, _payload: Payload, _position: Point, _modifiers: Modifiers) -> bool {
+        false
+    }
+
+    /// The drag of the system moved to `position`. Returns whether the content takes it
+    /// there.
+    fn system_drag_moved(&mut self, _position: Point, _modifiers: Modifiers) -> bool {
+        false
+    }
+
+    /// The drag of the system left the surface, or ended somewhere else.
+    fn system_drag_exited(&mut self) {}
+
+    /// The drag of the system was dropped at `position`. Returns whether the content took
+    /// what it carried.
+    fn system_drag_dropped(&mut self, _position: Point, _modifiers: Modifiers) -> bool {
+        false
+    }
 }

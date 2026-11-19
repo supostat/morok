@@ -1,4 +1,7 @@
-use morok_core::{AccessibilityAction, ElementId, InputHandler, KeyEvent, PointerEvent, Propagation, ShortcutId};
+use morok_core::{
+    AccessibilityAction, DragEvent, DragOutcome, DragStart, ElementId, InputHandler, KeyEvent, PointerEvent,
+    Propagation, ShortcutId,
+};
 use morok_reactive::Runtime;
 
 use crate::view::element_event::ElementEvent;
@@ -35,5 +38,19 @@ impl InputHandler for EventDispatch<'_> {
     fn text_changed(&mut self, element: ElementId, text: &str) {
         self.handlers
             .element_event(self.runtime, element, &ElementEvent::TextChanged(text));
+    }
+
+    fn drag_started(&mut self, source: ElementId) -> Option<DragStart> {
+        self.handlers.drag_started(self.runtime, source)
+    }
+
+    fn drag_event(&mut self, target: ElementId, event: &DragEvent<'_>) {
+        self.handlers
+            .element_event(self.runtime, target, &ElementEvent::Drag(*event));
+    }
+
+    fn drag_ended(&mut self, source: ElementId, outcome: DragOutcome) {
+        self.handlers
+            .element_event(self.runtime, source, &ElementEvent::DragEnded(outcome));
     }
 }

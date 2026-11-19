@@ -116,7 +116,8 @@ pub(crate) fn key_event(event: &NSEvent, phase: KeyPhase) -> Option<KeyEvent> {
     })
 }
 
-fn modifiers(flags: NSEventModifierFlags) -> Modifiers {
+/// The modifier keys of the kit among the modifier flags of an event.
+pub(crate) fn modifiers(flags: NSEventModifierFlags) -> Modifiers {
     [
         (NSEventModifierFlags::Shift, Modifiers::SHIFT),
         (NSEventModifierFlags::Control, Modifiers::CONTROL),

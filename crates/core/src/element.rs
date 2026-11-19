@@ -3,6 +3,7 @@ use taffy::{Cache, DetailedLayoutInfo, Layout};
 
 use crate::accessibility::semantics::Semantics;
 use crate::dirty::Dirty;
+use crate::drag::drag_role::DragRole;
 use crate::editing::editable_text::EditableText;
 use crate::editing::line_mode::LineMode;
 use crate::element_id::ElementId;
@@ -22,6 +23,7 @@ use crate::style::resolved_length_or_auto::ResolvedLengthOrAuto;
 use crate::style::selector_target::SelectorTarget;
 use crate::style::style_lists::StyleLists;
 use crate::text::text_layout::TextLayout;
+use crate::transfer::payload_type::PayloadType;
 
 /// One node of an element tree with everything the frame stages keep about it.
 #[derive(Debug)]
@@ -74,6 +76,9 @@ pub(crate) struct Element {
     /// How far a component moves the element from where layout placed it; none for an element
     /// no component ever moved.
     pub(crate) displacement: Option<Point>,
+    /// What the element is to a drag; none for an element that was never a drag source nor a
+    /// drop target.
+    pub(crate) drag_role: Option<Box<DragRole>>,
 }
 
 impl Element {
@@ -107,6 +112,7 @@ impl Element {
             shift: Point::default(),
             is_scroll_thumb: false,
             displacement: None,
+            drag_role: None,
         }
     }
 
@@ -140,6 +146,17 @@ impl Element {
             && is_length(self.style.layout.height)
             && hides_overflow(parent.style.layout.overflow_x)
             && hides_overflow(parent.style.layout.overflow_y)
+    }
+
+    /// Whether the pointer may drag the element.
+    pub(crate) fn is_drag_source(&self) -> bool {
+        self.drag_role.as_deref().is_some_and(|role| role.is_source)
+    }
+
+    /// The payload types a drag is dropped on the element in; empty unless the element is a
+    /// drop target.
+    pub(crate) fn drop_types(&self) -> &[PayloadType] {
+        self.drag_role.as_deref().map_or(&[], |role| &role.drop_types)
     }
 
     pub(crate) fn selector_target(&self) -> SelectorTarget<'_> {

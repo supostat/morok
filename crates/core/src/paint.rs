@@ -15,5 +15,6 @@ pub(crate) mod paint_order;
 pub(crate) mod paint_pass;
 pub(crate) mod paint_step;
 pub(crate) mod painted_element;
+pub(crate) mod subtree_picture;
 pub(crate) mod unpaint;
 pub(crate) mod visual_bounds;

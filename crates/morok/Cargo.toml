@@ -21,10 +21,12 @@ morok-style.workspace = true
 objc2.workspace = true
 objc2-app-kit = { workspace = true, features = [
   "NSApplication",
+  "NSDragging",
   "NSEvent",
   "NSGraphicsContext",
   "NSMenu",
   "NSMenuItem",
+  "NSPasteboard",
   "NSResponder",
   "NSView",
   "NSVisualEffectView",
@@ -34,6 +36,10 @@ objc2-foundation = { workspace = true, features = ["NSArray", "NSGeometry", "NSS
 
 [[test]]
 name = "button_interaction"
+harness = false
+
+[[test]]
+name = "drag_windows"
 harness = false
 
 [[test]]

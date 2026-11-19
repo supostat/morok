@@ -112,7 +112,10 @@ impl FieldParts {
                         _ => Propagation::Continue,
                     }
                 }
-                ElementEvent::Pointer(_) | ElementEvent::Accessibility(_) => Propagation::Continue,
+                ElementEvent::Pointer(_)
+                | ElementEvent::Accessibility(_)
+                | ElementEvent::Drag(_)
+                | ElementEvent::DragEnded(_) => Propagation::Continue,
             });
         let input = input.id();
         let mut field = mount.element();

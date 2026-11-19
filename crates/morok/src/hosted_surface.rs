@@ -7,10 +7,12 @@ use std::time::Duration;
 use morok_components::view::SurfaceId;
 use morok_core::accesskit::{ActionRequest, Node, NodeId, Role, TreeId, TreeInfo, TreeUpdate};
 use morok_core::{
-    ElementTree, FrameScheduler, KeyEvent, NativeMenu, NativeMenuItem, OverlaySide, Point, PointerInput, Rect,
-    ScrollInput, Size, TextCommand,
+    DisplayList, DragOutcome, ElementId, ElementTree, FrameScheduler, KeyEvent, Modifiers, NativeMenu, NativeMenuItem,
+    OverlaySide, Payload, PayloadType, Point, PointerInput, Rect, ScrollInput, Size, TextCommand,
 };
-use morok_platform::{FocusedText, OverlayId, OverlayRequest, PasteboardClipboard, SurfaceContent, SurfaceSettings};
+use morok_platform::{
+    FocusedText, OverlayId, OverlayRequest, PasteboardClipboard, SurfaceContent, SurfaceSettings, SystemDragRequest,
+};
 use morok_style::ColorScheme;
 
 use crate::application_state::ApplicationState;
@@ -39,6 +41,8 @@ pub(crate) struct HostedSurface {
     last_frame_time: Duration,
     /// The focus of the accessibility tree as the window was told last.
     accessibility_focus: NodeId,
+    /// The drag source of the drag the window began in the system and has not told the end of.
+    dragged_source: Option<ElementId>,
 }
 
 impl HostedSurface {
@@ -52,6 +56,7 @@ impl HostedSurface {
             open_overlays: Vec::new(),
             last_frame_time,
             accessibility_focus: CLOSED_SURFACE_NODE,
+            dragged_source: None,
         }
     }
 
@@ -374,6 +379,104 @@ impl SurfaceContent for HostedSurface {
             .surface_mut(self.surface)
             .menu_command_chosen(&mut state.runtime, id);
         Self::request_frame_for_queued_effects(state, self.surface);
+    }
+
+    /// The picture of the drag is what the last frame drew of its source.
+    fn system_drag(&mut self) -> Option<SystemDragRequest> {
+        let mut state = state_while_open(&self.state, self.surface)?;
+        let tree = state.surfaces.surface_mut(self.surface).tree_mut();
+        let drag = tree.take_system_drag()?;
+        let mut picture = DisplayList::default();
+        let picture_box = tree.subtree_display_list(drag.source, &mut picture);
+        self.dragged_source = Some(drag.source);
+        Some(SystemDragRequest {
+            payload: drag.payload,
+            picture,
+            picture_box,
+        })
+    }
+
+    fn system_drag_ended(&mut self, outcome: DragOutcome) {
+        let Some(source) = self.dragged_source.take() else {
+            return;
+        };
+        let Some(mut state) = state_while_open(&self.state, self.surface) else {
+            return;
+        };
+        let state = &mut *state;
+        state
+            .surfaces
+            .surface_mut(self.surface)
+            .system_drag_ended(&mut state.runtime, source, outcome);
+        Self::request_frame_for_queued_effects(state, self.surface);
+    }
+
+    fn drop_types_revision(&mut self) -> u64 {
+        state_while_open(&self.state, self.surface).map_or(0, |state| {
+            state.surfaces.surface(self.surface).tree().drop_types_revision()
+        })
+    }
+
+    /// The types are the ones the drop targets of the tree of the surface take between them.
+    fn drop_types(&mut self) -> Vec<PayloadType> {
+        state_while_open(&self.state, self.surface).map_or_else(Vec::new, |state| {
+            state.surfaces.surface(self.surface).tree().accepted_drop_types()
+        })
+    }
+
+    fn system_drag_entered(&mut self, payload: Payload, position: Point, modifiers: Modifiers) -> bool {
+        let Some(mut state) = state_while_open(&self.state, self.surface) else {
+            return false;
+        };
+        let state = &mut *state;
+        let is_taken = state.surfaces.surface_mut(self.surface).system_drag_entered(
+            &mut state.runtime,
+            payload,
+            position,
+            modifiers,
+        );
+        Self::request_frame_for_queued_effects(state, self.surface);
+        is_taken
+    }
+
+    fn system_drag_moved(&mut self, position: Point, modifiers: Modifiers) -> bool {
+        let Some(mut state) = state_while_open(&self.state, self.surface) else {
+            return false;
+        };
+        let state = &mut *state;
+        let is_taken =
+            state
+                .surfaces
+                .surface_mut(self.surface)
+                .system_drag_moved(&mut state.runtime, position, modifiers);
+        Self::request_frame_for_queued_effects(state, self.surface);
+        is_taken
+    }
+
+    fn system_drag_exited(&mut self) {
+        let Some(mut state) = state_while_open(&self.state, self.surface) else {
+            return;
+        };
+        let state = &mut *state;
+        state
+            .surfaces
+            .surface_mut(self.surface)
+            .system_drag_exited(&mut state.runtime);
+        Self::request_frame_for_queued_effects(state, self.surface);
+    }
+
+    fn system_drag_dropped(&mut self, position: Point, modifiers: Modifiers) -> bool {
+        let Some(mut state) = state_while_open(&self.state, self.surface) else {
+            return false;
+        };
+        let state = &mut *state;
+        let was_taken =
+            state
+                .surfaces
+                .surface_mut(self.surface)
+                .system_drag_dropped(&mut state.runtime, position, modifiers);
+        Self::request_frame_for_queued_effects(state, self.surface);
+        was_taken
     }
 }
 

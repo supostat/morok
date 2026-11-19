@@ -1,3 +1,4 @@
+mod dragging;
 mod menu_bar;
 mod scrolling;
 mod text_editing;
@@ -16,7 +17,8 @@ use crate::accessibility::accessible_value::AccessibleValue;
 use crate::accessibility::node_identity::element_of;
 use crate::accessibility::semantics::Semantics;
 use crate::dirty::Dirty;
-use crate::editing::clipboard::Clipboard;
+use crate::drag::accepted_drop_types::AcceptedDropTypes;
+use crate::drag::drag_router::DragRouter;
 use crate::element::Element;
 use crate::element_arena::ElementArena;
 use crate::element_id::ElementId;
@@ -74,6 +76,7 @@ use crate::text::text_layout_pass::TextLayoutPass;
 use crate::text::text_shaper::TextShaper;
 use crate::timing::timer_id::TimerId;
 use crate::timing::timers::Timers;
+use crate::transfer::clipboard::Clipboard;
 
 /// The retained tree of one surface: its elements, their styles, their boxes and its display list.
 ///
@@ -85,6 +88,10 @@ use crate::timing::timers::Timers;
 ///
 /// The tree drives the `hover`, `active` and focus states of its elements from the input it is
 /// given, and routes that input to the elements through an [`InputHandler`].
+///
+/// A press on a drag source becomes a drag the pointer carries across the drop targets of the
+/// surface, or one the host hands to the system; a drag of the system is carried over the
+/// surface by the host.
 ///
 /// An element of an editable role holds a text the tree edits itself, from the keys that reach
 /// the element while it has focus, from the pointer and from the input methods of the system.
@@ -134,6 +141,7 @@ pub struct ElementTree {
     /// The element whose edited text the last frame showed with its caret and its selection.
     text_focus: Option<ElementId>,
     timers: Timers,
+    accepted_drop_types: AcceptedDropTypes,
 }
 
 impl ElementTree {
@@ -174,6 +182,7 @@ impl ElementTree {
             clipboard: None,
             text_focus: None,
             timers: Timers::default(),
+            accepted_drop_types: AcceptedDropTypes::default(),
         }
     }
 
@@ -290,6 +299,7 @@ impl ElementTree {
         self.pending.push(element);
         while let Some(removed) = self.pending.pop() {
             let removed = self.elements.remove(removed);
+            self.accepted_drop_types.remove(removed.drop_types());
             self.pending.extend(removed.children);
         }
         let elements = &self.elements;
@@ -852,6 +862,9 @@ impl ElementTree {
     ///
     /// A press on an edited text that takes focus puts its caret there, and the pointer
     /// selects in it until the button is released.
+    ///
+    /// While the pointer carries a drag, it does nothing else: it moves the drag across the
+    /// drop targets and drops it where the primary button comes up.
     pub fn pointer_input(&mut self, input: &PointerInput, handler: &mut dyn InputHandler) {
         let is_on_surface = input.kind != PointerInputKind::Exited;
         let hit = if is_on_surface {
@@ -862,11 +875,15 @@ impl ElementTree {
         self.input.pointer = is_on_surface.then_some(input.position);
         self.input.pointer_modifiers = input.modifiers;
         self.input.hover_is_stale = false;
+        let carries_drag = self.input.drag.is_some();
         PointerRouter {
             targets: self.pointer_targets(),
             handler,
         }
         .route(input, hit);
+        if carries_drag {
+            return;
+        }
         if matches!(input.kind, PointerInputKind::Pressed { .. }) {
             self.focus_manager().pointer_pressed(hit);
         }
@@ -874,8 +891,9 @@ impl ElementTree {
     }
 
     /// Works out again what a resting pointer is over when the last frame may have moved the
-    /// boxes under it, and tells the elements it left and came over. A host calls this at the
-    /// start of every frame, before the style stage.
+    /// boxes under it, and tells the elements it left and came over; a drag that rests over
+    /// the surface finds its drop target again. A host calls this at the start of every
+    /// frame, before the style stage.
     pub fn refresh_hover(&mut self, handler: &mut dyn InputHandler) {
         if !mem::take(&mut self.input.hover_is_stale) {
             return;
@@ -889,11 +907,15 @@ impl ElementTree {
             position,
             modifiers: self.input.pointer_modifiers,
         };
-        PointerRouter {
+        let mut pointer = PointerRouter {
             targets: self.pointer_targets(),
             handler,
+        };
+        if pointer.targets.input.drag.is_some() {
+            DragRouter { pointer: &mut pointer }.retarget(hit, &resting);
+        } else {
+            pointer.hover(hit, &resting);
         }
-        .hover(hit, &resting);
     }
 
     /// Takes a key that went down or up: offers it to the focused element and then to each

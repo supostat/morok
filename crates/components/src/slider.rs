@@ -113,7 +113,9 @@ impl Slider {
                         Some(moved_to) => Some(moved_to),
                         None => return Propagation::Continue,
                     },
-                    ElementEvent::TextChanged(_) => return Propagation::Continue,
+                    ElementEvent::TextChanged(_) | ElementEvent::Drag(_) | ElementEvent::DragEnded(_) => {
+                        return Propagation::Continue;
+                    }
                 };
                 if let Some(moved_to) = moved_to {
                     runtime.set(value, moved_to);

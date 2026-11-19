@@ -4,7 +4,6 @@ use accesskit::{Action, ActionData, ActionRequest};
 
 use super::ElementTree;
 use crate::dirty::Dirty;
-use crate::editing::clipboard::Clipboard;
 use crate::editing::editable_text::{EditChange, EditableText};
 use crate::editing::key_bindings::edit_command;
 use crate::editing::text_command::TextCommand;
@@ -21,6 +20,7 @@ use crate::input::pointer_button::PointerButton;
 use crate::input::pointer_input::PointerInput;
 use crate::input::pointer_input_kind::PointerInputKind;
 use crate::role::Role;
+use crate::transfer::clipboard::Clipboard;
 
 /// The text an element of an editable role holds: [`Role::TextInput`] and [`Role::TextArea`].
 /// Places in the text are bytes and lie between grapheme clusters; a place given inside a
@@ -30,6 +30,12 @@ impl ElementTree {
     /// the keys of the clipboard go on to the elements around the text.
     pub fn set_clipboard(&mut self, clipboard: Box<dyn Clipboard>) {
         self.clipboard = Some(clipboard);
+    }
+
+    /// The clipboard the tree was given, for whoever copies and pastes more than the text of
+    /// an edited text: files, addresses and data of the application's own types.
+    pub fn clipboard(&mut self) -> Option<&mut (dyn Clipboard + 'static)> {
+        self.clipboard.as_deref_mut()
     }
 
     /// The text the element shows while it holds none.

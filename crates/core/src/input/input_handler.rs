@@ -1,4 +1,7 @@
 use crate::accessibility::accessibility_action::AccessibilityAction;
+use crate::drag::drag_event::DragEvent;
+use crate::drag::drag_outcome::DragOutcome;
+use crate::drag::drag_start::DragStart;
 use crate::element_id::ElementId;
 use crate::input::key_event::KeyEvent;
 use crate::input::pointer_event::PointerEvent;
@@ -26,4 +29,14 @@ pub trait InputHandler {
 
     /// The user changed the text the element edits: `text` is what it holds now.
     fn text_changed(&mut self, element: ElementId, text: &str);
+
+    /// The pointer began to drag the element, a drag source. Returns what the drag carries
+    /// and how far it goes; none leaves the press a press.
+    fn drag_started(&mut self, source: ElementId) -> Option<DragStart>;
+
+    /// A drag did something to the element, a drop target that takes a type the drag carries.
+    fn drag_event(&mut self, target: ElementId, event: &DragEvent<'_>);
+
+    /// The drag that began on the element, a drag source, is over.
+    fn drag_ended(&mut self, source: ElementId, outcome: DragOutcome);
 }

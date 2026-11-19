@@ -2,6 +2,7 @@
 
 mod accessibility;
 mod dirty;
+mod drag;
 mod editing;
 mod element;
 mod element_arena;
@@ -22,6 +23,7 @@ mod scroll;
 mod style;
 mod text;
 mod timing;
+mod transfer;
 
 pub use accessibility::accessibility_action::AccessibilityAction;
 pub use accessibility::accessible_actions::AccessibleActions;
@@ -29,7 +31,12 @@ pub use accessibility::accessible_item::AccessibleItem;
 pub use accessibility::accessible_value::AccessibleValue;
 pub use accessibility::numeric_value::NumericValue;
 pub use accesskit;
-pub use editing::clipboard::Clipboard;
+pub use drag::drag_event::DragEvent;
+pub use drag::drag_event_kind::DragEventKind;
+pub use drag::drag_outcome::DragOutcome;
+pub use drag::drag_reach::DragReach;
+pub use drag::drag_start::DragStart;
+pub use drag::system_drag::SystemDrag;
 pub use editing::text_command::TextCommand;
 pub use editing::text_selection::TextSelection;
 pub use element_id::ElementId;
@@ -108,3 +115,7 @@ pub use text::text_request::TextRequest;
 pub use text::text_shaper::TextShaper;
 pub use text::width_constraint::WidthConstraint;
 pub use timing::timer_id::TimerId;
+pub use transfer::clipboard::Clipboard;
+pub use transfer::custom_data::CustomData;
+pub use transfer::payload::Payload;
+pub use transfer::payload_type::PayloadType;

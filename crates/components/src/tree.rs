@@ -133,7 +133,10 @@ impl<ItemKey: Clone + PartialEq + 'static> Tree<ItemKey> {
                     let clicks = match event {
                         ElementEvent::Pointer(pointer) => matches!(pointer.kind, PointerEventKind::Clicked { .. }),
                         ElementEvent::Accessibility(action) => matches!(action, AccessibilityAction::Click),
-                        ElementEvent::Key(_) | ElementEvent::TextChanged(_) => false,
+                        ElementEvent::Key(_)
+                        | ElementEvent::TextChanged(_)
+                        | ElementEvent::Drag(_)
+                        | ElementEvent::DragEnded(_) => false,
                     };
                     if !clicks {
                         return Propagation::Continue;

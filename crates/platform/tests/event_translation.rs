@@ -6,9 +6,9 @@ use std::time::Duration;
 
 use morok_core::accesskit::{ActionRequest, TreeUpdate};
 use morok_core::{
-    AccessibilityAction, ElementId, ElementTree, Focusability, InputHandler, Key, KeyChord, KeyEvent, KeyPhase,
-    Modifiers, Point, PointerButton, PointerEvent, PointerEventKind, PointerInput, PointerInputKind, Propagation,
-    ScrollInput, ShortcutId, ShortcutScope, Size,
+    AccessibilityAction, DragEvent, DragOutcome, DragStart, ElementId, ElementTree, Focusability, InputHandler, Key,
+    KeyChord, KeyEvent, KeyPhase, Modifiers, Point, PointerButton, PointerEvent, PointerEventKind, PointerInput,
+    PointerInputKind, Propagation, ScrollInput, ShortcutId, ShortcutScope, Size,
 };
 use morok_platform::{Application, SurfaceContent, Window, WindowOptions};
 use morok_style::{ColorScheme, States};
@@ -66,6 +66,14 @@ impl InputHandler for Heard {
     fn accessibility_action(&mut self, _element: ElementId, _action: &AccessibilityAction<'_>) {}
 
     fn text_changed(&mut self, _element: ElementId, _text: &str) {}
+
+    fn drag_started(&mut self, _source: ElementId) -> Option<DragStart> {
+        None
+    }
+
+    fn drag_event(&mut self, _target: ElementId, _event: &DragEvent<'_>) {}
+
+    fn drag_ended(&mut self, _source: ElementId, _outcome: DragOutcome) {}
 }
 
 /// A scene in a window that gives the input of the window to its tree and remembers both what

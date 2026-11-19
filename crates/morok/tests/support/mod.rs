@@ -68,9 +68,9 @@ impl EventSource {
         self.window.contentView().expect("the window shows its surface")
     }
 
-    fn mouse(&self, kind: NSEventType, at: Point) {
+    fn mouse_event(&self, kind: NSEventType, at: Point) -> Retained<NSEvent> {
         let location = NSPoint::new(f64::from(at.x), f64::from(self.content_size.height - at.y));
-        let event = NSEvent::mouseEventWithType_location_modifierFlags_timestamp_windowNumber_context_eventNumber_clickCount_pressure(
+        NSEvent::mouseEventWithType_location_modifierFlags_timestamp_windowNumber_context_eventNumber_clickCount_pressure(
             kind,
             location,
             NSEventModifierFlags::empty(),
@@ -81,14 +81,29 @@ impl EventSource {
             1,
             1.0,
         )
-        .expect("the mouse event is made");
-        self.window.sendEvent(&event);
+        .expect("the mouse event is made")
+    }
+
+    fn mouse(&self, kind: NSEventType, at: Point) {
+        self.window.sendEvent(&self.mouse_event(kind, at));
     }
 
     /// The primary button goes down and up at a point of the surface.
     pub(crate) fn click(&self, at: Point) {
         self.mouse(NSEventType::LeftMouseDown, at);
         self.mouse(NSEventType::LeftMouseUp, at);
+    }
+
+    /// The primary button goes down at `from` and the pointer moves to `to` with the button
+    /// down. The release is put into the queue of the application: a drag of the system that
+    /// began on the way takes the events of the queue from there on, and ends with it.
+    pub(crate) fn drag_and_release(&self, main_thread: MainThreadMarker, from: Point, to: Point) {
+        self.window
+            .sendEvent(&self.mouse_event(NSEventType::LeftMouseDown, from));
+        self.window
+            .sendEvent(&self.mouse_event(NSEventType::LeftMouseDragged, to));
+        NSApplication::sharedApplication(main_thread)
+            .postEvent_atStart(&self.mouse_event(NSEventType::LeftMouseUp, to), false);
     }
 
     /// The secondary button goes down and up at a point of the surface.

@@ -11,7 +11,6 @@ use crate::paint::damage::Damage;
 use crate::paint::display_item::DisplayItem;
 use crate::paint::display_list::DisplayList;
 use crate::paint::filter::Filter;
-use crate::paint::gradient_fill::GradientFill;
 use crate::paint::group_effects::GroupEffects;
 use crate::paint::group_transform::{local_transform, scroll_transform};
 use crate::paint::item_range::ItemRange;
@@ -325,52 +324,14 @@ impl PaintPass<'_> {
         painted.box_items = box_items;
     }
 
-    /// Takes items over from the previous list and returns where they are now. The stops of a
-    /// gradient and the glyphs of a run move with them.
+    /// Takes items over from the previous list and returns where they are now.
     fn keep(&mut self, kept: ItemRange) -> ItemRange {
         let start = self.display_list.items.len();
         if kept.start == kept.end {
             return self.items_since(start);
         }
         for item in &self.previous.items[kept.as_range()] {
-            let item = match *item {
-                DisplayItem::Gradient { frame, gradient } => {
-                    let stops_start = self.display_list.gradient_stops.len();
-                    self.display_list
-                        .gradient_stops
-                        .extend_from_slice(self.previous.gradient_stops(gradient.stops));
-                    DisplayItem::Gradient {
-                        frame,
-                        gradient: GradientFill {
-                            shape: gradient.shape,
-                            stops: ItemRange {
-                                start: stops_start as u32,
-                                end: self.display_list.gradient_stops.len() as u32,
-                            },
-                        },
-                    }
-                }
-                DisplayItem::GlyphRun {
-                    origin,
-                    font,
-                    glyphs,
-                    color,
-                } => {
-                    let glyphs_start = self.display_list.glyphs.len();
-                    self.display_list.glyphs.extend_from_slice(self.previous.glyphs(glyphs));
-                    DisplayItem::GlyphRun {
-                        origin,
-                        font,
-                        glyphs: ItemRange {
-                            start: glyphs_start as u32,
-                            end: self.display_list.glyphs.len() as u32,
-                        },
-                        color,
-                    }
-                }
-                other => other,
-            };
-            self.display_list.items.push(item);
+            self.display_list.push_copy(*item, self.previous);
         }
         self.items_since(start)
     }

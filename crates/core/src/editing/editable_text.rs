@@ -4,7 +4,6 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use crate::editing::caret_affinity::CaretAffinity;
 use crate::editing::caret_blink::CaretBlink;
-use crate::editing::clipboard::Clipboard;
 use crate::editing::edit_command::EditCommand;
 use crate::editing::edit_kind::EditKind;
 use crate::editing::editable_layout::{CARET_WIDTH, EditableLayout};
@@ -19,6 +18,9 @@ use crate::editing::text_editor::TextEditor;
 use crate::editing::text_selection::TextSelection;
 use crate::geometry::point::Point;
 use crate::geometry::rect::Rect;
+use crate::transfer::clipboard::Clipboard;
+use crate::transfer::payload::Payload;
+use crate::transfer::payload_type::PayloadType;
 
 /// What an edit changed of an edited text; the later a kind, the more it changed.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -210,7 +212,7 @@ impl EditableText {
                 self.copy_selection(clipboard?);
                 text_change(self.editor.edit(selection.range(), "", EditKind::Single))
             }
-            EditCommand::Paste => match clipboard?.text() {
+            EditCommand::Paste => match clipboard?.read(&[PayloadType::Text]).text {
                 Some(pasted) => {
                     let pasted = self.line_mode.sanitized(&pasted);
                     text_change(self.editor.edit(selection.range(), &pasted, EditKind::Single))
@@ -384,7 +386,7 @@ impl EditableText {
     fn copy_selection(&self, clipboard: &mut dyn Clipboard) {
         let selected = &self.editor.text()[self.editor.selection().range()];
         if !selected.is_empty() {
-            clipboard.set_text(selected);
+            clipboard.write(&Payload::of_text(selected));
         }
     }
 

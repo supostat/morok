@@ -24,14 +24,19 @@ objc2-app-kit = { workspace = true, features = [
   "NSAppearance",
   "NSApplication",
   "NSColor",
+  "NSDragging",
+  "NSDraggingItem",
+  "NSDraggingSession",
   "NSEvent",
   "NSFont",
   "NSFontDescriptor",
   "NSGraphics",
+  "NSImage",
   "NSMenu",
   "NSMenuItem",
   "NSPanel",
   "NSPasteboard",
+  "NSPasteboardItem",
   "NSResponder",
   "NSRunningApplication",
   "NSScreen",
@@ -43,6 +48,7 @@ objc2-app-kit = { workspace = true, features = [
   "NSWindow",
   "NSWorkspace",
   "objc2-core-foundation",
+  "objc2-core-graphics",
   "objc2-quartz-core",
 ] }
 objc2-core-foundation = { workspace = true, features = [
@@ -76,6 +82,7 @@ objc2-core-text = { workspace = true, features = [
 objc2-foundation = { workspace = true, features = [
   "NSArray",
   "NSAttributedString",
+  "NSData",
   "NSDate",
   "NSDictionary",
   "NSError",
@@ -86,6 +93,7 @@ objc2-foundation = { workspace = true, features = [
   "NSRange",
   "NSRunLoop",
   "NSString",
+  "NSURL",
 ] }
 objc2-image-io = { workspace = true, features = ["CGImageSource", "objc2-core-graphics"] }
 objc2-metal = { workspace = true, features = [
@@ -167,6 +175,14 @@ harness = false
 
 [[test]]
 name = "overlay_placement"
+harness = false
+
+[[test]]
+name = "pasteboard_types"
+harness = false
+
+[[test]]
+name = "system_drag"
 harness = false
 
 [[test]]

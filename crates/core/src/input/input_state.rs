@@ -1,3 +1,6 @@
+use crate::drag::drag_candidate::DragCandidate;
+use crate::drag::drag_session::DragSession;
+use crate::drag::system_drag::SystemDrag;
 use crate::element_id::ElementId;
 use crate::geometry::point::Point;
 use crate::input::focus_trap::FocusTrap;
@@ -11,7 +14,8 @@ pub(crate) struct InputState {
     /// Where the pointer rests on the surface; none while it is outside.
     pub(crate) pointer: Option<Point>,
     pub(crate) pointer_modifiers: Modifiers,
-    /// The innermost element the pointer is over; it and its ancestors are hovered.
+    /// The innermost element the pointer is over; it and its ancestors are hovered. While a
+    /// drag is under way it is the drop target the drag is over.
     pub(crate) hovered: Option<ElementId>,
     /// The element the primary button went down on. Until the button is released it and its
     /// ancestors are active and the pointer belongs to it.
@@ -38,6 +42,12 @@ pub(crate) struct InputState {
     pub(crate) scroll_latch: Option<ElementId>,
     /// The element the keyboard focused since the last frame; the frame scrolls it into view.
     pub(crate) focus_to_reveal: Option<ElementId>,
+    /// The press on a drag source that has not travelled far enough to be a drag yet.
+    pub(crate) drag_candidate: Option<DragCandidate>,
+    /// The drag under way over the surface.
+    pub(crate) drag: Option<DragSession>,
+    /// The drag a source handed to the system and the host has not taken yet.
+    pub(crate) system_drag: Option<SystemDrag>,
 }
 
 impl Default for InputState {
@@ -61,6 +71,9 @@ impl Default for InputState {
             group_points: Vec::new(),
             scroll_latch: None,
             focus_to_reveal: None,
+            drag_candidate: None,
+            drag: None,
+            system_drag: None,
         }
     }
 }

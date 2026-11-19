@@ -1,3 +1,4 @@
+mod dragging;
 mod key_routing;
 mod text_input;
 
@@ -8,15 +9,16 @@ use std::time::Duration;
 
 use dispatch2::{DispatchQueue, MainThreadBound};
 use morok_core::{
-    DisplayList, ElementTree, FrameScheduler, KeyPhase, PointerButton, PointerInputKind, Size, TextCommand,
+    DisplayList, ElementTree, FrameScheduler, KeyPhase, PayloadType, PointerButton, PointerInputKind, Size, TextCommand,
 };
 use morok_style::ColorScheme;
 use objc2::rc::{Retained, Weak};
 use objc2::runtime::{AnyObject, NSObjectProtocol, ProtocolObject, Sel};
 use objc2::{AnyThread, DefinedClass, MainThreadMarker, MainThreadOnly, Message, define_class, msg_send, sel};
 use objc2_app_kit::{
-    NSAppearanceCustomization, NSApplicationDidResignActiveNotification, NSEvent, NSResponder, NSTextInputClient,
-    NSTrackingArea, NSTrackingAreaOptions, NSView, NSWindow, NSWindowDidBecomeKeyNotification,
+    NSAppearanceCustomization, NSApplicationDidResignActiveNotification, NSDragOperation, NSDraggingContext,
+    NSDraggingDestination, NSDraggingInfo, NSDraggingSession, NSDraggingSource, NSEvent, NSResponder,
+    NSTextInputClient, NSTrackingArea, NSTrackingAreaOptions, NSView, NSWindow, NSWindowDidBecomeKeyNotification,
     NSWindowDidMoveNotification, NSWindowDidResignKeyNotification, NSWorkspace,
     NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification,
 };
@@ -87,13 +89,19 @@ pub(crate) struct SurfaceState {
     menu_bar_target: RefCell<Option<Retained<MenuBarTarget>>>,
     /// The revision of the menus of the content the menu bar was built from last.
     shown_menu_bar: Cell<Option<u64>>,
+    /// The payload types the content takes drags of the system in, as the system was asked to
+    /// offer them to the view last.
+    drop_types: RefCell<Vec<PayloadType>>,
+    /// The revision of the payload types of the content the system was asked with last.
+    registered_drop_types: Cell<Option<u64>>,
 }
 
 define_class!(
     /// The view of a surface: a Metal layer the display lists of its content are drawn into,
     /// the display link that paces the frames, the responder that takes the mouse and the
-    /// keyboard for its content, and the accessibility element whose children are the nodes
-    /// of the accessibility tree of the content.
+    /// keyboard for its content, the source and the destination of the drags of the system
+    /// its content begins and takes, and the accessibility element whose children are the
+    /// nodes of the accessibility tree of the content.
     #[unsafe(super(NSView, NSResponder))]
     #[thread_kind = MainThreadOnly]
     #[ivars = SurfaceState]
@@ -222,6 +230,7 @@ define_class!(
         #[unsafe(method(mouseDragged:))]
         fn mouse_dragged(&self, event: &NSEvent) {
             self.pointer_input(event, PointerInputKind::Moved);
+            self.begin_requested_drag(event);
         }
 
         #[unsafe(method(rightMouseDragged:))]
@@ -309,6 +318,55 @@ define_class!(
     }
 
     unsafe impl NSObjectProtocol for SurfaceView {}
+
+    unsafe impl NSDraggingDestination for SurfaceView {
+        #[unsafe(method(draggingEntered:))]
+        fn dragging_entered(&self, sender: &ProtocolObject<dyn NSDraggingInfo>) -> NSDragOperation {
+            self.drag_came_over(sender)
+        }
+
+        #[unsafe(method(draggingUpdated:))]
+        fn dragging_updated(&self, sender: &ProtocolObject<dyn NSDraggingInfo>) -> NSDragOperation {
+            self.drag_moved_over(sender)
+        }
+
+        #[unsafe(method(draggingExited:))]
+        fn dragging_exited(&self, _sender: Option<&ProtocolObject<dyn NSDraggingInfo>>) {
+            self.drag_left();
+        }
+
+        #[unsafe(method(performDragOperation:))]
+        fn perform_drag_operation(&self, sender: &ProtocolObject<dyn NSDraggingInfo>) -> bool {
+            self.drag_dropped(sender)
+        }
+
+        #[unsafe(method(draggingEnded:))]
+        fn dragging_ended(&self, _sender: &ProtocolObject<dyn NSDraggingInfo>) {
+            self.drag_left();
+        }
+
+        /// The view hears of a drag when it moves: a drag at rest changes nothing.
+        #[unsafe(method(wantsPeriodicDraggingUpdates))]
+        fn wants_periodic_dragging_updates(&self) -> bool {
+            false
+        }
+    }
+
+    unsafe impl NSDraggingSource for SurfaceView {
+        #[unsafe(method(draggingSession:sourceOperationMaskForDraggingContext:))]
+        fn dragging_session_source_operation_mask(
+            &self,
+            _session: &NSDraggingSession,
+            context: NSDraggingContext,
+        ) -> NSDragOperation {
+            Self::offered_operations(context)
+        }
+
+        #[unsafe(method(draggingSession:endedAtPoint:operation:))]
+        fn dragging_session_ended(&self, _session: &NSDraggingSession, _screen_point: NSPoint, operation: NSDragOperation) {
+            self.handed_drag_ended(operation);
+        }
+    }
 
     unsafe impl NSTextInputClient for SurfaceView {
         #[unsafe(method(insertText:replacementRange:))]
@@ -415,6 +473,8 @@ impl SurfaceView {
             overlay_room: Cell::new(overlay_room),
             menu_bar_target: RefCell::new(None),
             shown_menu_bar: Cell::new(None),
+            drop_types: RefCell::new(Vec::new()),
+            registered_drop_types: Cell::new(None),
             overlays: RefCell::new(Vec::new()),
             overlay_requests: RefCell::new(Vec::new()),
         };
@@ -704,6 +764,7 @@ impl SurfaceView {
         self.accessibility().frame_ran();
         self.sync_overlays(now);
         self.sync_menu_bar();
+        self.sync_drop_types();
         self.show_requested_native_menu();
     }
 

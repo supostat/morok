@@ -5,7 +5,8 @@ use std::time::Duration;
 
 use morok_core::accesskit::ActionRequest;
 use morok_core::{
-    ElementId, ElementTree, IconId, KeyEvent, NativeMenu, PointerInput, ScrollInput, TextCommand, TimerId,
+    DragOutcome, ElementId, ElementTree, IconId, KeyEvent, Modifiers, NativeMenu, Payload, Point, PointerInput,
+    ScrollInput, TextCommand, TimerId,
 };
 use morok_reactive::{Runtime, Scope, Signal};
 use morok_style::{StyleSheet, Theme};
@@ -265,6 +266,72 @@ impl Surface {
             runtime,
         };
         self.tree.accessibility_action(request, &mut dispatch);
+    }
+
+    /// The drag the host took from the tree of the surface for the system is over: the
+    /// component of `source`, the element it began on, hears how it ended.
+    pub fn system_drag_ended(&mut self, runtime: &mut Runtime<Surfaces>, source: ElementId, outcome: DragOutcome) {
+        let mut dispatch = EventDispatch {
+            handlers: &mut self.event_handlers,
+            runtime,
+        };
+        self.tree.system_drag_ended(source, outcome, &mut dispatch);
+    }
+
+    /// A drag of the system came over the surface at `position`, carrying `payload`. Returns
+    /// whether a drop target takes it there.
+    pub fn system_drag_entered(
+        &mut self,
+        runtime: &mut Runtime<Surfaces>,
+        payload: Payload,
+        position: Point,
+        modifiers: Modifiers,
+    ) -> bool {
+        let mut dispatch = EventDispatch {
+            handlers: &mut self.event_handlers,
+            runtime,
+        };
+        self.tree
+            .system_drag_entered(payload, position, modifiers, &mut dispatch)
+    }
+
+    /// The drag of the system moved to `position`. Returns whether a drop target takes it
+    /// there.
+    pub fn system_drag_moved(
+        &mut self,
+        runtime: &mut Runtime<Surfaces>,
+        position: Point,
+        modifiers: Modifiers,
+    ) -> bool {
+        let mut dispatch = EventDispatch {
+            handlers: &mut self.event_handlers,
+            runtime,
+        };
+        self.tree.system_drag_moved(position, modifiers, &mut dispatch)
+    }
+
+    /// The drag of the system left the surface, or ended somewhere else.
+    pub fn system_drag_exited(&mut self, runtime: &mut Runtime<Surfaces>) {
+        let mut dispatch = EventDispatch {
+            handlers: &mut self.event_handlers,
+            runtime,
+        };
+        self.tree.system_drag_exited(&mut dispatch);
+    }
+
+    /// The drag of the system was dropped at `position`. Returns whether a drop target took
+    /// it.
+    pub fn system_drag_dropped(
+        &mut self,
+        runtime: &mut Runtime<Surfaces>,
+        position: Point,
+        modifiers: Modifiers,
+    ) -> bool {
+        let mut dispatch = EventDispatch {
+            handlers: &mut self.event_handlers,
+            runtime,
+        };
+        self.tree.system_drag_dropped(position, modifiers, &mut dispatch)
     }
 
     /// Removes the element with everything inside it from the tree, and with them what the

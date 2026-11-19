@@ -1,9 +1,11 @@
-use morok_core::Clipboard;
+use morok_core::{Clipboard, Payload, PayloadType};
 use objc2::rc::Retained;
-use objc2_app_kit::{NSPasteboard, NSPasteboardTypeString};
-use objc2_foundation::NSString;
+use objc2_app_kit::NSPasteboard;
 
-/// The clipboard of the system as edited texts reach it: the plain text of a pasteboard.
+use crate::pasteboard_payload;
+
+/// The clipboard of the system: a pasteboard, read and written in the payload types of the
+/// kit — plain text, files, addresses and data of the application's own types.
 #[derive(Debug)]
 pub struct PasteboardClipboard {
     pasteboard: Retained<NSPasteboard>,
@@ -23,17 +25,11 @@ impl PasteboardClipboard {
 }
 
 impl Clipboard for PasteboardClipboard {
-    fn text(&mut self) -> Option<String> {
-        // SAFETY: the type is a constant of AppKit.
-        let string_type = unsafe { NSPasteboardTypeString };
-        self.pasteboard.stringForType(string_type).map(|text| text.to_string())
+    fn read(&mut self, types: &[PayloadType]) -> Payload {
+        pasteboard_payload::read(&self.pasteboard, types)
     }
 
-    fn set_text(&mut self, text: &str) {
-        // SAFETY: the type is a constant of AppKit.
-        let string_type = unsafe { NSPasteboardTypeString };
-        self.pasteboard.clearContents();
-        self.pasteboard
-            .setString_forType(&NSString::from_str(text), string_type);
+    fn write(&mut self, payload: &Payload) {
+        pasteboard_payload::write(&self.pasteboard, payload);
     }
 }

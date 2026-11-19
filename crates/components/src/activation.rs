@@ -47,7 +47,7 @@ fn activates(event: &ElementEvent<'_>, keys: ActivationKeys) -> bool {
         ElementEvent::Pointer(pointer) => matches!(pointer.kind, PointerEventKind::Clicked { .. }),
         ElementEvent::Key(key) => is_press_of(key, keys),
         ElementEvent::Accessibility(action) => *action == AccessibilityAction::Click,
-        ElementEvent::TextChanged(_) => false,
+        ElementEvent::TextChanged(_) | ElementEvent::Drag(_) | ElementEvent::DragEnded(_) => false,
     }
 }
 

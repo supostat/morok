@@ -3,7 +3,6 @@
 
 pub(crate) mod caret_affinity;
 pub(crate) mod caret_blink;
-pub(crate) mod clipboard;
 pub(crate) mod composition;
 pub(crate) mod edit_command;
 pub(crate) mod edit_history;
