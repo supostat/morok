@@ -1,0 +1,16 @@
+/* The stage of the overlay cases: a padded surface with what the overlays of a case show
+   side by side, each as large as its content makes it. */
+
+.overlays-stage {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-8);
+  padding: var(--space-8);
+  background-color: var(--color-bg);
+}
+
+/* The buttons an application puts into a popover. */
+.overlays-actions {
+  display: flex;
+  gap: var(--space-2);
+}

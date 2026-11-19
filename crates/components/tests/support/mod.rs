@@ -8,7 +8,7 @@ use morok_components::view::{Mount, SurfaceId, Surfaces};
 use morok_core::accesskit::{Action, ActionData, ActionRequest, Node, NodeId, TreeId, TreeUpdate};
 use morok_core::{
     CaretLine, CaretLines, CaretStop, ElementId, ElementTree, FontId, FontMetrics, FontRequest, ItemRange, Key,
-    KeyEvent, KeyPhase, Modifiers, Point, PointerButton, PointerInput, PointerInputKind, ShapedGlyph, ShapedLine,
+    KeyEvent, KeyPhase, Modifiers, Point, PointerButton, PointerInput, PointerInputKind, Rect, ShapedGlyph, ShapedLine,
     ShapedRun, ShapedText, Size, TextExtent, TextRequest, TextShaper,
 };
 use morok_reactive::Runtime;
@@ -17,6 +17,10 @@ const VIEWPORT: Size = Size {
     width: 400.0,
     height: 300.0,
 };
+/// The screen of the stage: its window lies in the top left corner, and an overlay has the
+/// whole screen for room.
+pub(crate) const SCREEN: Rect = Rect::new(0.0, 0.0, 800.0, 600.0);
+const FRAME_INTERVAL: Duration = Duration::from_millis(16);
 /// The width of every character of the test font, per CSS pixel of font size.
 const ADVANCE_PER_FONT_SIZE: f32 = 0.5;
 
@@ -176,15 +180,84 @@ impl Stage {
 
     /// Runs one frame of the surface: the effects that wait, then style, layout and display list.
     pub(crate) fn frame(&mut self) {
-        self.surfaces
-            .surface_mut(self.surface)
-            .follow_scrolls(&mut self.runtime);
+        self.time += FRAME_INTERVAL;
+        self.frame_of(self.surface, VIEWPORT);
+    }
+
+    /// Runs one frame of every surface `after` the frame before, as the windows of a host
+    /// do: the surface of the window, then every overlay opened over it, each laid out in
+    /// the room of the screen and placed on the screen against its anchor.
+    pub(crate) fn frame_all_after(&mut self, after: Duration) {
+        self.time += after;
+        self.frame_of(self.surface, VIEWPORT);
+        self.frame_overlays_of(self.surface, Point::default());
+    }
+
+    /// Runs one frame of every surface, a frame interval after the frame before.
+    pub(crate) fn frame_all(&mut self) {
+        self.frame_all_after(FRAME_INTERVAL);
+    }
+
+    /// Runs the frame of a surface that is open at the time of the stage.
+    fn frame_of(&mut self, surface: SurfaceId, viewport: Size) {
+        if !self.surfaces.contains(surface) {
+            return;
+        }
+        let shown = self.surfaces.surface_mut(surface);
+        shown.follow_scrolls(&mut self.runtime);
+        shown.run_due_timers(&mut self.runtime, self.time);
         self.flush();
-        self.time += Duration::from_millis(16);
-        let tree = self.surfaces.surface_mut(self.surface).tree_mut();
+        if !self.surfaces.contains(surface) {
+            return;
+        }
+        let tree = self.surfaces.surface_mut(surface).tree_mut();
         tree.resolve_styles(self.time);
-        tree.compute_layout(VIEWPORT, 1.0, &mut self.text_shaper);
+        tree.compute_layout(viewport, 1.0, &mut self.text_shaper);
         tree.build_display_list();
+    }
+
+    /// Runs the frames of the overlays opened over `parent`, whose top left corner lies at
+    /// `parent_corner` of the screen, and places each as a window would.
+    fn frame_overlays_of(&mut self, parent: SurfaceId, parent_corner: Point) {
+        if !self.surfaces.contains(parent) {
+            return;
+        }
+        self.surfaces.follow_overlay_anchors(&mut self.runtime, parent);
+        for overlay in self.overlays_of(parent) {
+            self.frame_of(overlay, SCREEN.size());
+            if !self.surfaces.contains(overlay) {
+                continue;
+            }
+            let Some(geometry) = self.surfaces.overlay_geometry(overlay) else {
+                continue;
+            };
+            let anchor_on_screen = Rect {
+                x: geometry.anchor.x + parent_corner.x,
+                y: geometry.anchor.y + parent_corner.y,
+                ..geometry.anchor
+            };
+            let placed = geometry
+                .placement
+                .place(anchor_on_screen, geometry.panel.size(), SCREEN);
+            let corner = Point {
+                x: placed.frame.x - geometry.panel.x,
+                y: placed.frame.y - geometry.panel.y,
+            };
+            let corner_on_parent = Point {
+                x: corner.x - parent_corner.x,
+                y: corner.y - parent_corner.y,
+            };
+            self.surfaces
+                .overlay_placed(&mut self.runtime, overlay, placed.side, corner_on_parent);
+            self.frame_overlays_of(overlay, corner);
+        }
+    }
+
+    /// The overlays opened over the surface.
+    pub(crate) fn overlays_of(&self, surface: SurfaceId) -> Vec<SurfaceId> {
+        let mut overlays = Vec::new();
+        self.surfaces.overlays_of(surface, &mut overlays);
+        overlays
     }
 
     /// The children of the element in the tree of the surface.
@@ -202,14 +275,50 @@ impl Stage {
     }
 
     fn pointer(&mut self, kind: PointerInputKind, position: Point) {
+        self.pointer_on(self.surface, kind, position);
+    }
+
+    /// The pointer does something at a point of a surface, as the window of that surface
+    /// reports it.
+    pub(crate) fn pointer_on(&mut self, surface: SurfaceId, kind: PointerInputKind, position: Point) {
         let input = PointerInput {
             kind,
             position,
             modifiers: Modifiers::NONE,
         };
-        self.surfaces
-            .surface_mut(self.surface)
-            .pointer_input(&mut self.runtime, &input);
+        self.surfaces.pointer_input(&mut self.runtime, surface, &input);
+    }
+
+    /// Presses and releases a button at a point of a surface.
+    pub(crate) fn click_on(&mut self, surface: SurfaceId, button: PointerButton, position: Point) {
+        self.pointer_on(surface, PointerInputKind::Pressed { button, click_count: 1 }, position);
+        self.pointer_on(surface, PointerInputKind::Released { button, click_count: 1 }, position);
+    }
+
+    /// The middle of the box a surface showed the element in after its last frame.
+    pub(crate) fn middle_on(&self, surface: SurfaceId, element: ElementId) -> Point {
+        let shown_in = self.tree_of(surface).surface_box(element);
+        Point {
+            x: shown_in.x + shown_in.width / 2.0,
+            y: shown_in.y + shown_in.height / 2.0,
+        }
+    }
+
+    /// A key goes down and up on the surface that has the keyboard. Returns whether the
+    /// press was used.
+    pub(crate) fn press_key_on(&mut self, surface: SurfaceId, key: Key) -> bool {
+        let mut event = KeyEvent {
+            phase: KeyPhase::Pressed,
+            key,
+            modifiers: Modifiers::NONE,
+            is_repeat: false,
+        };
+        let was_used = self.surfaces.key_input(&mut self.runtime, surface, &event);
+        event.phase = KeyPhase::Released;
+        if self.surfaces.contains(surface) {
+            self.surfaces.key_input(&mut self.runtime, surface, &event);
+        }
+        was_used
     }
 
     /// Presses and releases the primary button at a point of the surface.
@@ -263,16 +372,15 @@ impl Stage {
 
     /// A key goes down and up with the modifiers held. Returns whether the press was used.
     pub(crate) fn press_key(&mut self, key: Key, modifiers: Modifiers) -> bool {
-        let surface = self.surfaces.surface_mut(self.surface);
         let mut event = KeyEvent {
             phase: KeyPhase::Pressed,
             key,
             modifiers,
             is_repeat: false,
         };
-        let was_used = surface.key_input(&mut self.runtime, &event);
+        let was_used = self.surfaces.key_input(&mut self.runtime, self.surface, &event);
         event.phase = KeyPhase::Released;
-        surface.key_input(&mut self.runtime, &event);
+        self.surfaces.key_input(&mut self.runtime, self.surface, &event);
         was_used
     }
 
@@ -284,9 +392,7 @@ impl Stage {
             modifiers: Modifiers::NONE,
             is_repeat: true,
         };
-        self.surfaces
-            .surface_mut(self.surface)
-            .key_input(&mut self.runtime, &event)
+        self.surfaces.key_input(&mut self.runtime, self.surface, &event)
     }
 
     /// Gives keyboard focus to the element. Returns whether it has focus now.
@@ -318,8 +424,16 @@ impl Stage {
 
     /// The node of the element in the accessibility tree as it stands now.
     pub(crate) fn accessible_node(&mut self, element: ElementId) -> Node {
+        self.accessible_node_on(self.surface, element)
+    }
+
+    /// The node of an element of a surface in the accessibility tree of that surface.
+    pub(crate) fn accessible_node_on(&mut self, surface: SurfaceId, element: ElementId) -> Node {
         let id = NodeId::from(element);
-        self.accessibility_tree()
+        self.surfaces
+            .surface_mut(surface)
+            .tree_mut()
+            .accessibility_tree()
             .nodes
             .into_iter()
             .find(|(node_id, _)| *node_id == id)

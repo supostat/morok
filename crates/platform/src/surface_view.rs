@@ -6,16 +6,18 @@ use std::ffi::c_void;
 use std::rc::Rc;
 use std::time::Duration;
 
+use dispatch2::{DispatchQueue, MainThreadBound};
 use morok_core::{
     DisplayList, ElementTree, FrameScheduler, KeyPhase, PointerButton, PointerInputKind, Size, TextCommand,
 };
 use morok_style::ColorScheme;
-use objc2::rc::Retained;
+use objc2::rc::{Retained, Weak};
 use objc2::runtime::{AnyObject, NSObjectProtocol, ProtocolObject, Sel};
-use objc2::{AnyThread, DefinedClass, MainThreadMarker, MainThreadOnly, define_class, msg_send, sel};
+use objc2::{AnyThread, DefinedClass, MainThreadMarker, MainThreadOnly, Message, define_class, msg_send, sel};
 use objc2_app_kit::{
-    NSAppearanceCustomization, NSEvent, NSResponder, NSTextInputClient, NSTrackingArea, NSTrackingAreaOptions, NSView,
-    NSWindowDidBecomeKeyNotification, NSWindowDidResignKeyNotification, NSWorkspace,
+    NSAppearanceCustomization, NSApplicationDidResignActiveNotification, NSEvent, NSResponder, NSTextInputClient,
+    NSTrackingArea, NSTrackingAreaOptions, NSView, NSWindow, NSWindowDidBecomeKeyNotification,
+    NSWindowDidMoveNotification, NSWindowDidResignKeyNotification, NSWorkspace,
     NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification,
 };
 use objc2_core_foundation::CGSize;
@@ -34,6 +36,10 @@ use crate::frame_loop::FrameLoop;
 use crate::frame_requester::FrameRequester;
 use crate::frame_statistics::FrameStatistics;
 use crate::input_translation;
+use crate::native_menu;
+use crate::overlay::overlay_request::OverlayRequest;
+use crate::overlay::screen_space::ScreenSpace;
+use crate::overlay::shown_overlay::ShownOverlay;
 use crate::render::frame_renderer::FrameRenderer;
 use crate::render::renderer::{PIXEL_FORMAT, Renderer};
 use crate::render::screen_target::ScreenTarget;
@@ -65,6 +71,15 @@ pub(crate) struct SurfaceState {
     /// The key being handed to the input methods.
     key_in_flight: RefCell<Option<Retained<NSEvent>>>,
     key_routing: Cell<KeyRouting>,
+    /// The GPU resources of the application, for the views of the overlays of this one.
+    renderer: Renderer,
+    /// The room the screen has for the surface when the surface is an overlay: its content is
+    /// laid out in that room, and the window takes the size the content comes to.
+    overlay_room: Cell<Option<Size>>,
+    /// The overlays the content asked for, on screen.
+    overlays: RefCell<Vec<ShownOverlay>>,
+    /// Scratch space for what the content asks for after a frame.
+    overlay_requests: RefCell<Vec<OverlayRequest>>,
 }
 
 define_class!(
@@ -117,6 +132,17 @@ define_class!(
         #[unsafe(method(windowDidBecomeKey:))]
         fn window_did_become_key(&self, notification: &NSNotification) {
             self.window_key_state_changed(notification, true);
+            self.keyboard_went_to(notification);
+        }
+
+        #[unsafe(method(applicationDidResignActive:))]
+        fn application_did_resign_active(&self, _notification: &NSNotification) {
+            self.user_turned_away();
+        }
+
+        #[unsafe(method(windowDidMove:))]
+        fn window_did_move(&self, notification: &NSNotification) {
+            self.window_moved(notification);
         }
 
         #[unsafe(method(windowDidResignKey:))]
@@ -346,16 +372,20 @@ define_class!(
 
 impl SurfaceView {
     /// A view that shows nothing yet: the window gives it its content before it shows it. It
-    /// follows the settings of the system from `settings` on.
+    /// follows the settings of the system from `settings` on. The view of an overlay is given
+    /// the room the screen has for the overlay, and shows through wherever its content draws
+    /// nothing.
     pub(crate) fn new(
         main_thread: MainThreadMarker,
         renderer: &Renderer,
         frame: NSRect,
         settings: SurfaceSettings,
+        overlay_room: Option<Size>,
     ) -> Retained<Self> {
         let layer = CAMetalLayer::new();
         layer.setDevice(Some(renderer.device()));
         layer.setPixelFormat(PIXEL_FORMAT);
+        layer.setOpaque(overlay_room.is_none());
         // A backdrop filter reads what the surface already shows.
         layer.setFramebufferOnly(false);
         // SAFETY: the name is a constant of Core Graphics.
@@ -373,6 +403,10 @@ impl SurfaceView {
             statistics: Cell::new(FrameStatistics::default()),
             key_in_flight: RefCell::new(None),
             key_routing: Cell::new(KeyRouting::Waiting),
+            renderer: renderer.clone(),
+            overlay_room: Cell::new(overlay_room),
+            overlays: RefCell::new(Vec::new()),
+            overlay_requests: RefCell::new(Vec::new()),
         };
         let view = Self::alloc(main_thread).set_ivars(state);
         // SAFETY: the superclass initializes a view with a frame.
@@ -409,6 +443,18 @@ impl SurfaceView {
                 observer,
                 sel!(windowDidResignKey:),
                 Some(NSWindowDidResignKeyNotification),
+                None,
+            );
+            window_notifications.addObserver_selector_name_object(
+                observer,
+                sel!(applicationDidResignActive:),
+                Some(NSApplicationDidResignActiveNotification),
+                None,
+            );
+            window_notifications.addObserver_selector_name_object(
+                observer,
+                sel!(windowDidMove:),
+                Some(NSWindowDidMoveNotification),
                 None,
             );
         }
@@ -468,9 +514,22 @@ impl SurfaceView {
         self.ivars().statistics.get()
     }
 
-    /// The window closes: the display link, which holds the view, and the notifications of the
-    /// system let go of it.
+    pub(crate) fn renderer(&self) -> &Renderer {
+        &self.ivars().renderer
+    }
+
+    /// The room the screen has for the overlay the view shows changed.
+    pub(crate) fn set_overlay_room(&self, room: Size) {
+        let state = self.ivars();
+        if state.overlay_room.replace(Some(room)) != Some(room) {
+            self.frame_loop().request_frame();
+        }
+    }
+
+    /// The window closes: its overlays close with it, and the display link, which holds the
+    /// view, and the notifications of the system let go of it.
     pub(crate) fn close(&self) {
+        drop(self.ivars().overlays.take());
         self.frame_loop().stop();
         let observer: &AnyObject = self;
         // SAFETY: the view was added as an observer when it was created.
@@ -560,15 +619,27 @@ impl SurfaceView {
 
     /// A window got or lost the keyboard; the accessibility of the view follows its own window.
     fn window_key_state_changed(&self, notification: &NSNotification, is_key: bool) {
-        let Some(window) = self.window() else {
-            return;
-        };
-        let is_of_this_window = notification.object().is_some_and(|object| {
-            Retained::as_ptr(&object).cast::<c_void>() == Retained::as_ptr(&window).cast::<c_void>()
-        });
-        if is_of_this_window {
+        if self.is_about_own_window(notification) {
             self.accessibility().view_focus_changed(is_key);
         }
+    }
+
+    /// A window moved. The overlays of the view move along with its own window, and each has
+    /// to be placed again: the room around its anchor changed.
+    fn window_moved(&self, notification: &NSNotification) {
+        if self.is_about_own_window(notification) && !self.ivars().overlays.borrow().is_empty() {
+            self.frame_loop().request_frame();
+        }
+    }
+
+    /// Whether the notification tells of the window the view is in.
+    fn is_about_own_window(&self, notification: &NSNotification) -> bool {
+        let Some(window) = self.window() else {
+            return false;
+        };
+        notification.object().is_some_and(|object| {
+            Retained::as_ptr(&object).cast::<c_void>() == Retained::as_ptr(&window).cast::<c_void>()
+        })
     }
 
     fn accessibility(&self) -> &SurfaceAccessibility {
@@ -578,7 +649,7 @@ impl SurfaceView {
             .expect("a view has its content before it enters a window")
     }
 
-    fn content(&self) -> &Rc<RefCell<dyn SurfaceContent>> {
+    pub(crate) fn content(&self) -> &Rc<RefCell<dyn SurfaceContent>> {
         self.ivars()
             .content
             .get()
@@ -607,13 +678,110 @@ impl SurfaceView {
                     frame_loop.request_frame();
                 }
             };
+            let layout_viewport = state.overlay_room.get().unwrap_or(geometry.viewport);
             self.content()
                 .borrow_mut()
-                .frame(geometry.viewport, geometry.scale, now, &mut show);
+                .frame(layout_viewport, geometry.scale, now, &mut show);
         }
         state.statistics.set(statistics);
         frame_loop.end_frame();
         self.accessibility().frame_ran();
+        self.sync_overlays(now);
+        self.show_requested_native_menu();
+    }
+
+    /// Brings the windows of the overlays in line with what the content asks for after a
+    /// frame: opens the new ones, places every one against its anchor, and closes the ones
+    /// the content asks for no longer.
+    fn sync_overlays(&self, now: Duration) {
+        let Some(window) = self.window() else {
+            return;
+        };
+        let state = self.ivars();
+        let main_thread = self.mtm();
+        let screen = ScreenSpace::current(main_thread);
+        let room = screen.room_around(&window, main_thread);
+        let scale = window.backingScaleFactor() as f32;
+        let mut requests = state.overlay_requests.take();
+        requests.clear();
+        self.content()
+            .borrow_mut()
+            .overlays(room.size(), scale, now, &mut requests);
+        // A window that closes hands the keyboard back, and the observers of the key window
+        // hear of it at once: the overlays are not borrowed while one is dropped.
+        let closed: Vec<ShownOverlay> = state
+            .overlays
+            .borrow_mut()
+            .extract_if(.., |shown| !requests.iter().any(|request| request.id == shown.id()))
+            .collect();
+        drop(closed);
+        for request in requests.iter().filter(|request| !request.size.is_empty()) {
+            let is_shown = state.overlays.borrow().iter().any(|shown| shown.id() == request.id);
+            if !is_shown {
+                let opened = ShownOverlay::open(self, request, room.size(), self.settings());
+                state.overlays.borrow_mut().push(opened);
+            }
+            let moved = state
+                .overlays
+                .borrow()
+                .iter()
+                .find(|shown| shown.id() == request.id)
+                .and_then(|shown| shown.place(self, &window, request, screen, room));
+            if let Some((side, origin)) = moved {
+                self.content().borrow_mut().overlay_placed(request.id, side, origin);
+            }
+        }
+        state.overlay_requests.replace(requests);
+    }
+
+    /// The settings of the system the surface follows now.
+    fn settings(&self) -> SurfaceSettings {
+        let state = self.ivars();
+        SurfaceSettings {
+            color_scheme: state.color_scheme.get(),
+            reduces_motion: state.reduces_motion.get(),
+        }
+    }
+
+    /// Shows the menu of the system the content asked for. The menu runs an event loop of its
+    /// own until it closes, so it opens from the main queue: once the callback that found it
+    /// asked for has returned and nothing is borrowed.
+    fn show_requested_native_menu(&self) {
+        let Some(menu) = self.content().borrow_mut().native_menu() else {
+            return;
+        };
+        let view = MainThreadBound::new(Weak::from_retained(&self.retain()), self.mtm());
+        DispatchQueue::main().exec_async(move || {
+            let main_thread = MainThreadMarker::new().expect("the main queue runs on the main thread");
+            let Some(view) = view.get(main_thread).load() else {
+                return;
+            };
+            if let Some(id) = native_menu::pop_up(&view, &menu, main_thread) {
+                view.content().borrow_mut().native_menu_command_chosen(id);
+            }
+        });
+    }
+
+    /// A window took the keyboard. When it shows no surface, the user turned to a panel of
+    /// the system or to a window the kit does not draw.
+    fn keyboard_went_to(&self, notification: &NSNotification) {
+        let shows_surface = notification
+            .object()
+            .and_then(|object| object.downcast::<NSWindow>().ok())
+            .and_then(|window| window.contentView())
+            .is_some_and(|content_view| content_view.downcast_ref::<Self>().is_some());
+        if !shows_surface {
+            self.user_turned_away();
+        }
+    }
+
+    /// The user left the surface for something the kit does not draw: the overlays of the
+    /// surface that go on a press outside them go now.
+    fn user_turned_away(&self) {
+        if self.ivars().overlays.borrow().is_empty() {
+            return;
+        }
+        self.content().borrow_mut().dismiss_overlays();
     }
 
     /// Draws the display list into the next drawable of the layer. Returns whether the layer

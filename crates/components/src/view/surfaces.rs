@@ -1,5 +1,7 @@
+mod overlays;
+
 use morok_core::{ElementId, IconId};
-use morok_reactive::Runtime;
+use morok_reactive::{Runtime, Scope};
 use morok_style::{StyleSheet, Theme};
 
 use crate::kit_icon::KitIcon;
@@ -35,7 +37,13 @@ impl Surfaces {
 
     /// Opens a surface with an empty tree styled by `style_sheet` under `theme`.
     pub fn open(&mut self, runtime: &mut Runtime<Self>, style_sheet: StyleSheet, theme: Theme) -> SurfaceId {
-        let surface = Surface::new(style_sheet, theme, runtime.scope(|_| {}), self.kit_icon_ids.clone());
+        let scope = runtime.scope(|_| {});
+        self.open_in_scope(scope, style_sheet, theme)
+    }
+
+    /// Opens a surface whose components live in `scope`.
+    fn open_in_scope(&mut self, scope: Scope, style_sheet: StyleSheet, theme: Theme) -> SurfaceId {
+        let surface = Surface::new(style_sheet, theme, scope, self.kit_icon_ids.clone());
         if let Some(index) = self.free_indices.pop() {
             let slot = &mut self.slots[index as usize];
             slot.surface = Some(surface);
@@ -49,12 +57,23 @@ impl Surfaces {
         SurfaceId::new(index, 0)
     }
 
-    /// Closes the surface: everything mounted on it is disposed and its tree is dropped.
+    /// Whether the surface is open.
+    pub fn contains(&self, surface: SurfaceId) -> bool {
+        let slot = &self.slots[surface.index()];
+        slot.generation == surface.generation() && slot.surface.is_some()
+    }
+
+    /// Closes the surface: the overlays opened over it are closed first, then everything
+    /// mounted on it is disposed and its tree is dropped. The host of the surface an overlay
+    /// was opened over hears of it in the next frame of that surface.
     ///
     /// # Panics
     ///
     /// When the surface was closed already.
     pub fn close(&mut self, runtime: &mut Runtime<Self>, surface: SurfaceId) {
+        while let Some(overlay) = self.first_overlay_of(surface) {
+            self.close(runtime, overlay);
+        }
         let slot = &mut self.slots[surface.index()];
         assert_eq!(slot.generation, surface.generation(), "{CLOSED_SURFACE}");
         let closed = slot.surface.take().expect(CLOSED_SURFACE);
@@ -62,6 +81,11 @@ impl Surfaces {
         self.free_indices
             .push(u32::try_from(surface.index()).expect("the index came out of a surface ID"));
         runtime.dispose(closed.scope);
+        if let Some(attachment) = closed.overlay
+            && self.contains(attachment.parent)
+        {
+            self.surface_mut(attachment.parent).tree.request_frame();
+        }
     }
 
     /// # Panics

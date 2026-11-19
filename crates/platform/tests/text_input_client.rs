@@ -118,10 +118,7 @@ impl SurfaceContent for FieldWindow {
     fn scroll_input(&mut self, _input: &ScrollInput) {}
 
     fn key_input(&mut self, event: &KeyEvent) -> bool {
-        let was_used = self
-            .surfaces
-            .surface_mut(self.surface)
-            .key_input(&mut self.runtime, event);
+        let was_used = self.surfaces.key_input(&mut self.runtime, self.surface, event);
         self.flush();
         was_used
     }

@@ -9,6 +9,8 @@ pub(crate) struct FrameRequests {
     scheduler: Option<Box<dyn FrameScheduler>>,
     /// Whether a change waits for a frame that has not begun.
     is_pending: bool,
+    /// The shortest delay a frame was asked for after since the last frame began.
+    shortest_delay: Option<Duration>,
 }
 
 impl FrameRequests {
@@ -17,6 +19,7 @@ impl FrameRequests {
         Self {
             scheduler: None,
             is_pending: true,
+            shortest_delay: None,
         }
     }
 
@@ -42,8 +45,14 @@ impl FrameRequests {
     }
 
     /// Asks the host for a frame once `delay` has passed, whether or not one waits already:
-    /// the frame that waits runs before then.
-    pub(crate) fn request_after(&self, delay: Duration) {
+    /// the frame that waits runs before then. Whatever shows a change with time alone asks
+    /// again in every frame, and the host keeps one such request, so of the delays asked for
+    /// in a frame the shortest is passed on.
+    pub(crate) fn request_after(&mut self, delay: Duration) {
+        if self.shortest_delay.is_some_and(|shortest| shortest <= delay) {
+            return;
+        }
+        self.shortest_delay = Some(delay);
         if let Some(scheduler) = &self.scheduler {
             scheduler.request_frame_after(delay);
         }
@@ -51,5 +60,6 @@ impl FrameRequests {
 
     pub(crate) fn frame_began(&mut self) {
         self.is_pending = false;
+        self.shortest_delay = None;
     }
 }

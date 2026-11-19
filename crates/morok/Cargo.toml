@@ -32,3 +32,7 @@ objc2-foundation = { workspace = true, features = ["NSArray", "NSGeometry", "NSS
 [[test]]
 name = "button_interaction"
 harness = false
+
+[[test]]
+name = "overlay_windows"
+harness = false

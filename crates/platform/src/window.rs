@@ -36,7 +36,7 @@ impl<Content: SurfaceContent + 'static> Window<Content> {
         let main_thread = application.main_thread();
         let settings = application.surface_settings();
         let content_rect = NSRect::new(NSPoint::ZERO, ns_size(options.content_size));
-        let view = SurfaceView::new(main_thread, application.renderer(), content_rect, settings);
+        let view = SurfaceView::new(main_thread, application.renderer(), content_rect, settings, None);
         let content = Rc::new(RefCell::new(build_content(view.frame_scheduler(), settings)));
         view.set_content(Rc::clone(&content) as Rc<RefCell<dyn SurfaceContent>>);
 

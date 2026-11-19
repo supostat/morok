@@ -1,0 +1,55 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 260.0
+height = 92.0
+
+[[light]]
+node = "#1 .overlays-stage"
+x = 0.0
+y = 0.0
+width = 260.0
+height = 89.39844
+
+[[light]]
+node = "#2 .tooltip"
+x = 32.0
+y = 32.0
+width = 113.44531
+height = 25.398438
+
+[[light]]
+node = "#3 text"
+x = 40.0
+y = 36.0
+width = 97.44531
+height = 17.398438
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 260.0
+height = 92.0
+
+[[dark]]
+node = "#1 .overlays-stage"
+x = 0.0
+y = 0.0
+width = 260.0
+height = 89.39844
+
+[[dark]]
+node = "#2 .tooltip"
+x = 32.0
+y = 32.0
+width = 113.44531
+height = 25.398438
+
+[[dark]]
+node = "#3 text"
+x = 40.0
+y = 36.0
+width = 97.44531
+height = 17.398438

@@ -1,0 +1,167 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 420.0
+height = 200.0
+
+[[light]]
+node = "#1 .overlays-stage"
+x = 0.0
+y = 0.0
+width = 420.0
+height = 64.0
+
+[[light]]
+node = "#2 .toasts"
+x = 124.0
+y = 68.91406
+width = 280.0
+height = 115.08594
+
+[[light]]
+node = "#3 .toast"
+x = 124.0
+y = 68.91406
+width = 280.0
+height = 62.242188
+
+[[light]]
+node = "#4 .toast-dot"
+x = 141.0
+y = 96.03125
+width = 8.0
+height = 8.0
+
+[[light]]
+node = "#5 element"
+x = 161.0
+y = 81.91406
+width = 87.21094
+height = 36.242188
+
+[[light]]
+node = "#6 text"
+x = 161.0
+y = 81.91406
+width = 87.21094
+height = 18.84375
+
+[[light]]
+node = "#7 .toast-detail"
+x = 161.0
+y = 100.75781
+width = 87.21094
+height = 17.398438
+
+[[light]]
+node = "#8 .toast"
+x = 124.0
+y = 139.15625
+width = 280.0
+height = 44.84375
+
+[[light]]
+node = "#9 .toast-dot.danger"
+x = 141.0
+y = 157.57813
+width = 8.0
+height = 8.0
+
+[[light]]
+node = "#10 element"
+x = 161.0
+y = 152.15625
+width = 160.67188
+height = 18.84375
+
+[[light]]
+node = "#11 text"
+x = 161.0
+y = 152.15625
+width = 160.67188
+height = 18.84375
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 420.0
+height = 200.0
+
+[[dark]]
+node = "#1 .overlays-stage"
+x = 0.0
+y = 0.0
+width = 420.0
+height = 64.0
+
+[[dark]]
+node = "#2 .toasts"
+x = 124.0
+y = 68.91406
+width = 280.0
+height = 115.08594
+
+[[dark]]
+node = "#3 .toast"
+x = 124.0
+y = 68.91406
+width = 280.0
+height = 62.242188
+
+[[dark]]
+node = "#4 .toast-dot"
+x = 141.0
+y = 96.03125
+width = 8.0
+height = 8.0
+
+[[dark]]
+node = "#5 element"
+x = 161.0
+y = 81.91406
+width = 87.21094
+height = 36.242188
+
+[[dark]]
+node = "#6 text"
+x = 161.0
+y = 81.91406
+width = 87.21094
+height = 18.84375
+
+[[dark]]
+node = "#7 .toast-detail"
+x = 161.0
+y = 100.75781
+width = 87.21094
+height = 17.398438
+
+[[dark]]
+node = "#8 .toast"
+x = 124.0
+y = 139.15625
+width = 280.0
+height = 44.84375
+
+[[dark]]
+node = "#9 .toast-dot.danger"
+x = 141.0
+y = 157.57813
+width = 8.0
+height = 8.0
+
+[[dark]]
+node = "#10 element"
+x = 161.0
+y = 152.15625
+width = 160.67188
+height = 18.84375
+
+[[dark]]
+node = "#11 text"
+x = 161.0
+y = 152.15625
+width = 160.67188
+height = 18.84375

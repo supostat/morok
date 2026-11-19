@@ -1,0 +1,307 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 300.0
+height = 220.0
+
+[[light]]
+node = "#1 .overlays-stage"
+x = 0.0
+y = 0.0
+width = 300.0
+height = 213.0
+
+[[light]]
+node = "#2 .menu"
+x = 32.0
+y = 32.0
+width = 200.0
+height = 149.0
+
+[[light]]
+node = "#3 .menu-item"
+x = 37.0
+y = 37.0
+width = 190.0
+height = 26.0
+
+[[light]]
+node = "#4 .menu-item-icon"
+x = 45.0
+y = 43.0
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#5 text"
+x = 67.0
+y = 40.578125
+width = 67.53906
+height = 18.84375
+
+[[light]]
+node = "#6 .menu-item"
+x = 37.0
+y = 63.0
+width = 190.0
+height = 26.0
+
+[[light]]
+node = "#7 .menu-item-icon"
+x = 45.0
+y = 69.0
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#8 text"
+x = 67.0
+y = 66.578125
+width = 62.179688
+height = 18.84375
+
+[[light]]
+node = "#9 .menu-item-shortcut"
+x = 187.67969
+y = 67.296875
+width = 31.320313
+height = 17.398438
+
+[[light]]
+node = "#10 .menu-item"
+x = 37.0
+y = 89.0
+width = 190.0
+height = 26.0
+
+[[light]]
+node = "#11 .menu-item-icon"
+x = 45.0
+y = 95.0
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#12 text"
+x = 67.0
+y = 92.578125
+width = 61.601563
+height = 18.84375
+
+[[light]]
+node = "#13 .menu-item-chevron"
+x = 207.0
+y = 96.0
+width = 12.0
+height = 12.0
+
+[[light]]
+node = "#14 .menu-item"
+x = 37.0
+y = 115.0
+width = 190.0
+height = 26.0
+
+[[light]]
+node = "#15 .menu-item-icon"
+x = 45.0
+y = 121.0
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#16 text"
+x = 67.0
+y = 118.578125
+width = 110.39844
+height = 18.84375
+
+[[light]]
+node = "#17 .menu-separator"
+x = 45.0
+y = 145.0
+width = 174.0
+height = 1.0
+
+[[light]]
+node = "#18 .menu-item.danger"
+x = 37.0
+y = 150.0
+width = 190.0
+height = 26.0
+
+[[light]]
+node = "#19 .menu-item-icon"
+x = 45.0
+y = 156.0
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#20 text"
+x = 67.0
+y = 153.57813
+width = 85.50781
+height = 18.84375
+
+[[light]]
+node = "#21 .menu-item-shortcut"
+x = 195.77344
+y = 154.29688
+width = 23.226563
+height = 17.398438
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 300.0
+height = 220.0
+
+[[dark]]
+node = "#1 .overlays-stage"
+x = 0.0
+y = 0.0
+width = 300.0
+height = 213.0
+
+[[dark]]
+node = "#2 .menu"
+x = 32.0
+y = 32.0
+width = 200.0
+height = 149.0
+
+[[dark]]
+node = "#3 .menu-item"
+x = 37.0
+y = 37.0
+width = 190.0
+height = 26.0
+
+[[dark]]
+node = "#4 .menu-item-icon"
+x = 45.0
+y = 43.0
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#5 text"
+x = 67.0
+y = 40.578125
+width = 67.53906
+height = 18.84375
+
+[[dark]]
+node = "#6 .menu-item"
+x = 37.0
+y = 63.0
+width = 190.0
+height = 26.0
+
+[[dark]]
+node = "#7 .menu-item-icon"
+x = 45.0
+y = 69.0
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#8 text"
+x = 67.0
+y = 66.578125
+width = 62.179688
+height = 18.84375
+
+[[dark]]
+node = "#9 .menu-item-shortcut"
+x = 187.67969
+y = 67.296875
+width = 31.320313
+height = 17.398438
+
+[[dark]]
+node = "#10 .menu-item"
+x = 37.0
+y = 89.0
+width = 190.0
+height = 26.0
+
+[[dark]]
+node = "#11 .menu-item-icon"
+x = 45.0
+y = 95.0
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#12 text"
+x = 67.0
+y = 92.578125
+width = 61.601563
+height = 18.84375
+
+[[dark]]
+node = "#13 .menu-item-chevron"
+x = 207.0
+y = 96.0
+width = 12.0
+height = 12.0
+
+[[dark]]
+node = "#14 .menu-item"
+x = 37.0
+y = 115.0
+width = 190.0
+height = 26.0
+
+[[dark]]
+node = "#15 .menu-item-icon"
+x = 45.0
+y = 121.0
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#16 text"
+x = 67.0
+y = 118.578125
+width = 110.39844
+height = 18.84375
+
+[[dark]]
+node = "#17 .menu-separator"
+x = 45.0
+y = 145.0
+width = 174.0
+height = 1.0
+
+[[dark]]
+node = "#18 .menu-item.danger"
+x = 37.0
+y = 150.0
+width = 190.0
+height = 26.0
+
+[[dark]]
+node = "#19 .menu-item-icon"
+x = 45.0
+y = 156.0
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#20 text"
+x = 67.0
+y = 153.57813
+width = 85.50781
+height = 18.84375
+
+[[dark]]
+node = "#21 .menu-item-shortcut"
+x = 195.77344
+y = 154.29688
+width = 23.226563
+height = 17.398438

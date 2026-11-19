@@ -34,9 +34,9 @@ impl Expectations {
     }
 }
 
-/// Makes the events `AppKit` would send for a mouse and a keyboard and gives them to the only
-/// window of the application, which finds the view under the point or its first responder as
-/// it does for the events of the system.
+/// Makes the events `AppKit` would send for a mouse and a keyboard and gives them to a window
+/// of the application, which finds the view under the point or its first responder as it
+/// does for the events of the system.
 pub(crate) struct EventSource {
     window: Retained<NSWindow>,
     content_size: Size,
@@ -51,6 +51,16 @@ impl EventSource {
             .firstObject()
             .expect("the application has opened its window");
         Self { window, content_size }
+    }
+
+    /// The source of the events of `window`, whose surface takes `content_size` CSS pixels.
+    pub(crate) fn for_window(window: Retained<NSWindow>, content_size: Size) -> Self {
+        Self { window, content_size }
+    }
+
+    /// The window the events go to.
+    pub(crate) fn window(&self) -> &NSWindow {
+        &self.window
     }
 
     /// The view that shows the surface of the window.
@@ -81,26 +91,44 @@ impl EventSource {
         self.mouse(NSEventType::LeftMouseUp, at);
     }
 
+    /// The secondary button goes down and up at a point of the surface.
+    pub(crate) fn secondary_click(&self, at: Point) {
+        self.mouse(NSEventType::RightMouseDown, at);
+        self.mouse(NSEventType::RightMouseUp, at);
+    }
+
     /// A key goes down and up: `key_code` is its virtual key code and `characters` what it
     /// types.
     pub(crate) fn press_key(&self, key_code: u16, characters: &str) {
         for kind in [NSEventType::KeyDown, NSEventType::KeyUp] {
-            let characters = NSString::from_str(characters);
-            let event = NSEvent::keyEventWithType_location_modifierFlags_timestamp_windowNumber_context_characters_charactersIgnoringModifiers_isARepeat_keyCode(
-                kind,
-                NSPoint::ZERO,
-                NSEventModifierFlags::empty(),
-                0.0,
-                self.window.windowNumber(),
-                None,
-                &characters,
-                &characters,
-                false,
-                key_code,
-            )
-            .expect("the key event is made");
-            self.window.sendEvent(&event);
+            self.window.sendEvent(&self.key_event(kind, key_code, characters));
         }
+    }
+
+    /// Puts a key that goes down and up into the queue of the application, for whatever
+    /// takes the events of the queue next: a menu of the system does while it is open.
+    pub(crate) fn queue_key_press(&self, main_thread: MainThreadMarker, key_code: u16, characters: &str) {
+        let application = NSApplication::sharedApplication(main_thread);
+        for kind in [NSEventType::KeyDown, NSEventType::KeyUp] {
+            application.postEvent_atStart(&self.key_event(kind, key_code, characters), false);
+        }
+    }
+
+    fn key_event(&self, kind: NSEventType, key_code: u16, characters: &str) -> Retained<NSEvent> {
+        let characters = NSString::from_str(characters);
+        NSEvent::keyEventWithType_location_modifierFlags_timestamp_windowNumber_context_characters_charactersIgnoringModifiers_isARepeat_keyCode(
+            kind,
+            NSPoint::ZERO,
+            NSEventModifierFlags::empty(),
+            0.0,
+            self.window.windowNumber(),
+            None,
+            &characters,
+            &characters,
+            false,
+            key_code,
+        )
+        .expect("the key event is made")
     }
 }
 

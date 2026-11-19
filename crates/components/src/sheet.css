@@ -1,0 +1,45 @@
+/* A sheet: a panel that hangs from the top edge of the surface, over a scrim that covers the
+   surface until the sheet is answered. */
+
+.sheet-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background-color: var(--color-scrim);
+}
+
+.sheet {
+  width: 420px;
+  padding: var(--space-5) var(--space-6);
+  border-bottom-right-radius: var(--radius-lg);
+  border-bottom-left-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-modal);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  line-height: var(--text-leading);
+}
+
+.sheet-title {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-lg);
+  font-weight: var(--text-weight-semibold);
+}
+
+.sheet-message {
+  margin-bottom: var(--space-4);
+  color: var(--color-text-2);
+}
+
+.sheet-content {
+  margin-bottom: var(--space-4);
+}
+
+.sheet-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}

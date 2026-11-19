@@ -9,9 +9,9 @@
 
 mod application;
 mod application_state;
+mod hosted_surface;
 mod styles;
 mod window;
-mod window_content;
 
 pub use application::Application;
 pub use morok_components as components;

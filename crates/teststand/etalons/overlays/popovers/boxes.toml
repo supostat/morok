@@ -1,0 +1,279 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 660.0
+height = 220.0
+
+[[light]]
+node = "#1 .overlays-stage"
+x = 0.0
+y = 0.0
+width = 660.0
+height = 195.64063
+
+[[light]]
+node = "#2 .popover"
+x = 32.0
+y = 32.0
+width = 260.0
+height = 131.64063
+
+[[light]]
+node = "#3 .popover-arrow"
+x = 58.928932
+y = 24.928932
+width = 14.142136
+height = 14.142136
+
+[[light]]
+node = "#4 .popover-title"
+x = 49.0
+y = 49.0
+width = 226.0
+height = 18.84375
+
+[[light]]
+node = "#5 .popover-message"
+x = 49.0
+y = 71.84375
+width = 226.0
+height = 34.796875
+
+[[light]]
+node = "#6 .overlays-actions"
+x = 49.0
+y = 118.640625
+width = 226.0
+height = 28.0
+
+[[light]]
+node = "#7 .button.primary"
+x = 49.0
+y = 118.640625
+width = 80.375
+height = 28.0
+
+[[light]]
+node = "#8 text"
+x = 62.0
+y = 123.21875
+width = 54.375
+height = 18.84375
+
+[[light]]
+node = "#9 .button"
+x = 137.375
+y = 118.640625
+width = 58.054688
+height = 28.0
+
+[[light]]
+node = "#10 text"
+x = 150.375
+y = 123.21875
+width = 32.054688
+height = 18.84375
+
+[[light]]
+node = "#11 .popover"
+x = 324.0
+y = 32.0
+width = 260.0
+height = 131.64063
+
+[[light]]
+node = "#12 .popover-arrow.above"
+x = 350.92892
+y = 156.56955
+width = 14.142151
+height = 14.142151
+
+[[light]]
+node = "#13 .popover-title"
+x = 341.0
+y = 49.0
+width = 226.0
+height = 18.84375
+
+[[light]]
+node = "#14 .popover-message"
+x = 341.0
+y = 71.84375
+width = 226.0
+height = 34.796875
+
+[[light]]
+node = "#15 .overlays-actions"
+x = 341.0
+y = 118.640625
+width = 226.0
+height = 28.0
+
+[[light]]
+node = "#16 .button.primary"
+x = 341.0
+y = 118.640625
+width = 80.375
+height = 28.0
+
+[[light]]
+node = "#17 text"
+x = 354.0
+y = 123.21875
+width = 54.375
+height = 18.84375
+
+[[light]]
+node = "#18 .button"
+x = 429.375
+y = 118.640625
+width = 58.054688
+height = 28.0
+
+[[light]]
+node = "#19 text"
+x = 442.375
+y = 123.21875
+width = 32.054688
+height = 18.84375
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 660.0
+height = 220.0
+
+[[dark]]
+node = "#1 .overlays-stage"
+x = 0.0
+y = 0.0
+width = 660.0
+height = 195.64063
+
+[[dark]]
+node = "#2 .popover"
+x = 32.0
+y = 32.0
+width = 260.0
+height = 131.64063
+
+[[dark]]
+node = "#3 .popover-arrow"
+x = 58.928932
+y = 24.928932
+width = 14.142136
+height = 14.142136
+
+[[dark]]
+node = "#4 .popover-title"
+x = 49.0
+y = 49.0
+width = 226.0
+height = 18.84375
+
+[[dark]]
+node = "#5 .popover-message"
+x = 49.0
+y = 71.84375
+width = 226.0
+height = 34.796875
+
+[[dark]]
+node = "#6 .overlays-actions"
+x = 49.0
+y = 118.640625
+width = 226.0
+height = 28.0
+
+[[dark]]
+node = "#7 .button.primary"
+x = 49.0
+y = 118.640625
+width = 80.375
+height = 28.0
+
+[[dark]]
+node = "#8 text"
+x = 62.0
+y = 123.21875
+width = 54.375
+height = 18.84375
+
+[[dark]]
+node = "#9 .button"
+x = 137.375
+y = 118.640625
+width = 58.054688
+height = 28.0
+
+[[dark]]
+node = "#10 text"
+x = 150.375
+y = 123.21875
+width = 32.054688
+height = 18.84375
+
+[[dark]]
+node = "#11 .popover"
+x = 324.0
+y = 32.0
+width = 260.0
+height = 131.64063
+
+[[dark]]
+node = "#12 .popover-arrow.above"
+x = 350.92892
+y = 156.56955
+width = 14.142151
+height = 14.142151
+
+[[dark]]
+node = "#13 .popover-title"
+x = 341.0
+y = 49.0
+width = 226.0
+height = 18.84375
+
+[[dark]]
+node = "#14 .popover-message"
+x = 341.0
+y = 71.84375
+width = 226.0
+height = 34.796875
+
+[[dark]]
+node = "#15 .overlays-actions"
+x = 341.0
+y = 118.640625
+width = 226.0
+height = 28.0
+
+[[dark]]
+node = "#16 .button.primary"
+x = 341.0
+y = 118.640625
+width = 80.375
+height = 28.0
+
+[[dark]]
+node = "#17 text"
+x = 354.0
+y = 123.21875
+width = 54.375
+height = 18.84375
+
+[[dark]]
+node = "#18 .button"
+x = 429.375
+y = 118.640625
+width = 58.054688
+height = 28.0
+
+[[dark]]
+node = "#19 text"
+x = 442.375
+y = 123.21875
+width = 32.054688
+height = 18.84375

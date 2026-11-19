@@ -1,0 +1,13 @@
+/* A tooltip: a short dark note about what the pointer rests on. */
+
+.tooltip {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-text);
+  box-shadow: var(--shadow-float);
+  color: var(--color-bg);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  line-height: var(--text-leading);
+  white-space: nowrap;
+}

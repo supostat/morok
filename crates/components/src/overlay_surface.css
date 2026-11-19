@@ -1,0 +1,9 @@
+/* What an overlay surface holds: its panel, as large as the content of the panel makes it,
+   with room around it for the shadow of the panel. */
+
+.overlay-surface {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: var(--space-8);
+}

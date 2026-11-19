@@ -19,4 +19,10 @@ impl SurfaceId {
     pub(crate) const fn generation(self) -> u32 {
         self.generation
     }
+
+    /// A number no other surface of the application has or had: for a host that names its
+    /// own windows by the surfaces they show.
+    pub const fn serial(self) -> u64 {
+        ((self.generation as u64) << 32) | self.index as u64
+    }
 }

@@ -71,6 +71,8 @@ use crate::style::style_scratch::StyleScratch;
 use crate::text::line_box::LineBox;
 use crate::text::text_layout_pass::TextLayoutPass;
 use crate::text::text_shaper::TextShaper;
+use crate::timing::timer_id::TimerId;
+use crate::timing::timers::Timers;
 
 /// The retained tree of one surface: its elements, their styles, their boxes and its display list.
 ///
@@ -130,6 +132,7 @@ pub struct ElementTree {
     clipboard: Option<Box<dyn Clipboard>>,
     /// The element whose edited text the last frame showed with its caret and its selection.
     text_focus: Option<ElementId>,
+    timers: Timers,
 }
 
 impl ElementTree {
@@ -169,7 +172,18 @@ impl ElementTree {
             frame_requests: FrameRequests::awaiting_first_frame(),
             clipboard: None,
             text_focus: None,
+            timers: Timers::default(),
         }
+    }
+
+    /// The style sheet the tree is styled by.
+    pub fn style_sheet(&self) -> &StyleSheet {
+        &self.style_sheet
+    }
+
+    /// The values of the tokens under the active theme.
+    pub fn theme(&self) -> &Theme {
+        &self.theme
     }
 
     /// Names the host that runs the frames of the tree. A tree that already waits for a frame
@@ -283,6 +297,7 @@ impl ElementTree {
             ShortcutScope::Surface => true,
             ShortcutScope::Element(scope) => elements.contains(scope),
         });
+        self.timers.forget_removed(&self.elements);
     }
 
     pub fn role(&self, element: ElementId) -> Role {
@@ -559,6 +574,9 @@ impl ElementTree {
         let resolved_elements = self.run_style_pass();
         self.advance_springs();
         self.advance_caret();
+        if let Some(until_due) = self.timers.arm(now) {
+            self.frame_requests.request_after(until_due);
+        }
         if !self.moving_elements.is_empty() || self.springs.iter().any(|spring| !spring.is_settled) {
             self.request_frame();
         }
@@ -653,6 +671,26 @@ impl ElementTree {
             .position(|running| running.id == spring)
             .expect("the spring runs until it is stopped");
         self.springs.remove(position);
+    }
+
+    /// Starts a timer that falls due once `delay` has passed since the next frame. The tree
+    /// asks for the frame it falls due in, and the host of the tree takes it there through
+    /// [`take_due_timers`](Self::take_due_timers). The timer goes with `owner` when that
+    /// element is removed.
+    pub fn start_timer(&mut self, owner: ElementId, delay: Duration) -> TimerId {
+        self.request_frame();
+        self.timers.start(owner, delay)
+    }
+
+    /// Stops the timer; one that fell due already is gone and stays so.
+    pub fn cancel_timer(&mut self, timer: TimerId) {
+        self.timers.cancel(timer);
+    }
+
+    /// Moves the timers that fall due by `now`, the time of the frame that begins, to `due`,
+    /// the earliest first. A host calls this before the stages of every frame.
+    pub fn take_due_timers(&mut self, now: Duration, due: &mut Vec<TimerId>) {
+        self.timers.take_due(now, due);
     }
 
     fn running_spring(&self, spring: SpringId) -> &RunningSpring {

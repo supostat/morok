@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use morok_core::accesskit::Role as AccessibleRole;
 use morok_core::{
     AccessibleActions, AccessibleItem, AccessibleValue, ElementId, ElementTree, Focusability, KeyChord, NumericValue,
@@ -237,6 +239,29 @@ impl ElementBuilder<'_, '_> {
             },
         );
         self
+    }
+
+    /// A signal that tells whether `when` has held for `delay` without a break: it comes to
+    /// hold in the frame the delay runs out in, counted from the frame `when` came to hold in,
+    /// and holds no longer as soon as `when` does not. The signal goes with the element.
+    pub fn held_for(&mut self, when: impl Into<Source<bool>>, delay: Duration) -> Signal<bool> {
+        let when = when.into();
+        let has_held = self.mount.runtime.signal(false);
+        let (surface, owner) = (self.mount.surface_id, self.element);
+        let mut running = None;
+        self.mount.runtime.effect(move |runtime, surfaces: &mut Surfaces| {
+            let surface = surfaces.surface_mut(surface);
+            if let Some(timer) = running.take() {
+                surface.cancel_timer(timer);
+            }
+            if runtime.get(when) {
+                let run = Box::new(move |runtime: &mut Runtime<Surfaces>| runtime.set(has_held, true));
+                running = Some(surface.start_timer(owner, delay, run));
+            } else if runtime.untracked(|runtime| runtime.get(has_held)) {
+                runtime.set(has_held, false);
+            }
+        });
+        has_held
     }
 
     /// Gives the element the value of the property through `apply`: at once for a value that

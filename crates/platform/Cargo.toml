@@ -23,13 +23,18 @@ objc2-app-kit = { workspace = true, features = [
   "NSAccessibility",
   "NSAppearance",
   "NSApplication",
+  "NSColor",
   "NSEvent",
   "NSFont",
   "NSFontDescriptor",
   "NSGraphics",
+  "NSMenu",
+  "NSMenuItem",
+  "NSPanel",
   "NSPasteboard",
   "NSResponder",
   "NSRunningApplication",
+  "NSScreen",
   "NSTextInputClient",
   "NSTextInputContext",
   "NSTrackingArea",
@@ -156,6 +161,10 @@ harness = false
 
 [[test]]
 name = "event_translation"
+harness = false
+
+[[test]]
+name = "overlay_placement"
 harness = false
 
 [[test]]

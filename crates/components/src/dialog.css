@@ -1,0 +1,44 @@
+/* A dialog: a panel in the middle of a scrim that covers the surface until the dialog is
+   answered. */
+
+.dialog-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-scrim);
+}
+
+.dialog {
+  width: 340px;
+  padding: var(--space-6);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-modal);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  line-height: var(--text-leading);
+}
+
+.dialog-title {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-lg);
+  font-weight: var(--text-weight-semibold);
+}
+
+.dialog-message {
+  margin-bottom: var(--space-5);
+  color: var(--color-text-2);
+}
+
+.dialog-content {
+  margin-bottom: var(--space-5);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}

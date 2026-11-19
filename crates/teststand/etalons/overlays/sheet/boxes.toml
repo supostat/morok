@@ -1,0 +1,167 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 520.0
+height = 260.0
+
+[[light]]
+node = "#1 .overlays-stage"
+x = 0.0
+y = 0.0
+width = 520.0
+height = 64.0
+
+[[light]]
+node = "#2 element"
+x = 0.0
+y = 64.0
+width = 520.0
+height = 0.0
+
+[[light]]
+node = "#3 .sheet-layer"
+x = 0.0
+y = 0.0
+width = 520.0
+height = 260.0
+
+[[light]]
+node = "#4 .sheet"
+x = 50.0
+y = 0.0
+width = 420.0
+height = 132.59375
+
+[[light]]
+node = "#5 .sheet-title"
+x = 74.0
+y = 20.0
+width = 372.0
+height = 21.75
+
+[[light]]
+node = "#6 .sheet-message"
+x = 74.0
+y = 49.75
+width = 372.0
+height = 18.84375
+
+[[light]]
+node = "#7 .sheet-actions"
+x = 74.0
+y = 84.59375
+width = 372.0
+height = 28.0
+
+[[light]]
+node = "#8 .button"
+x = 309.0078
+y = 84.59375
+width = 73.25781
+height = 28.0
+
+[[light]]
+node = "#9 text"
+x = 322.0078
+y = 89.171875
+width = 47.257813
+height = 18.84375
+
+[[light]]
+node = "#10 .button.primary"
+x = 390.26563
+y = 84.59375
+width = 55.734375
+height = 28.0
+
+[[light]]
+node = "#11 text"
+x = 403.26563
+y = 89.171875
+width = 29.734375
+height = 18.84375
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 520.0
+height = 260.0
+
+[[dark]]
+node = "#1 .overlays-stage"
+x = 0.0
+y = 0.0
+width = 520.0
+height = 64.0
+
+[[dark]]
+node = "#2 element"
+x = 0.0
+y = 64.0
+width = 520.0
+height = 0.0
+
+[[dark]]
+node = "#3 .sheet-layer"
+x = 0.0
+y = 0.0
+width = 520.0
+height = 260.0
+
+[[dark]]
+node = "#4 .sheet"
+x = 50.0
+y = 0.0
+width = 420.0
+height = 132.59375
+
+[[dark]]
+node = "#5 .sheet-title"
+x = 74.0
+y = 20.0
+width = 372.0
+height = 21.75
+
+[[dark]]
+node = "#6 .sheet-message"
+x = 74.0
+y = 49.75
+width = 372.0
+height = 18.84375
+
+[[dark]]
+node = "#7 .sheet-actions"
+x = 74.0
+y = 84.59375
+width = 372.0
+height = 28.0
+
+[[dark]]
+node = "#8 .button"
+x = 309.0078
+y = 84.59375
+width = 73.25781
+height = 28.0
+
+[[dark]]
+node = "#9 text"
+x = 322.0078
+y = 89.171875
+width = 47.257813
+height = 18.84375
+
+[[dark]]
+node = "#10 .button.primary"
+x = 390.26563
+y = 84.59375
+width = 55.734375
+height = 28.0
+
+[[dark]]
+node = "#11 text"
+x = 403.26563
+y = 89.171875
+width = 29.734375
+height = 18.84375

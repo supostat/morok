@@ -1,0 +1,69 @@
+/* A menu: a floating column of items. The item the pointer or the arrow keys are on has focus
+   and is highlighted. */
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  padding: var(--space-1);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-float);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  line-height: var(--text-leading);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 26px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-xs);
+}
+
+.menu-item.danger {
+  color: var(--color-danger);
+}
+
+.menu-item:focus {
+  background-color: var(--color-accent);
+  color: var(--color-text-on-accent);
+}
+
+.menu-item:disabled {
+  color: var(--color-text-3);
+}
+
+.menu-item-icon {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.menu-item-shortcut {
+  margin-left: auto;
+  color: var(--color-text-3);
+  font-size: var(--text-sm);
+}
+
+.menu-item:focus > .menu-item-shortcut {
+  color: var(--color-text-on-accent);
+  opacity: 0.8;
+}
+
+.menu-item-chevron {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  margin-left: auto;
+}
+
+.menu-separator {
+  height: 1px;
+  margin: var(--space-1) var(--space-2);
+  background-color: var(--color-line);
+}

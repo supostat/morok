@@ -2,14 +2,14 @@ use morok_components::view::SurfaceId;
 use morok_core::{ElementTree, Size};
 use morok_platform::FrameStatistics;
 
-use crate::window_content::WindowContent;
+use crate::hosted_surface::HostedSurface;
 
 /// A window of an application: one surface with a tree of its own, on screen for as long as
 /// this value lives. A window is not dropped while the application handles an event or runs
 /// [`Application::update`](crate::Application::update).
 #[derive(Debug)]
 pub struct Window {
-    pub(crate) platform: morok_platform::Window<WindowContent>,
+    pub(crate) platform: morok_platform::Window<HostedSurface>,
     pub(crate) surface: SurfaceId,
 }
 

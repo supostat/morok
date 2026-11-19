@@ -1,22 +1,29 @@
 use std::collections::HashMap;
+use std::fmt::{Debug, Formatter, Result};
 use std::ops::Range;
+use std::time::Duration;
 
 use morok_core::accesskit::ActionRequest;
-use morok_core::{ElementId, ElementTree, IconId, KeyEvent, PointerInput, ScrollInput, TextCommand};
+use morok_core::{
+    ElementId, ElementTree, IconId, KeyEvent, NativeMenu, PointerInput, ScrollInput, TextCommand, TimerId,
+};
 use morok_reactive::{Runtime, Scope, Signal};
 use morok_style::{StyleSheet, Theme};
 
 use crate::kit_icon::KitIcon;
+use crate::view::action::Action;
 use crate::view::child_fragments::ChildFragments;
 use crate::view::event_dispatch::EventDispatch;
 use crate::view::event_handlers::EventHandlers;
+use crate::view::native_menu_choice::NativeMenuChoice;
+use crate::view::overlay_attachment::OverlayAttachment;
 use crate::view::scroll_area::ScrollArea;
 use crate::view::surfaces::Surfaces;
+use crate::view::timer_handler::TimerHandler;
 
 /// One surface as the components see it: its element tree and what they registered for its
 /// elements. The host of the surface gives it the input of the surface and runs the stages of
 /// its tree.
-#[derive(Debug)]
 pub struct Surface {
     pub(crate) tree: ElementTree,
     /// Owns everything mounted on the surface.
@@ -32,6 +39,15 @@ pub struct Surface {
     removed_elements: Vec<ElementId>,
     /// The `Scroll` elements whose scroll components follow, with the signals they follow it by.
     scroll_followers: Vec<(ElementId, Signal<ScrollArea>)>,
+    /// What ties the surface to the surface it is opened over; none for the surface of a window.
+    pub(crate) overlay: Option<OverlayAttachment>,
+    timer_handlers: HashMap<TimerId, TimerHandler>,
+    /// Scratch space for the timers that fall due in a frame.
+    due_timers: Vec<TimerId>,
+    /// The menu of the system a component asked for and the host has not shown yet.
+    native_menu: Option<NativeMenu>,
+    /// What hears of the line chosen in the menu of the system asked for last.
+    native_menu_choice: Option<NativeMenuChoice>,
 }
 
 impl Surface {
@@ -45,6 +61,60 @@ impl Surface {
             kit_icon_elements: HashMap::new(),
             removed_elements: Vec::new(),
             scroll_followers: Vec::new(),
+            overlay: None,
+            timer_handlers: HashMap::new(),
+            due_timers: Vec::new(),
+            native_menu: None,
+            native_menu_choice: None,
+        }
+    }
+
+    /// Starts a timer that runs `run` in the frame it falls due in: once `delay` has passed
+    /// since the next frame of the surface. It goes with `owner`.
+    pub(crate) fn start_timer(&mut self, owner: ElementId, delay: Duration, run: Action) -> TimerId {
+        let timer = self.tree.start_timer(owner, delay);
+        self.timer_handlers.insert(timer, TimerHandler { owner, run });
+        timer
+    }
+
+    /// Stops the timer; one that fell due already is gone and stays so.
+    pub(crate) fn cancel_timer(&mut self, timer: TimerId) {
+        self.tree.cancel_timer(timer);
+        self.timer_handlers.remove(&timer);
+    }
+
+    /// Runs what the timers that fall due by `now`, the time of the frame that begins, were
+    /// started for. Called at the start of every frame, before its flush.
+    pub fn run_due_timers(&mut self, runtime: &mut Runtime<Surfaces>, now: Duration) {
+        self.tree.take_due_timers(now, &mut self.due_timers);
+        for timer in self.due_timers.drain(..) {
+            let mut handler = self
+                .timer_handlers
+                .remove(&timer)
+                .expect("a timer of a surface is started with its handler");
+            (handler.run)(runtime);
+        }
+    }
+
+    /// Asks the host for a menu of the system; `on_choice` hears of the line the user chooses
+    /// in it. A menu asked for before and not shown yet is given up.
+    pub(crate) fn request_native_menu(&mut self, menu: NativeMenu, on_choice: NativeMenuChoice) {
+        self.native_menu = Some(menu);
+        self.native_menu_choice = Some(on_choice);
+        self.tree.request_frame();
+    }
+
+    /// The menu of the system a component asked for since the host took the last one. The
+    /// host shows it and tells the line the user chose through
+    /// [`native_menu_command_chosen`](Self::native_menu_command_chosen).
+    pub fn take_native_menu(&mut self) -> Option<NativeMenu> {
+        self.native_menu.take()
+    }
+
+    /// The user chose the command `id` of the menu of the system the host took last.
+    pub fn native_menu_command_chosen(&mut self, runtime: &mut Runtime<Surfaces>, id: usize) {
+        if let Some(on_choice) = &mut self.native_menu_choice {
+            on_choice(runtime, id);
         }
     }
 
@@ -120,7 +190,7 @@ impl Surface {
     }
 
     /// Takes what the pointer did on the surface and lets the components hear of it.
-    pub fn pointer_input(&mut self, runtime: &mut Runtime<Surfaces>, input: &PointerInput) {
+    pub(crate) fn pointer_input(&mut self, runtime: &mut Runtime<Surfaces>, input: &PointerInput) {
         let mut dispatch = EventDispatch {
             handlers: &mut self.event_handlers,
             runtime,
@@ -170,7 +240,7 @@ impl Surface {
 
     /// Takes a key that went down or up. Returns whether a component, a shortcut or the focus
     /// of the tree used it.
-    pub fn key_input(&mut self, runtime: &mut Runtime<Surfaces>, event: &KeyEvent) -> bool {
+    pub(crate) fn key_input(&mut self, runtime: &mut Runtime<Surfaces>, event: &KeyEvent) -> bool {
         let mut dispatch = EventDispatch {
             handlers: &mut self.event_handlers,
             runtime,
@@ -206,5 +276,20 @@ impl Surface {
         self.event_handlers.forget_shortcuts_of_removed_elements(&self.tree);
         let tree = &self.tree;
         self.scroll_followers.retain(|(scroller, _)| tree.contains(*scroller));
+        self.timer_handlers.retain(|_, handler| tree.contains(handler.owner));
+    }
+}
+
+impl Debug for Surface {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> Result {
+        formatter
+            .debug_struct("Surface")
+            .field("tree", &self.tree)
+            .field("scope", &self.scope)
+            .field("event_handlers", &self.event_handlers)
+            .field("overlay", &self.overlay)
+            .field("timer_handlers", &self.timer_handlers)
+            .field("native_menu", &self.native_menu)
+            .finish_non_exhaustive()
     }
 }

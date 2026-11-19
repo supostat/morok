@@ -8,9 +8,9 @@ use morok_platform::{Appearance, PasteboardClipboard, RendererError, WindowOptio
 use morok_reactive::Runtime;
 
 use crate::application_state::ApplicationState;
+use crate::hosted_surface::HostedSurface;
 use crate::styles::Styles;
 use crate::window::Window;
-use crate::window_content::WindowContent;
 
 /// A running application: the event loop of the system, the GPU resources its windows share
 /// and the signal graph its components live in. Every window is a surface with a tree of its
@@ -58,10 +58,7 @@ impl Application {
             tree.set_clipboard(Box::new(PasteboardClipboard::general()));
             let tree_root = tree.root();
             state.surfaces.mount(&mut state.runtime, surface, tree_root, root);
-            WindowContent {
-                state: Rc::clone(&self.state),
-                surface,
-            }
+            HostedSurface::new(Rc::clone(&self.state), surface, Duration::ZERO)
         });
         let surface = platform.update(|content| content.surface);
         Window { platform, surface }

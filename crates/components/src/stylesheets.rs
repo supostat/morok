@@ -3,7 +3,7 @@ use crate::stylesheet_source::StylesheetSource;
 /// The stylesheets of the components, in the order the build compiles them: the order of
 /// their paths. A host that compiles them first, in this order, and its own stylesheets after
 /// them gets a style sheet in which every class of the kit has the ID the components know it by.
-pub const STYLESHEETS: [StylesheetSource; 17] = [
+pub const STYLESHEETS: [StylesheetSource; 24] = [
     StylesheetSource {
         path: "crates/components/src/button.css",
         text: include_str!("button.css"),
@@ -13,12 +13,28 @@ pub const STYLESHEETS: [StylesheetSource; 17] = [
         text: include_str!("checkbox.css"),
     },
     StylesheetSource {
+        path: "crates/components/src/dialog.css",
+        text: include_str!("dialog.css"),
+    },
+    StylesheetSource {
         path: "crates/components/src/icon_button.css",
         text: include_str!("icon_button.css"),
     },
     StylesheetSource {
         path: "crates/components/src/list.css",
         text: include_str!("list.css"),
+    },
+    StylesheetSource {
+        path: "crates/components/src/menu.css",
+        text: include_str!("menu.css"),
+    },
+    StylesheetSource {
+        path: "crates/components/src/overlay_surface.css",
+        text: include_str!("overlay_surface.css"),
+    },
+    StylesheetSource {
+        path: "crates/components/src/popover.css",
+        text: include_str!("popover.css"),
     },
     StylesheetSource {
         path: "crates/components/src/progress_bar.css",
@@ -39,6 +55,10 @@ pub const STYLESHEETS: [StylesheetSource; 17] = [
     StylesheetSource {
         path: "crates/components/src/segmented_control.css",
         text: include_str!("segmented_control.css"),
+    },
+    StylesheetSource {
+        path: "crates/components/src/sheet.css",
+        text: include_str!("sheet.css"),
     },
     StylesheetSource {
         path: "crates/components/src/slider.css",
@@ -67,6 +87,14 @@ pub const STYLESHEETS: [StylesheetSource; 17] = [
     StylesheetSource {
         path: "crates/components/src/text_field.css",
         text: include_str!("text_field.css"),
+    },
+    StylesheetSource {
+        path: "crates/components/src/toast_stack.css",
+        text: include_str!("toast_stack.css"),
+    },
+    StylesheetSource {
+        path: "crates/components/src/tooltip.css",
+        text: include_str!("tooltip.css"),
     },
     StylesheetSource {
         path: "crates/components/src/tree.css",

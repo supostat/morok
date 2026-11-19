@@ -1,11 +1,19 @@
+use std::cell::RefCell;
 use std::ops::Range;
+use std::rc::Rc;
 use std::time::Duration;
 
 use morok_core::accesskit::{ActionRequest, TreeUpdate};
-use morok_core::{ElementTree, KeyEvent, Point, PointerInput, Rect, ScrollInput, Size, TextCommand};
+use morok_core::{
+    ElementTree, FrameScheduler, KeyEvent, NativeMenu, OverlaySide, Point, PointerInput, Rect, ScrollInput, Size,
+    TextCommand,
+};
 use morok_style::ColorScheme;
 
 use crate::focused_text::FocusedText;
+use crate::overlay::overlay_id::OverlayId;
+use crate::overlay::overlay_request::OverlayRequest;
+use crate::surface_settings::SurfaceSettings;
 
 /// What a window shows. The window asks its content for a frame whenever the tree of the
 /// content, or the window itself, asked the frame loop for one.
@@ -75,4 +83,46 @@ pub trait SurfaceContent {
     fn text_offset_at(&mut self, _point: Point) -> Option<usize> {
         None
     }
+
+    /// Lists the overlays the content wants shown over the surface now into `overlays`: asked
+    /// after every frame of the surface, at `now`. An overlay is laid out in `available`, the
+    /// room the screen of the surface has for it, with `scale` device pixels to a CSS pixel.
+    /// The window opens the overlays that are new, places every one, and closes the ones
+    /// that are listed no longer. A content that opens no overlay keeps this.
+    fn overlays(&mut self, _available: Size, _scale: f32, _now: Duration, _overlays: &mut Vec<OverlayRequest>) {}
+
+    /// The content of an overlay the content listed: asked once, when the overlay is first
+    /// shown. It is given the frame scheduler of the window of the overlay and the settings
+    /// of the system that window opens under.
+    ///
+    /// # Panics
+    ///
+    /// The default does: a content that lists an overlay gives its content.
+    fn overlay_content(
+        &mut self,
+        overlay: OverlayId,
+        _frame_scheduler: Box<dyn FrameScheduler>,
+        _settings: SurfaceSettings,
+    ) -> Rc<RefCell<dyn SurfaceContent>> {
+        panic!("the content listed {overlay:?} and gives no content for it");
+    }
+
+    /// The window placed an overlay: on `side` of its anchor, with the top left corner of its
+    /// surface at `origin` in CSS pixels of this surface. Told when either changes.
+    fn overlay_placed(&mut self, _overlay: OverlayId, _side: OverlaySide, _origin: Point) {}
+
+    /// The user turned away from the surface and its overlays: went to another application,
+    /// or to a window that shows no surface.
+    fn dismiss_overlays(&mut self) {}
+
+    /// The menu of the system the content asks for, once: the window shows it and tells the
+    /// command the user chose through
+    /// [`native_menu_command_chosen`](Self::native_menu_command_chosen). Asked after every
+    /// frame of the surface.
+    fn native_menu(&mut self) -> Option<NativeMenu> {
+        None
+    }
+
+    /// The user chose the command `id` of the menu of the system the window showed last.
+    fn native_menu_command_chosen(&mut self, _id: usize) {}
 }
