@@ -49,7 +49,7 @@ impl SearchField {
 
     /// Builds the field: a box that holds the magnifier and the edited line.
     pub fn mount(self, mount: &mut Mount<'_>) -> ElementId {
-        self.parts.mount(FieldKind::Search, mount)
+        self.parts.mount(FieldKind::Search, mount).field
     }
 }
 

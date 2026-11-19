@@ -50,7 +50,7 @@ impl TextArea {
 
     /// Builds the area: a box that holds the edited lines.
     pub fn mount(self, mount: &mut Mount<'_>) -> ElementId {
-        self.parts.mount(FieldKind::Area, mount)
+        self.parts.mount(FieldKind::Area, mount).field
     }
 }
 

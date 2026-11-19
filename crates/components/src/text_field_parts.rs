@@ -1,11 +1,16 @@
 use morok_core::accesskit::Role as AccessibleRole;
-use morok_core::{ElementId, Focusability, Key, KeyEvent, KeyPhase, Propagation};
-use morok_reactive::Signal;
+use morok_core::{Focusability, Key, KeyEvent, KeyPhase, Propagation};
+use morok_reactive::{Runtime, Signal};
 use morok_style::States;
 
+use crate::field_elements::FieldElements;
 use crate::kit_icon::KitIcon;
 use crate::styles::CLASSES;
-use crate::view::{Action, ElementEvent, Mount, Property};
+use crate::view::{Action, ElementEvent, Mount, Property, Surfaces};
+
+/// What a component built around a field does with a key before the field does anything
+/// with it; a key it uses goes no further.
+pub(crate) type FieldKeyHandler = Box<dyn FnMut(&mut Runtime<Surfaces>, &KeyEvent) -> Propagation>;
 
 /// Which of the fields of the kit is built.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -40,6 +45,10 @@ pub(crate) struct FieldParts {
     pub(crate) is_disabled: Property<bool>,
     pub(crate) is_invalid: Property<bool>,
     pub(crate) on_submit: Option<Action>,
+    /// Hears of every key before the field: the list a combo box drops down is moved by them.
+    pub(crate) on_key: Option<FieldKeyHandler>,
+    /// Hears of every change the user makes to the text, once the value has taken it.
+    pub(crate) on_edit: Option<Action>,
 }
 
 impl FieldParts {
@@ -51,10 +60,12 @@ impl FieldParts {
             is_disabled: Property::Fixed(false),
             is_invalid: Property::Fixed(false),
             on_submit: None,
+            on_key: None,
+            on_edit: None,
         }
     }
 
-    pub(crate) fn mount(self, kind: FieldKind, mount: &mut Mount<'_>) -> ElementId {
+    pub(crate) fn mount(self, kind: FieldKind, mount: &mut Mount<'_>) -> FieldElements {
         let Self {
             value,
             placeholder,
@@ -62,6 +73,8 @@ impl FieldParts {
             is_disabled,
             is_invalid,
             mut on_submit,
+            mut on_key,
+            mut on_edit,
         } = self;
         let icon = (kind == FieldKind::Search).then(|| mount.kit_icon(KitIcon::Search).class(CLASSES.field_icon).id());
         let mut input = if kind == FieldKind::Area {
@@ -80,18 +93,26 @@ impl FieldParts {
             .on_event(move |runtime, event| match event {
                 ElementEvent::TextChanged(text) => {
                     runtime.set(value, (*text).to_owned());
+                    if let Some(edited) = &mut on_edit {
+                        edited(runtime);
+                    }
                     Propagation::Stop
                 }
-                ElementEvent::Key(key) if kind.submits(key) => match &mut on_submit {
-                    Some(submit) => {
-                        submit(runtime);
-                        Propagation::Stop
+                ElementEvent::Key(key) => {
+                    if let Some(on_key) = &mut on_key
+                        && on_key(runtime, key) == Propagation::Stop
+                    {
+                        return Propagation::Stop;
                     }
-                    None => Propagation::Continue,
-                },
-                ElementEvent::Pointer(_) | ElementEvent::Key(_) | ElementEvent::Accessibility(_) => {
-                    Propagation::Continue
+                    match &mut on_submit {
+                        Some(submit) if kind.submits(key) => {
+                            submit(runtime);
+                            Propagation::Stop
+                        }
+                        _ => Propagation::Continue,
+                    }
                 }
+                ElementEvent::Pointer(_) | ElementEvent::Accessibility(_) => Propagation::Continue,
             });
         let input = input.id();
         let mut field = mount.element();
@@ -111,6 +132,7 @@ impl FieldParts {
         if let Some(icon) = icon {
             field.child(icon);
         }
-        field.child(input).id()
+        let field = field.child(input).id();
+        FieldElements { field, input }
     }
 }

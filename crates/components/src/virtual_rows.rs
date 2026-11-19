@@ -116,22 +116,27 @@ impl VirtualRows {
     }
 
     /// Scrolls the view as little as brings the row into view whenever `row` changes: the row
-    /// the keyboard is on.
-    pub(crate) fn keep_in_view(self, mount: &mut Mount<'_>, row: Signal<usize>) {
+    /// the keyboard is on. A view that opens with the row out of sight brings it into view
+    /// once its first frame told how high its viewport is.
+    pub(crate) fn keep_in_view(self, mount: &mut Mount<'_>, row: impl Into<Source<usize>>) {
         let Self {
             frame,
-            area,
+            area: followed_area,
             row_height,
             covered_top,
         } = self;
+        let row = row.into();
         mount.effect(move |runtime, tree| {
             let top = length_of(runtime.get(row), row_height);
-            let area = runtime.untracked(|runtime| runtime.get(area));
+            let area = runtime.untracked(|runtime| runtime.get(followed_area));
             let offset = area.offset.y;
             let height = area.viewport.height - covered_top;
-            let goal = if height <= 0.0 {
-                None
-            } else if top < offset {
+            if height <= 0.0 {
+                // Reading the area here makes the frame that measures the viewport run this again.
+                runtime.get(followed_area);
+                return;
+            }
+            let goal = if top < offset {
                 Some(top)
             } else if top + row_height > offset + height {
                 Some(top + row_height - height)

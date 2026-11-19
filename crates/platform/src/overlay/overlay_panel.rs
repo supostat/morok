@@ -1,3 +1,4 @@
+use morok_core::OverlayInput;
 use objc2::rc::Retained;
 use objc2::{DefinedClass, MainThreadMarker, MainThreadOnly, define_class, msg_send};
 use objc2_app_kit::{
@@ -6,13 +7,13 @@ use objc2_app_kit::{
 use objc2_foundation::NSRect;
 
 pub(crate) struct OverlayPanelState {
-    takes_input: bool,
+    input: OverlayInput,
 }
 
 define_class!(
     /// The window of an overlay: no frame, no background and no shadow of its own, so that
     /// all it shows is what its surface draws. It becomes the key window only for an overlay
-    /// that takes input, and the application stays the one it was.
+    /// that takes the keyboard, and the application stays the one it was.
     #[unsafe(super(NSPanel, NSWindow, NSResponder))]
     #[thread_kind = MainThreadOnly]
     #[ivars = OverlayPanelState]
@@ -21,14 +22,14 @@ define_class!(
     impl OverlayPanel {
         #[unsafe(method(canBecomeKeyWindow))]
         fn can_become_key_window(&self) -> bool {
-            self.ivars().takes_input
+            self.ivars().input.takes_keyboard()
         }
     }
 );
 
 impl OverlayPanel {
-    pub(crate) fn new(main_thread: MainThreadMarker, frame: NSRect, takes_input: bool) -> Retained<Self> {
-        let panel = Self::alloc(main_thread).set_ivars(OverlayPanelState { takes_input });
+    pub(crate) fn new(main_thread: MainThreadMarker, frame: NSRect, input: OverlayInput) -> Retained<Self> {
+        let panel = Self::alloc(main_thread).set_ivars(OverlayPanelState { input });
         let style = NSWindowStyleMask::Borderless | NSWindowStyleMask::NonactivatingPanel;
         // SAFETY: the superclass initializes a window with these four arguments, and the
         // panel is not released when closed: the overlay that opened it owns it.
@@ -46,7 +47,7 @@ impl OverlayPanel {
         panel.setOpaque(false);
         panel.setBackgroundColor(Some(&NSColor::clearColor()));
         panel.setHasShadow(false);
-        panel.setIgnoresMouseEvents(!takes_input);
+        panel.setIgnoresMouseEvents(!input.takes_pointer());
         panel.setHidesOnDeactivate(false);
         panel.setAnimationBehavior(NSWindowAnimationBehavior::None);
         panel

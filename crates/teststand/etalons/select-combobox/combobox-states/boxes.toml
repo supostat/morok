@@ -1,0 +1,251 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 716.0
+height = 100.0
+
+[[light]]
+node = "#1 .dropdowns-stage"
+x = 0.0
+y = 0.0
+width = 716.0
+height = 100.0
+
+[[light]]
+node = "#2 .dropdowns-grid"
+x = 16.0
+y = 16.0
+width = 684.0
+height = 68.0
+
+[[light]]
+node = "#3 .field"
+x = 16.0
+y = 16.0
+width = 220.0
+height = 28.0
+
+[[light]]
+node = "#4 .field-input"
+x = 25.0
+y = 22.5
+width = 182.0
+height = 15.0
+
+[[light]]
+node = "#5 .combobox-chevron"
+x = 215.0
+y = 24.0
+width = 12.0
+height = 12.0
+
+[[light]]
+node = "#6 .field"
+x = 248.0
+y = 16.0
+width = 220.0
+height = 28.0
+
+[[light]]
+node = "#7 .field-input"
+x = 257.0
+y = 22.5
+width = 182.0
+height = 15.0
+
+[[light]]
+node = "#8 .combobox-chevron"
+x = 447.0
+y = 24.0
+width = 12.0
+height = 12.0
+
+[[light]]
+node = "#9 .field"
+x = 480.0
+y = 16.0
+width = 220.0
+height = 28.0
+
+[[light]]
+node = "#10 .field-input"
+x = 489.0
+y = 22.5
+width = 182.0
+height = 15.0
+
+[[light]]
+node = "#11 .combobox-chevron"
+x = 679.0
+y = 24.0
+width = 12.0
+height = 12.0
+
+[[light]]
+node = "#12 .field.invalid"
+x = 16.0
+y = 56.0
+width = 220.0
+height = 28.0
+
+[[light]]
+node = "#13 .field-input"
+x = 25.0
+y = 62.5
+width = 182.0
+height = 15.0
+
+[[light]]
+node = "#14 .combobox-chevron"
+x = 215.0
+y = 64.0
+width = 12.0
+height = 12.0
+
+[[light]]
+node = "#15 .field"
+x = 248.0
+y = 56.0
+width = 220.0
+height = 28.0
+
+[[light]]
+node = "#16 .field-input"
+x = 257.0
+y = 62.5
+width = 182.0
+height = 15.0
+
+[[light]]
+node = "#17 .combobox-chevron"
+x = 447.0
+y = 64.0
+width = 12.0
+height = 12.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 716.0
+height = 100.0
+
+[[dark]]
+node = "#1 .dropdowns-stage"
+x = 0.0
+y = 0.0
+width = 716.0
+height = 100.0
+
+[[dark]]
+node = "#2 .dropdowns-grid"
+x = 16.0
+y = 16.0
+width = 684.0
+height = 68.0
+
+[[dark]]
+node = "#3 .field"
+x = 16.0
+y = 16.0
+width = 220.0
+height = 28.0
+
+[[dark]]
+node = "#4 .field-input"
+x = 25.0
+y = 22.5
+width = 182.0
+height = 15.0
+
+[[dark]]
+node = "#5 .combobox-chevron"
+x = 215.0
+y = 24.0
+width = 12.0
+height = 12.0
+
+[[dark]]
+node = "#6 .field"
+x = 248.0
+y = 16.0
+width = 220.0
+height = 28.0
+
+[[dark]]
+node = "#7 .field-input"
+x = 257.0
+y = 22.5
+width = 182.0
+height = 15.0
+
+[[dark]]
+node = "#8 .combobox-chevron"
+x = 447.0
+y = 24.0
+width = 12.0
+height = 12.0
+
+[[dark]]
+node = "#9 .field"
+x = 480.0
+y = 16.0
+width = 220.0
+height = 28.0
+
+[[dark]]
+node = "#10 .field-input"
+x = 489.0
+y = 22.5
+width = 182.0
+height = 15.0
+
+[[dark]]
+node = "#11 .combobox-chevron"
+x = 679.0
+y = 24.0
+width = 12.0
+height = 12.0
+
+[[dark]]
+node = "#12 .field.invalid"
+x = 16.0
+y = 56.0
+width = 220.0
+height = 28.0
+
+[[dark]]
+node = "#13 .field-input"
+x = 25.0
+y = 62.5
+width = 182.0
+height = 15.0
+
+[[dark]]
+node = "#14 .combobox-chevron"
+x = 215.0
+y = 64.0
+width = 12.0
+height = 12.0
+
+[[dark]]
+node = "#15 .field"
+x = 248.0
+y = 56.0
+width = 220.0
+height = 28.0
+
+[[dark]]
+node = "#16 .field-input"
+x = 257.0
+y = 62.5
+width = 182.0
+height = 15.0
+
+[[dark]]
+node = "#17 .combobox-chevron"
+x = 447.0
+y = 64.0
+width = 12.0
+height = 12.0

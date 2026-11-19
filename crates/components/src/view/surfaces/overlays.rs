@@ -10,7 +10,6 @@ use crate::view::overlay::Overlay;
 use crate::view::overlay_anchor::OverlayAnchor;
 use crate::view::overlay_attachment::OverlayAttachment;
 use crate::view::overlay_geometry::OverlayGeometry;
-use crate::view::overlay_interaction::OverlayInteraction;
 use crate::view::surface::Surface;
 use crate::view::surface_id::SurfaceId;
 use crate::view::surfaces::Surfaces;
@@ -128,7 +127,7 @@ impl Surfaces {
             placement: attachment.placement,
             size: surface.tree.border_box(attachment.frame).size(),
             panel: surface.tree.border_box(attachment.panel),
-            takes_input: self.takes_input(overlay),
+            input: attachment.interaction.input(),
         })
     }
 
@@ -203,13 +202,14 @@ impl Surfaces {
     }
 
     /// Takes a key that went down or up on the surface that has the keyboard. Returns whether
-    /// it was used. Escape that nothing on an overlay used dismisses the overlay.
+    /// it was used. Escape that nothing on an overlay used dismisses an overlay that takes the
+    /// keyboard.
     pub fn key_input(&mut self, runtime: &mut Runtime<Self>, surface: SurfaceId, event: &KeyEvent) -> bool {
         if self.surface_mut(surface).key_input(runtime, event) {
             return true;
         }
         let is_escape = event.phase == KeyPhase::Pressed && event.key == Key::Escape && event.modifiers.is_empty();
-        if is_escape && self.takes_input(surface) {
+        if is_escape && self.takes_keyboard(surface) {
             self.dismiss(runtime, surface);
             return true;
         }
@@ -217,7 +217,8 @@ impl Surfaces {
     }
 
     /// The user turned away from the surfaces of the application: pressed outside all of
-    /// them, or went to another application. Every overlay that takes input is dismissed.
+    /// them, or went to another application. Every overlay that takes the pointer is
+    /// dismissed.
     pub fn dismiss_overlays(&mut self, runtime: &mut Runtime<Self>) {
         for index in 0..self.slots.len() {
             if let Some(overlay) = self.overlay_in_slot(index) {
@@ -266,17 +267,17 @@ impl Surfaces {
         attachment.parent == pressed && hit.is_some_and(|hit| is_inside(&self.surface(pressed).tree, anchor, hit))
     }
 
-    /// Whether the surface is an overlay that takes the pointer and the keyboard.
-    fn takes_input(&self, surface: SurfaceId) -> bool {
+    /// Whether the surface is an overlay that takes the keyboard.
+    fn takes_keyboard(&self, surface: SurfaceId) -> bool {
         self.surface(surface)
             .overlay
             .as_ref()
-            .is_some_and(|attachment| matches!(attachment.interaction, OverlayInteraction::Interactive { .. }))
+            .is_some_and(|attachment| attachment.interaction.input().takes_keyboard())
     }
 
-    /// Asks an overlay that takes input to go; another one stays.
+    /// Asks an overlay that takes the pointer to go; one that only shows stays.
     fn dismiss(&mut self, runtime: &mut Runtime<Self>, overlay: SurfaceId) {
-        if let OverlayInteraction::Interactive { on_dismiss } = &mut self.attachment_mut(overlay).interaction {
+        if let Some(on_dismiss) = self.attachment_mut(overlay).interaction.on_dismiss() {
             on_dismiss(runtime);
         }
     }

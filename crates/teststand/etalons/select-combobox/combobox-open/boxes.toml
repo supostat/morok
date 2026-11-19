@@ -1,0 +1,293 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 284.0
+height = 158.0
+
+[[light]]
+node = "#1 .dropdown-open"
+x = 0.0
+y = 0.0
+width = 284.0
+height = 158.0
+
+[[light]]
+node = "#2 .field"
+x = 32.0
+y = 32.0
+width = 220.0
+height = 28.0
+
+[[light]]
+node = "#3 .field-input"
+x = 41.0
+y = 38.5
+width = 182.0
+height = 15.0
+
+[[light]]
+node = "#4 .combobox-chevron"
+x = 231.0
+y = 40.0
+width = 12.0
+height = 12.0
+
+[[light]]
+node = "#5 .options"
+x = 32.0
+y = 64.0
+width = 220.0
+height = 62.0
+
+[[light]]
+node = "#6 .scroll-view"
+x = 37.0
+y = 69.0
+width = 210.0
+height = 52.0
+
+[[light]]
+node = "#7 .scroll-viewport"
+x = 37.0
+y = 69.0
+width = 210.0
+height = 52.0
+
+[[light]]
+node = "#8 element"
+x = 37.0
+y = 69.0
+width = 210.0
+height = 52.0
+
+[[light]]
+node = "#9 element"
+x = 37.0
+y = 69.0
+width = 210.0
+height = 26.0
+
+[[light]]
+node = "#10 .option.highlighted"
+x = 37.0
+y = 69.0
+width = 210.0
+height = 26.0
+
+[[light]]
+node = "#11 .option-mark"
+x = 45.0
+y = 75.0
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#12 .option-name"
+x = 67.0
+y = 72.578125
+width = 69.03125
+height = 18.84375
+
+[[light]]
+node = "#13 element"
+x = 37.0
+y = 95.0
+width = 210.0
+height = 26.0
+
+[[light]]
+node = "#14 .option"
+x = 37.0
+y = 95.0
+width = 210.0
+height = 26.0
+
+[[light]]
+node = "#15 .option-mark"
+x = 45.0
+y = 101.0
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#16 .option-name"
+x = 67.0
+y = 98.578125
+width = 66.77344
+height = 18.84375
+
+[[light]]
+node = "#17 .scroll-bar.vertical"
+x = 236.0
+y = 69.0
+width = 11.0
+height = 52.0
+
+[[light]]
+node = "#18 .scroll-thumb"
+x = 238.0
+y = 71.0
+width = 7.0
+height = 0.0
+
+[[light]]
+node = "#19 .scroll-bar.horizontal"
+x = 37.0
+y = 110.0
+width = 210.0
+height = 11.0
+
+[[light]]
+node = "#20 .scroll-thumb"
+x = 39.0
+y = 112.0
+width = 0.0
+height = 7.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 284.0
+height = 158.0
+
+[[dark]]
+node = "#1 .dropdown-open"
+x = 0.0
+y = 0.0
+width = 284.0
+height = 158.0
+
+[[dark]]
+node = "#2 .field"
+x = 32.0
+y = 32.0
+width = 220.0
+height = 28.0
+
+[[dark]]
+node = "#3 .field-input"
+x = 41.0
+y = 38.5
+width = 182.0
+height = 15.0
+
+[[dark]]
+node = "#4 .combobox-chevron"
+x = 231.0
+y = 40.0
+width = 12.0
+height = 12.0
+
+[[dark]]
+node = "#5 .options"
+x = 32.0
+y = 64.0
+width = 220.0
+height = 62.0
+
+[[dark]]
+node = "#6 .scroll-view"
+x = 37.0
+y = 69.0
+width = 210.0
+height = 52.0
+
+[[dark]]
+node = "#7 .scroll-viewport"
+x = 37.0
+y = 69.0
+width = 210.0
+height = 52.0
+
+[[dark]]
+node = "#8 element"
+x = 37.0
+y = 69.0
+width = 210.0
+height = 52.0
+
+[[dark]]
+node = "#9 element"
+x = 37.0
+y = 69.0
+width = 210.0
+height = 26.0
+
+[[dark]]
+node = "#10 .option.highlighted"
+x = 37.0
+y = 69.0
+width = 210.0
+height = 26.0
+
+[[dark]]
+node = "#11 .option-mark"
+x = 45.0
+y = 75.0
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#12 .option-name"
+x = 67.0
+y = 72.578125
+width = 69.03125
+height = 18.84375
+
+[[dark]]
+node = "#13 element"
+x = 37.0
+y = 95.0
+width = 210.0
+height = 26.0
+
+[[dark]]
+node = "#14 .option"
+x = 37.0
+y = 95.0
+width = 210.0
+height = 26.0
+
+[[dark]]
+node = "#15 .option-mark"
+x = 45.0
+y = 101.0
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#16 .option-name"
+x = 67.0
+y = 98.578125
+width = 66.77344
+height = 18.84375
+
+[[dark]]
+node = "#17 .scroll-bar.vertical"
+x = 236.0
+y = 69.0
+width = 11.0
+height = 52.0
+
+[[dark]]
+node = "#18 .scroll-thumb"
+x = 238.0
+y = 71.0
+width = 7.0
+height = 0.0
+
+[[dark]]
+node = "#19 .scroll-bar.horizontal"
+x = 37.0
+y = 110.0
+width = 210.0
+height = 11.0
+
+[[dark]]
+node = "#20 .scroll-thumb"
+x = 39.0
+y = 112.0
+width = 0.0
+height = 7.0

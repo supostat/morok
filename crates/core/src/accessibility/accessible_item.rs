@@ -6,7 +6,8 @@ use accesskit::SortDirection;
 pub struct AccessibleItem {
     /// The depth of an item of a tree, one for its top level; none outside a tree.
     pub level: Option<usize>,
-    /// Whether an item that has items under it shows them; none for an item that has none.
+    /// Whether an item that has items under it, or a box that opens a list, shows them; none
+    /// for an element that has nothing to open.
     pub expanded: Option<bool>,
     /// The place of the item among its items, one for the first, and how many there are: an
     /// item may stand for one of more items than the tree holds elements for.

@@ -4,7 +4,7 @@ use std::process::{self, ExitCode};
 use std::thread;
 use std::time::Duration;
 
-use morok::components::{Button, ContextMenu, MenuItem, Popover};
+use morok::components::{Button, ContextMenu, MenuItem, Popover, Select};
 use morok::core::{ElementId, Point, Rect, Size};
 use morok::reactive::Signal;
 use morok::{Application, Styles, Window, WindowOptions};
@@ -33,6 +33,10 @@ const SHADOW_ROOM: f32 = 32.0;
 const POPOVER_INSET: f32 = 17.0;
 /// The distance between a popover and its anchor.
 const POPOVER_GAP: f64 = 10.0;
+/// The border and the padding of a dropdown list, and the height of one of its rows: the first
+/// row starts that far into the panel of the list.
+const LIST_INSET: f32 = 5.0;
+const LIST_ROW_HEIGHT: f32 = 26.0;
 /// How far a window may lie from where it is expected: windows lie on whole pixels.
 const TOLERANCE: f64 = 0.5;
 
@@ -41,6 +45,7 @@ const TOLERANCE: f64 = 0.5;
 struct Built {
     opener: ElementId,
     elsewhere: ElementId,
+    select: ElementId,
     /// The box a secondary press opens the menu of the system in.
     menu_area: ElementId,
 }
@@ -56,15 +61,23 @@ struct Stage {
     is_open: Signal<bool>,
     cleanups: Signal<u32>,
     chosen: Signal<Vec<&'static str>>,
+    /// The option the select holds: its place among the three.
+    sorting: Signal<usize>,
 }
 
 impl Stage {
     /// A window on a button that opens a popover with a button of its own, another button,
-    /// and a box with a context menu.
+    /// a select of three options that holds the second, and a box with a context menu.
     fn open(main_thread: MainThreadMarker) -> Self {
         let application = Application::new(Styles::of_kit()).expect("this Mac runs Metal 4");
-        let (is_open, cleanups, chosen) =
-            application.update(|runtime| (runtime.signal(false), runtime.signal(0_u32), runtime.signal(Vec::new())));
+        let (is_open, cleanups, chosen, sorting) = application.update(|runtime| {
+            (
+                runtime.signal(false),
+                runtime.signal(0_u32),
+                runtime.signal(Vec::new()),
+                runtime.signal(1_usize),
+            )
+        });
         let options = WindowOptions {
             title: String::from("morok: overlay windows"),
             content_size: CONTENT_SIZE,
@@ -83,6 +96,12 @@ impl Stage {
                 })
                 .attach(mount, opener);
             let elsewhere = Button::new("Elsewhere").mount(mount);
+            let select = Select::new(sorting)
+                .option(0, "By name")
+                .option(1, "By size")
+                .option(2, "By kind")
+                .label("Sort order")
+                .mount(mount);
             let files = Button::new("Files").mount(mount);
             let command = |label: &'static str, name: &'static str| {
                 MenuItem::new(label).on_choose(move |runtime| runtime.update(chosen, |chosen| chosen.push(name)))
@@ -92,9 +111,16 @@ impl Stage {
             built = Some(Built {
                 opener,
                 elsewhere,
+                select,
                 menu_area,
             });
-            mount.element().child(opener).child(elsewhere).child(menu_area).id()
+            mount
+                .element()
+                .child(opener)
+                .child(elsewhere)
+                .child(select)
+                .child(menu_area)
+                .id()
         });
         Self {
             main_thread,
@@ -106,6 +132,7 @@ impl Stage {
             is_open,
             cleanups,
             chosen,
+            sorting,
         }
     }
 
@@ -148,6 +175,10 @@ impl Stage {
 
     fn is_open(&self) -> bool {
         self.application.update(|runtime| runtime.get(self.is_open))
+    }
+
+    fn sorting(&self) -> usize {
+        self.application.update(|runtime| runtime.get(self.sorting))
     }
 }
 
@@ -245,6 +276,83 @@ fn a_press_outside_the_popover_closes_its_window(stage: &mut Stage) {
     );
 }
 
+fn the_list_of_a_select_opens_in_a_window_that_takes_the_pointer_and_never_the_keyboard(stage: &mut Stage) {
+    stage.click(stage.built.select);
+
+    let overlay = stage.overlay_window();
+    stage.expectations.expect(
+        overlay.is_some(),
+        "an open select has a window of its own for its list",
+        "no overlay window is on screen",
+    );
+    let Some(overlay) = overlay else {
+        return;
+    };
+    stage.expectations.expect(
+        !overlay.canBecomeKeyWindow() && !overlay.isKeyWindow() && !overlay.ignoresMouseEvents(),
+        "the window of the list takes the pointer and leaves the keyboard with the window of the select",
+        &format!(
+            "can take the keyboard: {}, has it: {}, lets the pointer through: {}",
+            overlay.canBecomeKeyWindow(),
+            overlay.isKeyWindow(),
+            overlay.ignoresMouseEvents()
+        ),
+    );
+    let width = overlay.frame().size.width;
+    let expected_width = f64::from(stage.box_of(stage.built.select).width + 2.0 * SHADOW_ROOM);
+    stage.expectations.expect(
+        (width - expected_width).abs() <= TOLERANCE,
+        "the list is as wide as the select, with the room around it",
+        &format!("the window of the list is {width} wide, expected {expected_width}"),
+    );
+}
+
+fn the_keys_of_the_window_of_a_select_choose_from_its_open_list(stage: &mut Stage) {
+    for (key_code, characters) in [DOWN_KEY, RETURN_KEY] {
+        stage.source.press_key(key_code, characters);
+        stage.application.run_for(ONE_CHANGE);
+    }
+
+    stage.expectations.expect(
+        stage.sorting() == 2 && stage.overlay_window().is_none(),
+        "the down arrow and Return in the window of the select choose the option after the held one and close the list",
+        &format!(
+            "the select holds option {}, on screen: {}",
+            stage.sorting(),
+            stage.overlay_window().is_some()
+        ),
+    );
+}
+
+fn a_click_on_a_row_of_the_list_of_a_select_chooses_its_option(stage: &mut Stage) {
+    stage.click(stage.built.select);
+    let Some(overlay) = stage.overlay_source() else {
+        stage.expectations.expect(
+            false,
+            "a select opens its list again after it was closed",
+            "no overlay window is on screen",
+        );
+        return;
+    };
+    let inside_the_first_row = Point {
+        x: SHADOW_ROOM + LIST_INSET + 40.0,
+        y: SHADOW_ROOM + LIST_INSET + LIST_ROW_HEIGHT / 2.0,
+    };
+
+    overlay.click(inside_the_first_row);
+    stage.application.run_for(ONE_CHANGE);
+
+    stage.expectations.expect(
+        stage.sorting() == 0 && stage.overlay_window().is_none(),
+        "a click on a row of the list chooses its option and closes the list",
+        &format!(
+            "the select holds option {}, on screen: {}",
+            stage.sorting(),
+            stage.overlay_window().is_some()
+        ),
+    );
+}
+
 /// The menu of the system takes the keys that wait in the queue of the application while it
 /// is open: the down arrow highlights its first command and Return chooses it.
 fn a_secondary_press_shows_the_menu_of_the_system_and_its_command_runs(stage: &mut Stage) {
@@ -283,6 +391,9 @@ fn main() -> ExitCode {
     a_press_inside_the_popover_reaches_its_content_and_keeps_it_open(&mut stage);
     escape_in_the_popover_closes_its_window(&mut stage);
     a_press_outside_the_popover_closes_its_window(&mut stage);
+    the_list_of_a_select_opens_in_a_window_that_takes_the_pointer_and_never_the_keyboard(&mut stage);
+    the_keys_of_the_window_of_a_select_choose_from_its_open_list(&mut stage);
+    a_click_on_a_row_of_the_list_of_a_select_chooses_its_option(&mut stage);
     a_secondary_press_shows_the_menu_of_the_system_and_its_command_runs(&mut stage);
 
     stage.expectations.report("overlay windows")

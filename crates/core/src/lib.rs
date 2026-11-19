@@ -65,6 +65,7 @@ pub use motion::spring::Spring;
 pub use motion::spring_id::SpringId;
 pub use motion::spring_sample::SpringSample;
 pub use overlay::overlay_alignment::OverlayAlignment;
+pub use overlay::overlay_input::OverlayInput;
 pub use overlay::overlay_placement::OverlayPlacement;
 pub use overlay::overlay_side::OverlaySide;
 pub use overlay::placed_overlay::PlacedOverlay;

@@ -121,8 +121,20 @@ impl ElementBuilder<'_, '_> {
         })
     }
 
+    /// Says what text the node of the element stands for when it is not the text of the
+    /// element itself: the choice a box that opens a list holds.
+    ///
+    /// # Panics
+    ///
+    /// When the element has no accessible role.
+    pub fn accessible_text(&mut self, text: impl Into<Property<String>>) -> &mut Self {
+        self.bind(text.into(), |tree, element, text| {
+            tree.set_accessible_value(element, AccessibleValue::Text(text));
+        })
+    }
+
     /// Says where the node of the element stands among the items of a list, a tree or a strip
-    /// of tabs.
+    /// of tabs, and whether a box that opens a list shows it.
     ///
     /// # Panics
     ///

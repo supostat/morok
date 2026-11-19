@@ -9,8 +9,8 @@ use morok_components::{
 };
 use morok_core::accesskit::Role as AccessibleRole;
 use morok_core::{
-    ElementId, Key, KeyChord, Modifiers, NativeMenuItem, OverlayAlignment, OverlaySide, Point, PointerButton,
-    PointerInputKind, Rect, Role, Size,
+    ElementId, Key, KeyChord, Modifiers, NativeMenuItem, OverlayAlignment, OverlayInput, OverlaySide, Point,
+    PointerButton, PointerInputKind, Rect, Role, Size,
 };
 use morok_reactive::Signal;
 use morok_style::States;
@@ -114,7 +114,11 @@ mod popover {
             (geometry.placement.side, geometry.placement.alignment),
             (OverlaySide::Below, OverlayAlignment::Start)
         );
-        assert!(geometry.takes_input, "a popover takes the pointer and the keyboard");
+        assert_eq!(
+            geometry.input,
+            OverlayInput::PointerAndKeyboard,
+            "a popover takes the pointer and the keyboard"
+        );
         assert_eq!(
             (geometry.panel.x, geometry.panel.y, geometry.panel.width),
             (SHADOW_ROOM, SHADOW_ROOM, 260.0)
@@ -788,7 +792,11 @@ mod tooltip {
             .surfaces
             .overlay_geometry(overlay)
             .expect("the target has a box after the frame");
-        assert!(!geometry.takes_input, "the pointer and the keys pass a tooltip by");
+        assert_eq!(
+            geometry.input,
+            OverlayInput::None,
+            "the pointer and the keys pass a tooltip by"
+        );
         assert_eq!(
             (geometry.placement.side, geometry.placement.alignment),
             (OverlaySide::Below, OverlayAlignment::Center)

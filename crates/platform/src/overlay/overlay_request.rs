@@ -1,4 +1,4 @@
-use morok_core::{OverlayPlacement, Rect, Size};
+use morok_core::{OverlayInput, OverlayPlacement, Rect, Size};
 
 use crate::overlay::overlay_id::OverlayId;
 
@@ -15,7 +15,7 @@ pub struct OverlayRequest {
     /// The box on the surface of the overlay that is placed against the anchor and kept on
     /// the screen; what lies around it is room for its shadow.
     pub panel: Rect,
-    /// Whether the overlay takes the pointer and the keyboard; one that does not lets both
-    /// through to what lies under it.
-    pub takes_input: bool,
+    /// What the overlay takes of the pointer and the keyboard; what it does not take goes to
+    /// what lies under it.
+    pub input: OverlayInput,
 }

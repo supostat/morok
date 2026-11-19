@@ -18,7 +18,7 @@ pub(crate) struct ShownOverlay {
     id: OverlayId,
     panel: Retained<OverlayPanel>,
     view: Retained<SurfaceView>,
-    takes_input: bool,
+    takes_keyboard: bool,
     /// Whether the window was put on screen: it is, once it has a place.
     is_on_screen: Cell<bool>,
     /// Where the overlay lies, as its content was told last.
@@ -37,14 +37,14 @@ impl ShownOverlay {
             .borrow_mut()
             .overlay_content(request.id, view.frame_scheduler(), settings);
         view.set_content(content);
-        let panel = OverlayPanel::new(main_thread, frame, request.takes_input);
+        let panel = OverlayPanel::new(main_thread, frame, request.input);
         panel.setContentView(Some(&view));
         panel.makeFirstResponder(Some(&view));
         Self {
             id: request.id,
             panel,
             view,
-            takes_input: request.takes_input,
+            takes_keyboard: request.input.takes_keyboard(),
             is_on_screen: Cell::new(false),
             placed: Cell::new(None),
         }
@@ -91,7 +91,7 @@ impl ShownOverlay {
             // SAFETY: the panel is a window of its own that is no child of another window,
             // and it leaves its parent before it is closed.
             unsafe { parent_window.addChildWindow_ordered(&self.panel, NSWindowOrderingMode::Above) };
-            if self.takes_input {
+            if self.takes_keyboard {
                 self.panel.makeKeyWindow();
             }
         }

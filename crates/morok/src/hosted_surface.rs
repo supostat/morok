@@ -280,7 +280,7 @@ impl SurfaceContent for HostedSurface {
                     placement: geometry.placement,
                     size: geometry.size,
                     panel: geometry.panel,
-                    takes_input: geometry.takes_input,
+                    input: geometry.input,
                 });
             }
         }

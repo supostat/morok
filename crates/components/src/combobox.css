@@ -1,0 +1,18 @@
+/* A combo box: the field of the kit with a chevron after its line, which opens and closes the
+   dropdown list of the kit. */
+
+.combobox-chevron {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  color: var(--color-text-2);
+}
+
+.combobox-chevron:hover {
+  color: var(--color-text);
+}
+
+/* The chevron of a disabled combo box does not answer the pointer over it. */
+.combobox-chevron:disabled:hover {
+  color: var(--color-text-2);
+}

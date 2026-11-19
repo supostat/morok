@@ -7,8 +7,8 @@ use std::time::Duration;
 
 use morok_core::accesskit::{ActionRequest, TreeUpdate};
 use morok_core::{
-    ElementTree, FrameScheduler, KeyEvent, OverlayAlignment, OverlayPlacement, OverlaySide, Point, PointerInput, Rect,
-    ScrollInput, Size,
+    ElementTree, FrameScheduler, KeyEvent, OverlayAlignment, OverlayInput, OverlayPlacement, OverlaySide, Point,
+    PointerInput, Rect, ScrollInput, Size,
 };
 use morok_platform::{Application, OverlayId, OverlayRequest, SurfaceContent, SurfaceSettings, Window, WindowOptions};
 use morok_style::ColorScheme;
@@ -98,7 +98,7 @@ impl SurfaceContent for AnchoredScene {
             placement: BELOW_ITS_START,
             size: OVERLAY_SURFACE,
             panel: PANEL,
-            takes_input: true,
+            input: OverlayInput::PointerAndKeyboard,
         }));
     }
 

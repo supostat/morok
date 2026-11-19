@@ -57,7 +57,7 @@ impl TextField {
 
     /// Builds the field: a box that holds the edited line.
     pub fn mount(self, mount: &mut Mount<'_>) -> ElementId {
-        self.parts.mount(FieldKind::Line, mount)
+        self.parts.mount(FieldKind::Line, mount).field
     }
 }
 
