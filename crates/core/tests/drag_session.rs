@@ -3,8 +3,9 @@ mod support;
 use std::path::PathBuf;
 
 use morok_core::{
-    CustomData, DisplayItem, DisplayList, DragEventKind, DragOutcome, DragReach, DragStart, ElementId, Modifiers,
-    Payload, PayloadType, Point, PointerEventKind, Rect, Role, SystemDrag,
+    CustomData, DisplayItem, DisplayList, DragEventKind, DragOutcome, DragReach, DragStart, ElementId, Focusability,
+    Key, KeyChord, Modifiers, Payload, PayloadType, Point, PointerEventKind, Rect, Role, ShortcutScope, SystemDrag,
+    TextSelection,
 };
 use morok_style::States;
 use support::{InputLog, Scene};
@@ -19,7 +20,11 @@ const BOARD: &str = ".board { position: relative; width: 600px; height: 300px; }
     .shelf:hover { background-color: var(--color-surface-2); }\n\
     .slot { width: 150px; height: 50px; }\n\
     .bin { position: absolute; left: 400px; top: 20px; width: 150px; height: 200px; \
-           background-color: var(--color-surface); }";
+           background-color: var(--color-surface); }\n\
+    .title { width: 80px; height: 20px; }\n\
+    .list { position: absolute; left: 20px; top: 120px; width: 150px; height: 100px; overflow: auto; }\n\
+    .entry { height: 40px; overflow: hidden; background-color: var(--color-surface); }\n\
+    .badge { width: 100px; height: 10px; background-color: var(--color-accent); }";
 
 /// The type of the application's own a card is dragged in.
 const CARD_TYPE: &str = "com.example.board.card";
@@ -376,6 +381,101 @@ fn a_source_with_nothing_to_carry_leaves_the_press_a_press() {
 }
 
 #[test]
+fn escape_cancels_a_drag_and_reaches_nothing_else() {
+    let mut board = Board::dragging(card_payload());
+    let root = board.scene.root();
+    let escape = KeyChord {
+        key: Key::Escape,
+        modifiers: Modifiers::NONE,
+    };
+    board.scene.tree.register_shortcut(ShortcutScope::Surface, escape);
+    board.drag_card();
+    board.move_to(OVER_SHELF);
+
+    assert!(board.scene.press_key(Key::Escape, Modifiers::NONE, &mut board.log));
+    assert_eq!(
+        board.drag_events_of(board.shelf),
+        [DragEventKind::Entered, DragEventKind::Moved, DragEventKind::Left]
+    );
+    assert_eq!(board.log.ended_drags, [(board.card, DragOutcome::Cancelled)]);
+    assert_eq!(board.scene.tree.dragged_payload(), None);
+    assert!(
+        board.log.key_events.is_empty() && board.log.shortcuts.is_empty(),
+        "the Escape that cancels a drag is offered to no element and to no shortcut"
+    );
+    assert!(
+        board.is_hovered(board.shelf) && board.is_hovered(root),
+        "the pointer hovers what it is over again"
+    );
+
+    board.release(OVER_SHELF);
+    assert!(
+        board
+            .log
+            .drag_events
+            .iter()
+            .all(|(_, kind)| *kind != DragEventKind::Dropped),
+        "a cancelled drag is dropped nowhere"
+    );
+    assert_eq!(board.log.ended_drags.len(), 1);
+
+    board.drag_card();
+    assert_eq!(
+        board.log.dragged_sources,
+        [board.card, board.card],
+        "the next press drags afresh"
+    );
+    assert_eq!(board.scene.tree.dragged_payload(), Some(&card_payload()));
+    assert!(!board.scene.press_key(Key::Escape, Modifiers::SHIFT, &mut board.log));
+    assert_eq!(
+        board.scene.tree.dragged_payload(),
+        Some(&card_payload()),
+        "Escape with a modifier leaves the drag alone"
+    );
+    assert_eq!(board.log.key_receivers(), [root]);
+
+    board.release(OVER_BOARD);
+    assert!(
+        board.scene.press_key(Key::Escape, Modifiers::NONE, &mut board.log),
+        "with no drag under way Escape goes its usual way"
+    );
+    assert_eq!(board.log.key_receivers(), [root, root]);
+    assert_eq!(board.log.shortcuts.len(), 1);
+}
+
+#[test]
+fn a_press_in_the_selected_text_of_a_focused_input_inside_a_source_selects_and_drags_nothing() {
+    let mut board = Board::dragging(card_payload());
+    let title = board.scene.add(board.card, Role::TextInput, &["title"]);
+    board.scene.tree.set_focusability(title, Focusability::TabStop);
+    board.scene.tree.set_text(title, "Buy milk");
+    assert!(board.scene.tree.focus(title));
+    board
+        .scene
+        .tree
+        .set_text_selection(title, TextSelection { anchor: 0, head: 8 });
+    board.scene.frame();
+    let title_box = board.scene.border_box(title);
+    let (row, third_character, sixth_character) = (title_box.y + 10.0, title_box.x + 22.0, title_box.x + 52.0);
+
+    board.press((third_character, row));
+    board.move_to((sixth_character, row));
+
+    assert!(
+        board.log.dragged_sources.is_empty(),
+        "the source is not asked to drag: the press selects"
+    );
+    assert_eq!(board.scene.tree.dragged_payload(), None);
+    assert_eq!(
+        board.scene.tree.text_selection(title),
+        TextSelection { anchor: 2, head: 5 },
+        "the pointer selects from where it went down"
+    );
+    board.release((sixth_character, row));
+    assert!(board.log.ended_drags.is_empty());
+}
+
+#[test]
 fn a_drag_handed_to_the_system_ends_the_press_and_waits_for_the_host() {
     let mut board = Board::new();
     board.log.drag_start = Some(DragStart {
@@ -598,5 +698,64 @@ fn the_picture_of_a_subtree_holds_what_the_surface_drew_of_it_and_nothing_else()
     assert!(
         picture.items().is_empty(),
         "a slot that paints nothing has an empty picture"
+    );
+}
+
+#[test]
+fn the_picture_of_a_subtree_holds_the_part_the_clip_of_an_ancestor_hides() {
+    let mut scene = Scene::new(BOARD);
+    scene.add_classes(scene.root(), &["board"]);
+    let list = scene.add(scene.root(), Role::Scroll, &["list"]);
+    let entries: Vec<ElementId> = (0..5).map(|_| scene.add(list, Role::Element, &["entry"])).collect();
+    let badge = scene.add(entries[0], Role::Element, &["badge"]);
+    scene.frame();
+    scene.tree.scroll_to(list, Point { x: 0.0, y: 20.0 });
+    scene.frame();
+    let (list_box, entry_box) = (scene.border_box(list), scene.border_box(entries[0]));
+    let mut picture = DisplayList::default();
+
+    let covered = scene.tree.subtree_display_list(entries[0], &mut picture);
+    assert_eq!(
+        covered,
+        Some(Rect::new(
+            entry_box.x,
+            entry_box.y - 20.0,
+            entry_box.width,
+            entry_box.height
+        )),
+        "the picture covers the whole entry, the half the scroll moved above the list included"
+    );
+    assert!(
+        covered.is_some_and(|covered| covered.y < list_box.y),
+        "the top of the entry lies above the list that clips it"
+    );
+    let [
+        DisplayItem::PushGroup { .. },
+        DisplayItem::Background { frame: entry_frame, .. },
+        DisplayItem::PushClip { frame: clip_frame },
+        DisplayItem::Background { frame: badge_frame, .. },
+        DisplayItem::PopClip,
+        DisplayItem::PopGroup,
+    ] = picture.items()
+    else {
+        panic!(
+            "the scroll moves the picture, the entry clips its badge, and the list clips nothing: {:?}",
+            picture.items()
+        );
+    };
+    assert_eq!(entry_frame.border_box, entry_box);
+    assert_eq!(
+        clip_frame.border_box, entry_box,
+        "the clip that holds is the entry's own"
+    );
+    assert_eq!(badge_frame.border_box, scene.border_box(badge));
+    assert!(
+        scene
+            .tree
+            .display_list()
+            .items()
+            .iter()
+            .any(|item| matches!(item, DisplayItem::PushClip { frame } if frame.border_box == list_box)),
+        "the surface draws the entries inside the clip of the list"
     );
 }

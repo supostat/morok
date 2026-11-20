@@ -122,6 +122,8 @@ pub struct ElementTree {
     scrollers: Vec<ElementId>,
     /// Scratch space for the groups open while the display list is written.
     open_groups: Vec<OpenGroup>,
+    /// The element of every clip the display list holds, in the order of the clips.
+    clip_owners: Vec<ElementId>,
     paint_order_is_stale: bool,
     /// Whether an element waits for the display list stage.
     has_unpainted_changes: bool,
@@ -169,6 +171,7 @@ impl ElementTree {
             ancestor_layers: Vec::new(),
             scrollers: Vec::new(),
             open_groups: Vec::new(),
+            clip_owners: Vec::new(),
             paint_order_is_stale: true,
             has_unpainted_changes: true,
             display_list: DisplayList::default(),
@@ -839,6 +842,7 @@ impl ElementTree {
             display_list: &mut self.display_list,
             damage: &mut self.damage,
             open_groups: &mut self.open_groups,
+            clip_owners: &mut self.clip_owners,
         }
         .run();
         self.has_unpainted_changes = false;
@@ -935,7 +939,13 @@ impl ElementTree {
     /// A focused element that edits text and does not use the key itself has its text take
     /// the key, by the key bindings of the system, before its shortcuts and the elements
     /// around it are tried.
+    ///
+    /// Escape cancels the drag the pointer carries over the surface, and does nothing else.
     pub fn key_input(&mut self, event: &KeyEvent, handler: &mut dyn InputHandler) -> bool {
+        if event.cancels_drag() && self.carries_surface_drag() {
+            self.cancel_surface_drag(handler);
+            return true;
+        }
         if event.shows_keyboard_use() {
             self.focus_manager().set_modality(InputModality::Keyboard);
         }

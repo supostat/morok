@@ -36,6 +36,8 @@ pub(crate) struct PaintPass<'a> {
     pub(crate) damage: &'a mut Damage,
     /// The groups enclosing the step being written, outermost first.
     pub(crate) open_groups: &'a mut Vec<OpenGroup>,
+    /// The element of every clip the display list holds, in the order of the clips.
+    pub(crate) clip_owners: &'a mut Vec<ElementId>,
 }
 
 /// A group whose pop has not been written yet.
@@ -62,6 +64,7 @@ impl PaintPass<'_> {
     pub(crate) fn run(mut self) -> usize {
         self.display_list.clear();
         self.open_groups.clear();
+        self.clip_owners.clear();
         let mut rebuilt_elements = 0;
         for &step in self.steps {
             match step {
@@ -81,9 +84,12 @@ impl PaintPass<'_> {
                 PaintStep::Outline(id) => {
                     self.elements[id].painted.outline_items = self.keep(self.elements[id].painted.outline_items);
                 }
-                PaintStep::PushClip(id) => self.display_list.items.push(DisplayItem::PushClip {
-                    frame: BoxPainter::frame(&self.elements[id]),
-                }),
+                PaintStep::PushClip(id) => {
+                    self.display_list.items.push(DisplayItem::PushClip {
+                        frame: BoxPainter::frame(&self.elements[id]),
+                    });
+                    self.clip_owners.push(id);
+                }
                 PaintStep::PopClip => self.pop_clip(),
                 PaintStep::PushGroup(id) => self.push_group(id),
                 PaintStep::PopGroup => self.pop_group(),
@@ -289,6 +295,7 @@ impl PaintPass<'_> {
     fn pop_clip(&mut self) {
         if matches!(self.display_list.items.last(), Some(DisplayItem::PushClip { .. })) {
             self.display_list.items.pop();
+            self.clip_owners.pop();
         } else {
             self.display_list.items.push(DisplayItem::PopClip);
         }

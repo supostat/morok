@@ -159,16 +159,46 @@ impl ElementTree {
     }
 
     /// Writes to `picture` what the last display list drew of the element and of everything
-    /// inside it, and nothing else: the items in their paint order, inside the clips and the
-    /// groups that hold them on the surface, so that a renderer draws them where the surface
-    /// shows them. Returns the rectangle of the surface they cover; none when the display
-    /// list drew nothing of them.
+    /// inside it, and nothing else: the items in their paint order, inside the groups that
+    /// place them on the surface, so that a renderer draws them where the surface shows them,
+    /// and inside the clips of the elements of the subtree. The clips of the elements around
+    /// it do not hold: the picture shows the whole subtree, the part a scrolled viewport hides
+    /// included. Returns the rectangle of the surface they cover; none when the display list
+    /// drew nothing of them.
     pub fn subtree_display_list(&self, subtree: ElementId, picture: &mut DisplayList) -> Option<Rect> {
         SubtreePicture {
             elements: &self.elements,
             display_list: &self.display_list,
+            clip_owners: &self.clip_owners,
         }
         .write(subtree, picture)
+    }
+
+    /// Whether the pointer carries a drag across the surface.
+    pub(super) fn carries_surface_drag(&self) -> bool {
+        self.input
+            .drag
+            .as_ref()
+            .is_some_and(|drag| drag.reach == DragReach::Surface)
+    }
+
+    /// Cancels the drag the pointer carries, where the pointer is: the target it is over hears
+    /// that it left, the source that it was cancelled, and the pointer hovers what it is over.
+    pub(super) fn cancel_surface_drag(&mut self, handler: &mut dyn InputHandler) {
+        let (hit, kind, position) = match self.input.pointer {
+            Some(position) => (self.element_at(position), PointerInputKind::Moved, position),
+            None => (None, PointerInputKind::Exited, Point::default()),
+        };
+        let input = PointerInput {
+            kind,
+            position,
+            modifiers: self.input.pointer_modifiers,
+        };
+        let mut pointer = PointerRouter {
+            targets: self.pointer_targets(),
+            handler,
+        };
+        DragRouter { pointer: &mut pointer }.cancel(hit, &input);
     }
 
     fn follows_system_drag(&self) -> bool {

@@ -32,6 +32,11 @@ impl KeyEvent {
         self.is_press() && !self.modifiers.intersects(Modifiers::COMMAND.union(Modifiers::CONTROL))
     }
 
+    /// Whether the press is Escape with no modifier, which cancels a drag under way.
+    pub(crate) fn cancels_drag(&self) -> bool {
+        self.is_press() && self.key == Key::Escape && self.modifiers.is_empty()
+    }
+
     /// Where the press moves focus when no element and no shortcut uses it.
     pub(crate) fn focus_move(&self) -> Option<FocusDirection> {
         if !self.is_press() || self.key != Key::Tab {
