@@ -73,6 +73,9 @@ impl MotionResolver<'_> {
             theme: self.theme,
         };
         self.follow_animation_names(motion, base, &declarations, scratch);
+        if base.motion.transition_property.is_some() {
+            make_room_for_transitions(motion, base, &declarations);
+        }
         let transitions_run = motion.as_ref().is_some_and(|motion| !motion.transitions.is_empty());
         if base.motion.transition_property.is_some() || transitions_run {
             let before = ShownBefore {
@@ -376,6 +379,26 @@ impl MotionResolver<'_> {
             eased(easing, local, iteration.is_before),
             value,
         );
+    }
+}
+
+/// Gives an element whose style transitions properties the room their transitions take, once,
+/// when it is styled: a transition that starts later — the pointer comes over the element —
+/// allocates nothing in the frame it starts in.
+fn make_room_for_transitions(
+    motion: &mut Option<Box<ElementMotion>>,
+    base: &ComputedStyle,
+    declarations: &MotionDeclarations<'_>,
+) {
+    let transitioned = AnimatableProperty::ALL
+        .into_iter()
+        .filter(|property| declarations.transition_timing(*property).is_some())
+        .count();
+    let transitions = &mut motion
+        .get_or_insert_with(|| Box::new(ElementMotion::new(base)))
+        .transitions;
+    if transitions.capacity() < transitioned {
+        transitions.reserve_exact(transitioned - transitions.len());
     }
 }
 

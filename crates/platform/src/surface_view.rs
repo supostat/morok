@@ -11,7 +11,7 @@ use dispatch2::{DispatchQueue, MainThreadBound};
 use morok_core::{
     DisplayList, ElementTree, FrameScheduler, KeyPhase, PayloadType, PointerButton, PointerInputKind, Size, TextCommand,
 };
-use morok_style::ColorScheme;
+use morok_style::{ColorScheme, Theme};
 use objc2::rc::{Retained, Weak};
 use objc2::runtime::{AnyObject, NSObjectProtocol, ProtocolObject, Sel};
 use objc2::{AnyThread, DefinedClass, MainThreadMarker, MainThreadOnly, Message, define_class, msg_send, sel};
@@ -576,6 +576,11 @@ impl SurfaceView {
         self.target_geometry().viewport
     }
 
+    /// Device pixels per CSS pixel on the screen the surface is shown on.
+    pub(crate) fn scale(&self) -> f32 {
+        self.target_geometry().scale
+    }
+
     pub(crate) fn set_canvas_painter(&self, painter: Box<dyn CanvasPainter>) {
         self.ivars().frame_renderer.borrow_mut().set_canvas_painter(painter);
     }
@@ -746,7 +751,7 @@ impl SurfaceView {
                 if !state.surface_is_stale.get() && tree.damage().is_empty() {
                     return;
                 }
-                if self.present(tree.display_list(), &geometry) {
+                if self.present(tree.display_list(), tree.theme(), &geometry) {
                     state.surface_is_stale.set(false);
                     statistics.presented_frames += 1;
                 } else {
@@ -886,15 +891,16 @@ impl SurfaceView {
         self.content().borrow_mut().dismiss_overlays();
     }
 
-    /// Draws the display list into the next drawable of the layer. Returns whether the layer
-    /// had one to give; a layer that is not on screen may have none.
-    fn present(&self, display_list: &DisplayList, geometry: &TargetGeometry) -> bool {
+    /// Draws the display list into the next drawable of the layer, its canvases under `theme`.
+    /// Returns whether the layer had one to give; a layer that is not on screen may have none.
+    fn present(&self, display_list: &DisplayList, theme: &Theme, geometry: &TargetGeometry) -> bool {
         let state = self.ivars();
         let Some(drawable) = state.layer.nextDrawable() else {
             return false;
         };
         state.frame_renderer.borrow_mut().render(
             display_list,
+            theme,
             geometry,
             &drawable.texture(),
             Some(ScreenTarget {

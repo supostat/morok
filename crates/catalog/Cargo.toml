@@ -1,0 +1,42 @@
+[package]
+name = "morok-catalog"
+description = "The catalog of the morok UI kit: every component family on a page of its own, and two screens built from them"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+morok.workspace = true
+
+[build-dependencies]
+morok-components.workspace = true
+morok-css.workspace = true
+
+[dev-dependencies]
+morok-components.workspace = true
+morok-css.workspace = true
+objc2.workspace = true
+objc2-app-kit = { workspace = true, features = [
+  "NSApplication",
+  "NSEvent",
+  "NSGraphicsContext",
+  "NSMenu",
+  "NSMenuItem",
+  "NSResponder",
+  "NSScreen",
+  "NSView",
+  "NSWindow",
+  "objc2-core-graphics",
+] }
+objc2-core-foundation = { workspace = true, features = ["CFCGTypes"] }
+objc2-core-graphics = { workspace = true, features = ["CGEvent", "CGEventTypes"] }
+objc2-foundation = { workspace = true, features = ["NSArray", "NSGeometry", "NSString", "NSValue"] }
+
+[[test]]
+name = "wire_main_path"
+harness = false

@@ -115,7 +115,7 @@ pub use split_pane::SplitPane;
 pub use split_view::SplitView;
 pub use status_bar::StatusBar;
 pub use stylesheet_source::StylesheetSource;
-pub use stylesheets::STYLESHEETS;
+pub use stylesheets::{KIT_TOKENS, STYLESHEETS};
 pub use switch::Switch;
 pub use table::Table;
 pub use table_column::TableColumn;

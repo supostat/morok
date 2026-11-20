@@ -26,7 +26,13 @@ impl SurfaceView {
             return;
         }
         let picture = request.picture_box.and_then(|covered| {
-            DragPicture::render(self.renderer(), &request.picture, &covered, &self.target_geometry())
+            DragPicture::render(
+                self.renderer(),
+                &request.picture,
+                &request.theme,
+                &covered,
+                &self.target_geometry(),
+            )
         });
         let frame = picture
             .as_ref()

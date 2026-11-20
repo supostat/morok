@@ -6,6 +6,7 @@ use crate::case::Case;
 use crate::moment::Moment;
 use crate::scene::Scene;
 use crate::suite::Suite;
+use crate::suites::kit_tokens;
 
 pub(crate) const NAME: &str = "primitives";
 
@@ -19,6 +20,7 @@ const PARAGRAPH: &str = "Morok draws every glyph itself, so each line has to bre
 pub(crate) fn suite() -> Suite {
     Suite {
         name: NAME,
+        tokens: kit_tokens(),
         component_stylesheets: Vec::new(),
         stylesheets: vec![SourceFile::new(STYLESHEET_PATH, STYLESHEET)],
         cases: vec![

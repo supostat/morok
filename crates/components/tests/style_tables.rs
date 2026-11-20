@@ -1,6 +1,6 @@
 use morok_components::styles::{CLASSES, STYLE_SHEET};
 use morok_components::tokens::{DARK, LIGHT};
-use morok_components::{STYLESHEETS, StylesheetSource};
+use morok_components::{KIT_TOKENS, STYLESHEETS, StylesheetSource};
 use morok_css::{SourceFile, compile_stylesheets, compile_tokens};
 
 const TOKENS_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../design/system/tokens.css");
@@ -24,6 +24,15 @@ fn the_listed_stylesheets_compile_to_the_tables_of_the_build() {
         compiled == STYLE_SHEET,
         "`STYLESHEETS` lists every stylesheet under `src`, in the order of their paths"
     );
+    assert!(tokens.light == LIGHT && tokens.dark == DARK);
+}
+
+#[test]
+fn the_tokens_of_the_kit_are_shipped_as_the_build_compiled_them() {
+    let tokens = compile_tokens(&SourceFile::new(KIT_TOKENS.path, KIT_TOKENS.text))
+        .unwrap_or_else(|diagnostics| panic!("the tokens of the kit compile:\n{diagnostics}"));
+
+    assert_eq!(KIT_TOKENS.path, "design/system/tokens.css");
     assert!(tokens.light == LIGHT && tokens.dark == DARK);
 }
 

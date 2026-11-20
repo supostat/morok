@@ -1,0 +1,164 @@
+/* MOROK catalog · ember tokens
+   The values the catalog switches to: the tokens of its base file with a warm accent and warm
+   neutrals, so that every component shows how its look follows the tokens alone. */
+
+:root {
+  /* color · neutrals */
+  --color-bg: #F6F4F1;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #FAF8F5;
+  --color-surface-sunken: #EFEBE6;
+  --color-line: #E3DDD5;
+  --color-line-strong: #CEC6BB;
+  --color-text: #1C1917;
+  --color-text-2: #57534E;
+  --color-text-3: #8C857D;
+  --color-text-on-accent: #FFFFFF;
+  --color-knob: #FFFFFF;
+
+  /* color · accent and signals */
+  --color-accent: #C2410C;
+  --color-accent-hover: #A8380A;
+  --color-accent-active: #8F2F08;
+  --color-accent-soft: #FDEBDD;
+  --color-focus: #F97316;
+  --color-danger: #CF4338;
+  --color-danger-soft: #FBE6E4;
+  --color-warning: #B97A12;
+  --color-success: #2B8F55;
+  --color-selection: #FBD9C2;
+  --color-scrim: rgba(28, 25, 23, 0.32);
+
+  /* space · 4px base */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  /* radius */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 999px;
+
+  /* font */
+  --font-ui: -apple-system, "SF Pro Text", system-ui, sans-serif;
+  --font-display: -apple-system, "SF Pro Display", system-ui, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", monospace;
+
+  /* text */
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-md: 13px;
+  --text-lg: 15px;
+  --text-xl: 20px;
+  --text-2xl: 28px;
+  --text-leading-tight: 1.25;
+  --text-leading: 1.45;
+  --text-weight-regular: 400;
+  --text-weight-medium: 500;
+  --text-weight-semibold: 600;
+
+  /* shadow */
+  --shadow-raised: 0 1px 2px rgba(28, 25, 23, 0.08);
+  --shadow-float: 0 8px 24px rgba(28, 25, 23, 0.14), 0 1px 3px rgba(28, 25, 23, 0.10);
+  --shadow-modal: 0 24px 64px rgba(28, 25, 23, 0.22), 0 2px 6px rgba(28, 25, 23, 0.12);
+
+  /* motion */
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 280ms;
+  --motion-ease: cubic-bezier(0.2, 0, 0, 1);
+  --motion-ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+  /* color · chart */
+  --color-chart-1: #C2410C;
+  --color-chart-2: #F97316;
+  --color-chart-3: #D9A47F;
+  --color-chart-4: #E8C39E;
+  --color-chart-5: #B5838D;
+  --color-chart-6: #CEC6BB;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #151311;
+    --color-surface: #1C1917;
+    --color-surface-2: #23201D;
+    --color-surface-sunken: #0F0D0C;
+    --color-line: #332E29;
+    --color-line-strong: #443D36;
+    --color-text: #F0ECE7;
+    --color-text-2: #B3AAA0;
+    --color-text-3: #7A7168;
+    --color-text-on-accent: #2A1205;
+    --color-knob: #FFFFFF;
+
+    --color-accent: #FB923C;
+    --color-accent-hover: #FDA75E;
+    --color-accent-active: #EA7F2A;
+    --color-accent-soft: #3A2312;
+    --color-focus: #FB923C;
+    --color-danger: #F2665B;
+    --color-danger-soft: #3A1D1B;
+    --color-warning: #E3A63B;
+    --color-success: #57C285;
+    --color-selection: #4A2A14;
+    --color-scrim: rgba(0, 0, 0, 0.5);
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-12: 48px;
+
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 999px;
+
+    --font-ui: -apple-system, "SF Pro Text", system-ui, sans-serif;
+    --font-display: -apple-system, "SF Pro Display", system-ui, sans-serif;
+    --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", monospace;
+
+    --text-xs: 11px;
+    --text-sm: 12px;
+    --text-md: 13px;
+    --text-lg: 15px;
+    --text-xl: 20px;
+    --text-2xl: 28px;
+    --text-leading-tight: 1.25;
+    --text-leading: 1.45;
+    --text-weight-regular: 400;
+    --text-weight-medium: 500;
+    --text-weight-semibold: 600;
+
+    --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04);
+    --shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+
+    --motion-fast: 120ms;
+    --motion-base: 180ms;
+    --motion-slow: 280ms;
+    --motion-ease: cubic-bezier(0.2, 0, 0, 1);
+    --motion-ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+    --color-chart-1: #FB923C;
+    --color-chart-2: #F97316;
+    --color-chart-3: #C28A62;
+    --color-chart-4: #D6AE86;
+    --color-chart-5: #A77681;
+    --color-chart-6: #443D36;
+  }
+}

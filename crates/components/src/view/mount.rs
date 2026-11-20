@@ -1,4 +1,4 @@
-use morok_core::{ElementId, ElementTree, Role};
+use morok_core::{CanvasId, ElementId, ElementTree, Role};
 use morok_reactive::{Effect, Runtime, Scope, Signal};
 
 use crate::kit_icon::KitIcon;
@@ -93,6 +93,14 @@ impl<'a> Mount<'a> {
     pub fn kit_icon(&mut self, icon: KitIcon) -> ElementBuilder<'_, 'a> {
         let element = self.surface.tree.create(Role::Icon);
         self.surface.show_kit_icon(element, icon);
+        self.build(element)
+    }
+
+    /// Creates a canvas the application draws `canvas` into and builds on it: the kit lays it
+    /// out, clips it and hands its content box to the painter of the host in paint order.
+    pub fn canvas(&mut self, canvas: CanvasId) -> ElementBuilder<'_, 'a> {
+        let element = self.surface.tree.create(Role::Canvas);
+        self.surface.tree.set_canvas(element, canvas);
         self.build(element)
     }
 

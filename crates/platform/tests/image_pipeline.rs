@@ -1,14 +1,15 @@
 mod support;
 
+use std::f32::consts::{FRAC_PI_2, TAU};
 use std::sync::LazyLock;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use morok_core::{CanvasId, ElementId, ImageId, Rect, Role, Size};
+use morok_core::{CanvasId, ElementId, ImageId, Point, Rect, Role, Size};
 use morok_platform::{
-    CanvasEncoder, CanvasPainter, FrameImage, ImageStatus, OffscreenTarget, Renderer, RendererOptions,
+    CanvasEncoder, CanvasPainter, FrameImage, ImageStatus, OffscreenTarget, Renderer, RendererOptions, RingSector,
 };
-use morok_style::Color;
+use morok_style::{Color, Token};
 use support::Scene;
 
 const SKY_PNG: &[u8] = include_bytes!("images/sky.png");
@@ -198,7 +199,7 @@ fn large_images_are_dropped_from_their_textures_at_the_byte_budget_and_uploaded_
     let mut show = |(image, size): (ImageId, Size)| {
         scene.tree.set_image(element, image, Some(size));
         scene.frame();
-        target.render(scene.tree.display_list());
+        target.render(scene.tree.display_list(), scene.tree.theme());
     };
 
     show(first);
@@ -257,11 +258,90 @@ fn a_canvas_draw_stays_inside_the_content_box_of_its_element() {
     target.set_canvas_painter(Box::new(SpillingPainter));
     scene.frame();
 
-    let frame = target.render(scene.tree.display_list());
+    let frame = target.render(scene.tree.display_list(), scene.tree.theme());
 
     assert_eq!(frame.pixel(100, 60), [0, 0, 255, 255]);
     assert_eq!(frame.pixel(51, 31), [0, 0, 255, 255]);
     assert_eq!(frame.pixel(49, 60), CLEAR);
     assert_eq!(frame.pixel(100, 91), CLEAR);
     assert_eq!(frame.pixel(10, 10), CLEAR);
+}
+
+/// Fills ring sectors in the color a token of the surface has under its theme.
+struct RingPainter {
+    sectors: Vec<RingSector>,
+    color: Token<Color>,
+}
+
+impl CanvasPainter for RingPainter {
+    fn draw(&mut self, _canvas: CanvasId, encoder: &mut CanvasEncoder<'_>) {
+        let color = *encoder.theme().resolve(self.color);
+        for sector in &self.sectors {
+            encoder.fill_ring_sector(*sector, color);
+        }
+    }
+}
+
+/// A 100 by 100 canvas whose painter fills `sectors` around its middle in red.
+fn render_ring_sectors(sectors: Vec<RingSector>) -> FrameImage {
+    let viewport = Size {
+        width: 100.0,
+        height: 100.0,
+    };
+    let mut scene = Scene::new(".drawing { width: 100px; height: 100px; }", viewport);
+    let element = scene.tree.create(Role::Canvas);
+    scene.add_classes(element, &["drawing"]);
+    let root = scene.root();
+    scene.tree.append_child(root, element);
+    scene.tree.set_canvas(element, CanvasId(1));
+    let mut target = OffscreenTarget::new(renderer(), viewport, 1.0);
+    target.set_canvas_painter(Box::new(RingPainter {
+        sectors,
+        color: scene.color_token("color-red"),
+    }));
+    scene.frame();
+    target.render(scene.tree.display_list(), scene.tree.theme())
+}
+
+fn ring(start_angle: f32, end_angle: f32) -> RingSector {
+    RingSector {
+        center: Point { x: 50.0, y: 50.0 },
+        inner_radius: 20.0,
+        outer_radius: 40.0,
+        start_angle,
+        end_angle,
+    }
+}
+
+#[test]
+fn a_ring_sector_fills_between_its_radii_and_its_angles_in_a_color_of_the_theme() {
+    const RED: [u8; 4] = [255, 0, 0, 255];
+
+    let frame = render_ring_sectors(vec![ring(0.0, FRAC_PI_2)]);
+
+    assert_eq!(
+        frame.pixel(71, 71),
+        RED,
+        "the middle of the sector, below and right of the center"
+    );
+    assert_eq!(
+        frame.pixel(80, 52),
+        RED,
+        "just past the start angle, which points right"
+    );
+    assert_eq!(frame.pixel(52, 80), RED, "just before the end angle, which points down");
+    assert_eq!(frame.pixel(71, 28), CLEAR, "above the center: before the start angle");
+    assert_eq!(frame.pixel(28, 71), CLEAR, "left of the center: past the end angle");
+    assert_eq!(frame.pixel(57, 57), CLEAR, "inside the inner radius");
+    assert_eq!(frame.pixel(82, 82), CLEAR, "outside the outer radius");
+}
+
+#[test]
+fn a_ring_sector_of_a_whole_turn_is_a_whole_ring() {
+    let frame = render_ring_sectors(vec![ring(-FRAC_PI_2, TAU - FRAC_PI_2)]);
+
+    for (x, y) in [(50, 80), (50, 20), (20, 50), (80, 50), (71, 71)] {
+        assert_eq!(frame.pixel(x, y), [255, 0, 0, 255], "the ring is filled at ({x}, {y})");
+    }
+    assert_eq!(frame.pixel(50, 50), CLEAR);
 }

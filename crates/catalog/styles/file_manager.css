@@ -1,0 +1,65 @@
+/* The file manager: two panes of files side by side under a toolbar, over a status bar. The
+   pane the keyboard is in marks its header. */
+
+.file-manager {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--color-surface);
+}
+
+.file-manager-body {
+  display: flex;
+  flex-grow: 1;
+  min-height: 0;
+}
+
+.file-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.file-pane-header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-line);
+  background-color: var(--color-surface-2);
+  color: var(--color-text-2);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+}
+
+/* The icon of the place takes the color of the header: the accent in the active pane. */
+.file-pane:focus-within > .file-pane-header {
+  background-color: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.file-pane-icon {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.file-pane-path {
+  color: var(--color-text);
+  font-weight: var(--text-weight-semibold);
+  white-space: nowrap;
+}
+
+.file-pane-count {
+  margin-left: auto;
+  color: var(--color-text-2);
+  white-space: nowrap;
+}
+
+.file-pane > .table {
+  flex-grow: 1;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+}

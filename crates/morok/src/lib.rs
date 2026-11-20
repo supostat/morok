@@ -10,13 +10,17 @@
 mod application;
 mod application_state;
 mod hosted_surface;
+mod shared_canvas_painter;
 mod styles;
 mod window;
 
 pub use application::Application;
 pub use morok_components as components;
 pub use morok_core as core;
-pub use morok_platform::{Appearance, AtlasStatistics, AtlasUsage, FrameStatistics, RendererError, WindowOptions};
+pub use morok_platform::{
+    Appearance, AtlasStatistics, AtlasUsage, CanvasEncoder, CanvasPainter, CanvasRegion, FrameImage, FrameStatistics,
+    RendererError, RingSector, WindowOptions,
+};
 pub use morok_reactive as reactive;
 pub use morok_style as style;
 pub use styles::Styles;

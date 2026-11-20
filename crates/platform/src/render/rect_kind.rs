@@ -10,4 +10,6 @@ pub(crate) enum RectKind {
     InsetShadow = 5,
     /// A fill with a border over it: one instance where a fill and a border would take two.
     Box = 6,
+    /// The part of a ring between two angles, filled: a shape a canvas draws.
+    RingSector = 7,
 }

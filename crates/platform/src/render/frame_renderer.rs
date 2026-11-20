@@ -2,6 +2,7 @@ use std::fmt::{self, Debug, Formatter};
 use std::ptr::NonNull;
 
 use morok_core::DisplayList;
+use morok_style::Theme;
 use objc2::rc::Retained;
 use objc2::runtime::ProtocolObject;
 use objc2_metal::{
@@ -106,10 +107,12 @@ impl FrameRenderer {
     }
 
     /// Draws the display list over a cleared `target` and, when the target is the texture of
-    /// a drawable, shows it on `screen`. Returns without waiting for the GPU.
+    /// a drawable, shows it on `screen`; its canvases are drawn under `theme`. Returns without
+    /// waiting for the GPU.
     pub(crate) fn render(
         &mut self,
         display_list: &DisplayList,
+        theme: &Theme,
         geometry: &TargetGeometry,
         target: &ProtocolObject<dyn MTLTexture>,
         screen: Option<ScreenTarget<'_>>,
@@ -163,6 +166,7 @@ impl FrameRenderer {
             images: &images,
             image_textures: &mut image_textures,
             canvas_painter: self.canvas_painter.as_deref_mut(),
+            theme,
             command_buffer: &self.command_buffer,
             render_pass: &self.render_pass,
             residency_set: &self.residency_set,

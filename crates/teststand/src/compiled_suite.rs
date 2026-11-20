@@ -1,5 +1,5 @@
-use morok_components::{STYLESHEETS, StylesheetSource};
-use morok_css::{CompiledTokens, SourceFile, compile_stylesheets, compile_tokens};
+use morok_components::{KIT_TOKENS, STYLESHEETS, StylesheetSource};
+use morok_css::{CompiledTokens, SourceFile, compile_application_tokens, compile_stylesheets, compile_tokens};
 use morok_style::{ColorScheme, StyleSheet};
 
 use crate::case::Case;
@@ -14,10 +14,6 @@ use crate::scroll_markup;
 use crate::stand_error::StandError;
 use crate::suite::Suite;
 
-const TOKENS_PATH: &str = "design/system/tokens.css";
-/// The canonical tokens of the kit: the compiler of the kit reads them and Chrome gets them as
-/// they are.
-const TOKENS: &str = include_str!("../../../design/system/tokens.css");
 const STYLE_END_TAG: &str = "</style";
 
 /// A suite whose stylesheets the compiler of the kit has accepted: both sides of the stand
@@ -36,7 +32,9 @@ impl<'a> CompiledSuite<'a> {
                 path: unembeddable.path().to_path_buf(),
             });
         }
-        let tokens = compile_tokens(&SourceFile::new(TOKENS_PATH, TOKENS)).map_err(StandError::Rejected)?;
+        let kit_tokens =
+            compile_tokens(&SourceFile::new(KIT_TOKENS.path, KIT_TOKENS.text)).map_err(StandError::Rejected)?;
+        let tokens = compile_application_tokens(&kit_tokens, &suite.tokens).map_err(StandError::Rejected)?;
         let style_sheet = compile_stylesheets(&tree_stylesheets(suite), &tokens).map_err(StandError::Rejected)?;
         Ok(Self {
             suite,
@@ -67,7 +65,7 @@ impl<'a> CompiledSuite<'a> {
         let stylesheets: Vec<String> = page_stylesheets(self.suite)
             .map(|stylesheet| marker_classes::in_place_of_states(stylesheet.text()))
             .collect();
-        harness_page::document(TOKENS, &stylesheets, &self.markup(case))
+        harness_page::document(self.suite.tokens.text(), &stylesheets, &self.markup(case))
     }
 
     /// What an etalon of the case rendered now by `chrome_build` would be made of.
@@ -76,7 +74,7 @@ impl<'a> CompiledSuite<'a> {
         Manifest::of(
             &stylesheets,
             &harness_page::document("", &[], &self.markup(case)),
-            TOKENS,
+            self.suite.tokens.text(),
             &chrome_build.version,
         )
     }
@@ -85,7 +83,7 @@ impl<'a> CompiledSuite<'a> {
     /// motion of the case for the page to play when it has one.
     fn markup(&self, case: &Case) -> String {
         let mut scene = self.scene(case, ColorScheme::Light);
-        let mut markup = markup::of(&scene);
+        let mut markup = markup::of(&scene, &self.tokens);
         if let Some(support) = markup::edited_text_support(&scene) {
             markup.push_str(&support);
         }

@@ -657,11 +657,11 @@ fn a_frame_starts_from_a_cleared_surface() {
     let element = scene.add(scene.root(), &["box"]);
     let mut target = OffscreenTarget::new(renderer(), SURFACE, 1.0);
     scene.frame();
-    let first = target.render(scene.tree.display_list());
+    let first = target.render(scene.tree.display_list(), scene.tree.theme());
 
     scene.add_classes(element, &["hidden"]);
     scene.frame();
-    let second = target.render(scene.tree.display_list());
+    let second = target.render(scene.tree.display_list(), scene.tree.theme());
 
     assert_eq!(first.pixel(60, 30), RED);
     assert!(second.pixels.iter().all(|channel| *channel == 0));

@@ -7,7 +7,7 @@ use crate::case::Case;
 use crate::moment::Moment;
 use crate::scene::Scene;
 use crate::suite::Suite;
-use crate::suites::component_stylesheet;
+use crate::suites::{component_stylesheet, kit_tokens};
 
 pub(crate) const NAME: &str = "button";
 
@@ -19,6 +19,7 @@ const STYLESHEET: &str = include_str!("../../suites/button.css");
 pub(crate) fn suite() -> Suite {
     Suite {
         name: NAME,
+        tokens: kit_tokens(),
         component_stylesheets: vec![component_stylesheet(COMPONENT_STYLESHEET_PATH)],
         stylesheets: vec![SourceFile::new(STYLESHEET_PATH, STYLESHEET)],
         cases: vec![

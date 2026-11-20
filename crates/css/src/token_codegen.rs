@@ -37,6 +37,21 @@ pub fn generate_tokens_source(tokens: &CompiledTokens, schema: SchemaPath) -> St
     prettyplease::unparse(&file)
 }
 
+/// Generates the Rust source of the values of compiled tokens alone: the `LIGHT` and `DARK`
+/// theme tables of a tokens file whose IDs another file's `Tokens` already names.
+pub fn generate_themes_source(tokens: &CompiledTokens, schema: SchemaPath) -> String {
+    let schema = schema.path();
+    let light = tokens.light.literal(&schema);
+    let dark = tokens.dark.literal(&schema);
+    let module = quote! {
+        pub const LIGHT: #schema::Theme = #light;
+
+        pub const DARK: #schema::Theme = #dark;
+    };
+    let file = syn::parse2::<syn::File>(module).expect("generated theme tables are valid Rust");
+    prettyplease::unparse(&file)
+}
+
 fn field(token_name: &str) -> Ident {
     format_ident!("{}", token_name.replace('-', "_"))
 }

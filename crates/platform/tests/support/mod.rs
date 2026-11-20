@@ -5,9 +5,9 @@ use std::time::Duration;
 
 use morok_core::accesskit::{ActionRequest, TreeUpdate};
 use morok_core::{ElementId, ElementTree, FrameScheduler, KeyEvent, PointerInput, Rect, Role, ScrollInput, Size};
-use morok_css::{CompiledTokens, SourceFile, compile_stylesheets, compile_tokens};
+use morok_css::{CompiledTokens, SourceFile, TokenId, compile_stylesheets, compile_tokens};
 use morok_platform::{CoreTextShaper, FrameImage, OffscreenTarget, Renderer, SurfaceContent, SurfaceSettings};
-use morok_style::{ColorScheme, StyleSheet, Theme};
+use morok_style::{Color, ColorScheme, StyleSheet, Theme, Token};
 use objc2_foundation::{NSDate, NSRunLoop};
 
 /// The tokens of the scenes: pure colors, so that a pixel tells which item drew it.
@@ -83,6 +83,14 @@ impl Scene {
         }
     }
 
+    /// The ID of a color token of the scenes, named without the leading `--`.
+    pub(crate) fn color_token(&self, name: &str) -> Token<Color> {
+        match self.tokens.id(name) {
+            Some(TokenId::Color(token)) => token,
+            other => panic!("`--{name}` is not a color token of the scenes: {other:?}"),
+        }
+    }
+
     pub(crate) fn theme(&self, color_scheme: ColorScheme) -> Theme {
         match color_scheme {
             ColorScheme::Light => self.tokens.light.clone(),
@@ -106,7 +114,7 @@ impl Scene {
     pub(crate) fn render(&mut self, renderer: &Renderer, scale: f32) -> FrameImage {
         self.scale = scale;
         self.frame();
-        OffscreenTarget::new(renderer, self.viewport, scale).render(self.tree.display_list())
+        OffscreenTarget::new(renderer, self.viewport, scale).render(self.tree.display_list(), self.tree.theme())
     }
 }
 

@@ -6,6 +6,7 @@ use crate::media_source::{IconSource, ImageSource};
 use crate::moment::Moment;
 use crate::scene::Scene;
 use crate::suite::Suite;
+use crate::suites::kit_tokens;
 
 pub(crate) const NAME: &str = "icons-images";
 
@@ -50,6 +51,7 @@ const OBJECT_FITS: [&str; 5] = ["fill", "contain", "cover", "none", "scale-down"
 pub(crate) fn suite() -> Suite {
     Suite {
         name: NAME,
+        tokens: kit_tokens(),
         component_stylesheets: Vec::new(),
         stylesheets: vec![SourceFile::new(STYLESHEET_PATH, STYLESHEET)],
         cases: vec![case("icons", 420.0, 200.0, icons), case("images", 580.0, 260.0, images)],

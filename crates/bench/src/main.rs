@@ -4,7 +4,8 @@ use std::process::ExitCode;
 
 use morok_bench::{Budgets, cold_start_application, scenarios};
 
-const USAGE: &str = "usage: morok-bench <frame | idle | cold-start | input-latency | scroll-1m>";
+const USAGE: &str = "usage: morok-bench <frame | idle | cold-start | input-latency | scroll-1m | all>";
+const WITHIN_BUDGET: u8 = 0;
 /// The command names no scenario, or the harness could not do its work.
 const COULD_NOT_RUN: u8 = 2;
 
@@ -17,21 +18,35 @@ fn main() -> ExitCode {
     if name == cold_start_application::COMMAND {
         return cold_start_application::run();
     }
-    if !scenarios::NAMES.contains(&name.as_str()) {
+    let Some(scenario_names) = scenarios::named(name) else {
         eprintln!(
-            "no scenario is named `{name}`; the scenarios are: {}",
-            scenarios::NAMES.join(", ")
+            "no scenario is named `{name}`; the scenarios are: {}, or `{}` for all of them",
+            scenarios::NAMES.join(", "),
+            scenarios::ALL
         );
         return ExitCode::from(COULD_NOT_RUN);
-    }
-    match Budgets::of_workspace().and_then(|budgets| scenarios::run(name, &budgets)) {
-        Ok(verdict) => {
-            println!("{verdict}");
-            ExitCode::from(verdict.exit_code())
-        }
+    };
+    let budgets = match Budgets::of_workspace() {
+        Ok(budgets) => budgets,
         Err(error) => {
             eprintln!("morok-bench: {error}");
-            ExitCode::from(COULD_NOT_RUN)
+            return ExitCode::from(COULD_NOT_RUN);
+        }
+    };
+    let mut worst = WITHIN_BUDGET;
+    for scenario in scenario_names {
+        match scenarios::run(scenario, &budgets) {
+            Ok(verdicts) => {
+                for verdict in &verdicts {
+                    println!("{verdict}");
+                    worst = worst.max(verdict.exit_code());
+                }
+            }
+            Err(error) => {
+                eprintln!("morok-bench: {scenario}: {error}");
+                worst = COULD_NOT_RUN;
+            }
         }
     }
+    ExitCode::from(worst)
 }

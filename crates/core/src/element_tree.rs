@@ -483,6 +483,15 @@ impl ElementTree {
         self.set_media(element, Role::Canvas, MediaContent::Canvas(canvas));
     }
 
+    /// The canvas a [`Role::Canvas`] element hands the application to draw into; none for an
+    /// element that was given no canvas.
+    pub fn canvas(&self, element: ElementId) -> Option<CanvasId> {
+        match self.elements[element].media {
+            MediaContent::Canvas(canvas) => Some(canvas),
+            _ => None,
+        }
+    }
+
     fn set_media(&mut self, element: ElementId, role: Role, media: MediaContent) {
         let held = &mut self.elements[element];
         assert!(held.role == role, "{:?} shows no {role:?}", held.role);

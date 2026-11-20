@@ -1,0 +1,28 @@
+/* The window of the catalog: a toolbar over the sidebar of the pages and the page that is
+   open, over a status bar. */
+
+.catalog-window {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--color-surface);
+}
+
+.catalog-body {
+  display: flex;
+  flex-grow: 1;
+  min-height: 0;
+}
+
+/* The room a page has: the pages that grow taller than it scroll inside it. */
+.catalog-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--color-bg);
+}
+
+.catalog-page > .scroll-view {
+  flex-grow: 1;
+  min-height: 0;
+}

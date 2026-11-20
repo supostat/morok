@@ -392,6 +392,7 @@ impl SurfaceContent for HostedSurface {
         Some(SystemDragRequest {
             payload: drag.payload,
             picture,
+            theme: tree.theme().clone(),
             picture_box,
         })
     }

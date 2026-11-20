@@ -41,6 +41,10 @@ impl TokenName {
         })
     }
 
+    pub(crate) fn as_str(&self) -> &str {
+        &self.text
+    }
+
     pub(crate) fn into_string(self) -> String {
         self.text
     }

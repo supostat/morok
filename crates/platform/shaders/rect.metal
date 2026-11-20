@@ -31,6 +31,7 @@ constant uint KIND_BORDER = 3;
 constant uint KIND_SHADOW = 4;
 constant uint KIND_INSET_SHADOW = 5;
 constant uint KIND_BOX = 6;
+constant uint KIND_RING_SECTOR = 7;
 
 // A blur narrower than this is drawn as a hard edge: the Gaussian would divide by its width.
 constant float MINIMUM_BLUR_DEVIATION = 0.01;
@@ -187,6 +188,31 @@ static float blurred_rounded_rect_coverage(float2 surface_point, RoundedRect sha
     return saturate(coverage);
 }
 
+// The signed distance from a point to the part of a ring between two angles, negative inside:
+// the ring cut by the wedge of the angles. `ring` holds the inner and the outer radius, the
+// start and the end angle. Exact on the edges, which is where anti-aliasing reads it.
+static float ring_sector_distance(float2 surface_point, float2 center, float4 ring) {
+    const float2 offset = surface_point - center;
+    const float radius = length(offset);
+    const float from_ring = max(radius - ring.y, ring.x - radius);
+    const float half_span = (ring.w - ring.z) * 0.5;
+    if (half_span >= M_PI_F) {
+        return from_ring;
+    }
+    const float middle = (ring.z + ring.w) * 0.5;
+    // The point in the frame where the middle of the wedge points along y and the wedge is
+    // symmetric about it.
+    const float2 in_wedge = float2(
+        abs(offset.x * sin(middle) - offset.y * cos(middle)),
+        offset.x * cos(middle) + offset.y * sin(middle)
+    );
+    const float2 edge = float2(sin(half_span), cos(half_span));
+    const float to_edge = length(in_wedge - edge * max(dot(in_wedge, edge), 0.0));
+    const float beyond_edge = edge.y * in_wedge.x - edge.x * in_wedge.y;
+    const float from_wedge = beyond_edge > 0.0 ? to_edge : -to_edge;
+    return max(from_ring, from_wedge);
+}
+
 fragment float4 rect_fragment(
     RectVaryings in [[stage_in]],
     const device RectInstance* instances [[buffer(0)]],
@@ -246,6 +272,11 @@ fragment float4 rect_fragment(
         case KIND_INSET_SHADOW: {
             const float light = blurred_rounded_rect_coverage(surface_point, instance.outer, instance.parameters.x, scale);
             color = instance.colors[0] * (1.0 - light) * rounded_rect_coverage(surface_point, instance.inner, scale);
+            break;
+        }
+        case KIND_RING_SECTOR: {
+            const float2 center = instance.outer.rect.xy + instance.outer.rect.zw * 0.5;
+            color = instance.colors[0] * edge_coverage(ring_sector_distance(surface_point, center, instance.parameters), scale);
             break;
         }
         default: {

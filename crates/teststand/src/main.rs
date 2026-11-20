@@ -4,7 +4,8 @@ use std::process::ExitCode;
 
 use morok_teststand::{Stand, StandError, Suite, SuiteReport, check, etalons, suites};
 
-const USAGE: &str = "usage: morok-teststand <etalons render <suite> | etalons verify <suite> | check <suite>>";
+const USAGE: &str =
+    "usage: morok-teststand <etalons render <suite> | etalons verify <suite> | check <suite>>, `all` for every suite";
 const CLEAN: u8 = 0;
 /// The command names nothing the stand has, or the stand could not do its work.
 const COULD_NOT_RUN: u8 = 2;
@@ -36,14 +37,25 @@ fn main() -> ExitCode {
     }
 }
 
-/// Runs the command on the named suite; a name that is no suite is a command the stand cannot run.
-fn on_suite(name: &str, command: impl FnOnce(&Suite) -> Result<u8, StandError>) -> Result<u8, StandError> {
+/// Runs the command on the named suite, or on every suite one after another for
+/// [`suites::ALL`]: the process exits with the worst of their codes. A name that is no suite is
+/// a command the stand cannot run.
+fn on_suite(name: &str, mut command: impl FnMut(&Suite) -> Result<u8, StandError>) -> Result<u8, StandError> {
+    if name == suites::ALL {
+        let mut worst = CLEAN;
+        for suite_name in suites::NAMES {
+            let suite = suites::named(suite_name).expect("every name of a suite names a suite");
+            worst = worst.max(command(&suite)?);
+        }
+        return Ok(worst);
+    }
     if let Some(suite) = suites::named(name) {
         command(&suite)
     } else {
         eprintln!(
-            "no suite is named `{name}`; the suites are: {}",
-            suites::NAMES.join(", ")
+            "no suite is named `{name}`; the suites are: {}, or `{}` for all of them",
+            suites::NAMES.join(", "),
+            suites::ALL
         );
         Ok(COULD_NOT_RUN)
     }

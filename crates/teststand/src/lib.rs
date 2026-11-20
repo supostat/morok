@@ -1,6 +1,9 @@
 #![forbid(unsafe_code)]
 
 mod anti_aliasing;
+mod canvas_markup;
+mod canvas_shape;
+mod canvas_shapes_painter;
 mod case;
 mod case_rendering;
 mod case_verdict;
@@ -39,6 +42,7 @@ pub mod suites;
 mod thresholds;
 mod toml_file;
 
+pub use canvas_shape::CanvasShape;
 pub use case::Case;
 pub use case_rendering::{COLOR_SCHEMES, CaseRendering};
 pub use case_verdict::CaseVerdict;

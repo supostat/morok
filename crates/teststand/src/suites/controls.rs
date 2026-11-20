@@ -12,7 +12,7 @@ use crate::case::Case;
 use crate::moment::Moment;
 use crate::scene::Scene;
 use crate::suite::Suite;
-use crate::suites::component_stylesheet;
+use crate::suites::{component_stylesheet, kit_tokens};
 
 pub(crate) const NAME: &str = "controls";
 
@@ -40,6 +40,7 @@ const KEYBOARD_FOCUS: States = States::FOCUS.union(States::FOCUS_VISIBLE);
 pub(crate) fn suite() -> Suite {
     Suite {
         name: NAME,
+        tokens: kit_tokens(),
         component_stylesheets: COMPONENT_STYLESHEET_PATHS
             .iter()
             .map(|path| component_stylesheet(path))

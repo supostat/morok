@@ -65,7 +65,7 @@ impl FramePipeline {
         let layout_done = Instant::now();
         tree.build_display_list();
         let display_list_done = Instant::now();
-        self.target.draw(tree.display_list());
+        self.target.draw(tree.display_list(), tree.theme());
         let encoding_done = Instant::now();
         let allocations = CountingAllocator::allocations_so_far() - allocations_before;
         self.target.wait_until_drawn();

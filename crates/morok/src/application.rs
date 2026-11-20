@@ -4,11 +4,13 @@ use std::time::Duration;
 
 use morok_components::view::{Mount, Surfaces};
 use morok_core::ElementId;
-use morok_platform::{Appearance, AtlasStatistics, PasteboardClipboard, RendererError, WindowOptions};
+use morok_platform::{Appearance, AtlasStatistics, CanvasPainter, PasteboardClipboard, RendererError, WindowOptions};
 use morok_reactive::Runtime;
+use morok_style::Theme;
 
 use crate::application_state::ApplicationState;
 use crate::hosted_surface::HostedSurface;
+use crate::shared_canvas_painter::SharedCanvasPainter;
 use crate::styles::Styles;
 use crate::window::Window;
 
@@ -22,6 +24,7 @@ use crate::window::Window;
 pub struct Application {
     platform: Rc<morok_platform::Application>,
     state: Rc<RefCell<ApplicationState>>,
+    canvas_painter: SharedCanvasPainter,
 }
 
 impl Application {
@@ -42,6 +45,7 @@ impl Application {
         Ok(Self {
             platform: Rc::new(platform),
             state: Rc::new(RefCell::new(state)),
+            canvas_painter: SharedCanvasPainter::default(),
         })
     }
 
@@ -49,7 +53,7 @@ impl Application {
     /// and the element it builds becomes the child of the root of the tree. The texts of the
     /// surface copy to and paste from the clipboard of the system. The window shares the GPU
     /// resources of the application with the windows opened before it, and closes when the
-    /// value returned is dropped.
+    /// value returned is dropped. Its canvases are drawn by the painter of the application.
     ///
     /// # Panics
     ///
@@ -70,8 +74,38 @@ impl Application {
             state.surfaces.mount(&mut state.runtime, surface, tree_root, root);
             HostedSurface::new(Rc::clone(&self.state), surface, Duration::ZERO)
         });
+        platform.set_canvas_painter(Box::new(self.canvas_painter.clone()));
         let surface = platform.update(|content| content.surface);
-        Window { platform, surface }
+        Window {
+            platform,
+            surface,
+            application: Rc::clone(&self.platform),
+            canvas_painter: self.canvas_painter.clone(),
+        }
+    }
+
+    /// Names who draws the canvases of every window of the application, the windows open now
+    /// among them: the painter is handed the content box of each canvas in paint order, with
+    /// the values of the tokens of its surface.
+    pub fn set_canvas_painter(&self, painter: impl CanvasPainter + 'static) {
+        self.canvas_painter.replace(Box::new(painter));
+    }
+
+    /// Restyles every surface of the application with other values of its tokens: `light` and
+    /// `dark` are the values a tokens file the application switches to gives the tokens its
+    /// style sheet was compiled against. Windows opened from now on, and a change of the color
+    /// scheme, take them too.
+    ///
+    /// # Panics
+    ///
+    /// When called while the application tells a handler of an event: a handler switches the
+    /// values through [`defer`](Self::defer).
+    pub fn set_themes(&self, light: Theme, dark: Theme) {
+        let state = &mut *self.state.borrow_mut();
+        state.styles.light = light;
+        state.styles.dark = dark;
+        let theme = state.styles.theme(self.platform.color_scheme()).clone();
+        state.surfaces.set_theme(&theme);
     }
 
     /// Reads or writes the signals of the application from outside its components. What a

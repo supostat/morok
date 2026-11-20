@@ -2,8 +2,10 @@ use std::fmt::Write;
 use std::time::Duration;
 
 use morok_core::{ElementId, Role};
+use morok_css::CompiledTokens;
 use morok_style::States;
 
+use crate::canvas_markup;
 use crate::inline_style::style_attribute;
 use crate::marker_classes::{self, PLACEHOLDER_MARKER};
 use crate::scene::Scene;
@@ -24,26 +26,34 @@ pub(crate) const SELECTION_END_ATTRIBUTE: &str = "data-selection-end";
 /// order, with the classes of the element, the marker classes of its states, the
 /// declarations set on it directly and the displacement a component gave it. A text holds
 /// its characters; an icon is its SVG inline, so that `currentColor` is the color of the
-/// element; an image is an `img` with its file as a data URL. An edited text holds its
+/// element; an image is an `img` with its file as a data URL; a canvas is an SVG of the shapes
+/// the case fills it with, in the colors of `tokens`. An edited text holds its
 /// characters, or while it is empty its placeholder; a focused one tells the page where its
 /// caret or its selection is.
 ///
 /// # Panics
 ///
 /// When the tree holds an element the stand has no markup for.
-pub(crate) fn of(scene: &Scene) -> String {
+pub(crate) fn of(scene: &Scene, tokens: &CompiledTokens) -> String {
     let mut markup = String::new();
-    write_element(scene, scene.root(), &mut markup);
+    write_element(scene, tokens, scene.root(), &mut markup);
     markup
 }
 
-fn write_element(scene: &Scene, element: ElementId, markup: &mut String) {
+fn write_element(scene: &Scene, tokens: &CompiledTokens, element: ElementId, markup: &mut String) {
     let tree = scene.tree();
     let role = tree.role(element);
     assert!(
         matches!(
             role,
-            Role::Element | Role::Text | Role::Icon | Role::Image | Role::TextInput | Role::TextArea | Role::Scroll
+            Role::Element
+                | Role::Text
+                | Role::Icon
+                | Role::Image
+                | Role::Canvas
+                | Role::TextInput
+                | Role::TextArea
+                | Role::Scroll
         ),
         "the stand has no markup for {role:?}"
     );
@@ -78,8 +88,12 @@ fn write_element(scene: &Scene, element: ElementId, markup: &mut String) {
             );
             return;
         }
+        Role::Canvas => {
+            let paths = canvas_markup::paths(scene.canvas_shapes_of(element), tokens);
+            let _ = write!(markup, "{SVG_TAG}{attributes}>{paths}</svg>");
+            return;
+        }
         Role::Element | Role::Text | Role::TextInput | Role::TextArea | Role::Scroll => {}
-        Role::Canvas => unreachable!("the roles were checked above"),
     }
     markup.push_str("<div");
     markup.push_str(&attributes);
@@ -98,7 +112,7 @@ fn write_element(scene: &Scene, element: ElementId, markup: &mut String) {
         write_escaped(tree.text(element), markup);
     }
     for child in tree.children(element) {
-        write_element(scene, *child, markup);
+        write_element(scene, tokens, *child, markup);
     }
     markup.push_str("</div>");
 }
@@ -248,8 +262,9 @@ fn write_escaped(text: &str, markup: &mut String) {
 
 #[cfg(test)]
 mod tests {
+    use morok_components::KIT_TOKENS;
     use morok_core::Size;
-    use morok_css::SourceFile;
+    use morok_css::{SourceFile, compile_tokens};
     use morok_style::{ColorScheme, States};
 
     use crate::case::Case;
@@ -267,8 +282,10 @@ mod tests {
 
     #[test]
     fn every_element_is_a_div_with_its_classes_the_markers_of_its_states_and_its_text() {
+        let tokens = SourceFile::new(KIT_TOKENS.path, KIT_TOKENS.text);
         let suite = Suite {
             name: "markup",
+            tokens: tokens.clone(),
             component_stylesheets: Vec::new(),
             stylesheets: vec![SourceFile::new(
                 "markup.css",
@@ -286,9 +303,10 @@ mod tests {
         };
         let compiled = CompiledSuite::compile(&suite).expect("the stylesheet compiles");
         let scene = compiled.scene(&suite.cases[0], ColorScheme::Light);
+        let compiled_tokens = compile_tokens(&tokens).expect("the tokens of the kit compile");
 
         assert_eq!(
-            super::of(&scene),
+            super::of(&scene, &compiled_tokens),
             "<div>\
              <div class=\"button primary state--hover state--focus-visible\">\
              <div class=\"label\" data-text>Save &amp; &lt;close&gt;</div>\

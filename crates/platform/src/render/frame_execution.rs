@@ -8,6 +8,7 @@ use objc2_metal::{
 };
 
 use morok_core::CanvasId;
+use morok_style::Theme;
 
 use crate::canvas::canvas_encoder::CanvasEncoder;
 use crate::canvas::canvas_painter::CanvasPainter;
@@ -60,6 +61,8 @@ pub(crate) struct FrameExecution<'a> {
     pub(crate) images: &'a ImageStore,
     pub(crate) image_textures: &'a mut ImageTextures,
     pub(crate) canvas_painter: Option<&'a mut (dyn CanvasPainter + 'static)>,
+    /// The values of the tokens the canvases are drawn with.
+    pub(crate) theme: &'a Theme,
     pub(crate) command_buffer: &'a ProtocolObject<dyn MTL4CommandBuffer>,
     pub(crate) render_pass: &'a MTL4RenderPassDescriptor,
     pub(crate) residency_set: &'a ProtocolObject<dyn MTLResidencySet>,
@@ -122,6 +125,7 @@ impl FrameExecution<'_> {
             },
             resources: self.resources,
             renderer: self.renderer,
+            theme: self.theme,
             transform,
         };
         painter.draw(canvas, &mut encoder);

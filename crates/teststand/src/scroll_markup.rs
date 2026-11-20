@@ -19,20 +19,29 @@ const SCROLL_STYLE: &str = "* { scrollbar-width: none; }";
 
 /// Scrolls every `Scroll` element to its offset, then sizes and moves the thumbs of the kit by
 /// the rule the kit sizes and moves them: as long as the share of the content the viewport
-/// shows, never shorter than `SHORTEST_THUMB`, along the content box of the bar.
+/// shows, never shorter than `SHORTEST_THUMB`, along the content box of the bar. The viewport
+/// and the bar are measured as the kit lays them out, in fractions of a pixel: the client
+/// sizes of the page are whole pixels.
 const SCROLL_SCRIPT: &str = "for (const scroller of document.querySelectorAll('[SCROLLER_ATTRIBUTE]')) {\n\
     scroller.scrollLeft = Number(scroller.getAttribute('SCROLL_LEFT_ATTRIBUTE'));\n\
     scroller.scrollTop = Number(scroller.getAttribute('SCROLL_TOP_ATTRIBUTE'));\n\
     }\n\
+    const insideBorder = (element, vertical) => {\n\
+    const box = element.getBoundingClientRect();\n\
+    const style = getComputedStyle(element);\n\
+    return vertical\n\
+    ? box.height - parseFloat(style.borderTopWidth) - parseFloat(style.borderBottomWidth)\n\
+    : box.width - parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth);\n\
+    };\n\
     for (const thumb of document.querySelectorAll('[THUMB_ATTRIBUTE]')) {\n\
     const scroller = document.querySelector(`[SCROLLER_ATTRIBUTE=\"${thumb.getAttribute('THUMB_ATTRIBUTE')}\"]`);\n\
     const vertical = thumb.getAttribute('THUMB_AXIS_ATTRIBUTE') === 'vertical';\n\
     const bar = getComputedStyle(thumb.parentElement);\n\
     const track = vertical\n\
-    ? thumb.parentElement.clientHeight - parseFloat(bar.paddingTop) - parseFloat(bar.paddingBottom)\n\
-    : thumb.parentElement.clientWidth - parseFloat(bar.paddingLeft) - parseFloat(bar.paddingRight);\n\
-    const viewport = vertical ? scroller.clientHeight : scroller.clientWidth;\n\
-    const limit = vertical ? scroller.scrollHeight - scroller.clientHeight : scroller.scrollWidth - scroller.clientWidth;\n\
+    ? insideBorder(thumb.parentElement, true) - parseFloat(bar.paddingTop) - parseFloat(bar.paddingBottom)\n\
+    : insideBorder(thumb.parentElement, false) - parseFloat(bar.paddingLeft) - parseFloat(bar.paddingRight);\n\
+    const viewport = insideBorder(scroller, vertical);\n\
+    const limit = (vertical ? scroller.scrollHeight : scroller.scrollWidth) - viewport;\n\
     const offset = vertical ? scroller.scrollTop : scroller.scrollLeft;\n\
     let length = 0;\n\
     let travel = 0;\n\

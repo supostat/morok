@@ -38,6 +38,7 @@ pub use atlas_usage::AtlasUsage;
 pub use canvas::canvas_encoder::CanvasEncoder;
 pub use canvas::canvas_painter::CanvasPainter;
 pub use canvas::canvas_region::CanvasRegion;
+pub use canvas::ring_sector::RingSector;
 pub use focused_text::FocusedText;
 pub use frame_image::FrameImage;
 pub use frame_statistics::FrameStatistics;

@@ -1,8 +1,8 @@
 use std::time::{Duration, Instant};
 
-use morok::components::TextField;
-use morok::core::{DisplayItem, ElementTree, Size};
-use morok::{Application, Styles, Window, WindowOptions};
+use morok::core::{DisplayItem, DisplayList, ElementTree, Role};
+use morok::{Application, Window};
+use morok_catalog::{Catalog, Page, WINDOW_TITLE};
 use objc2::MainThreadMarker;
 use objc2::rc::Retained;
 use objc2_app_kit::{NSApplication, NSEvent, NSEventModifierFlags, NSEventType, NSWindow};
@@ -13,10 +13,6 @@ use crate::input_latency_budget::InputLatencyBudget;
 use crate::input_latency_gate;
 use crate::verdict::Verdict;
 
-const CONTENT_SIZE: Size = Size {
-    width: 320.0,
-    height: 80.0,
-};
 /// How long the window gets to present its first frame, or to show the glyph of a keypress.
 const FRAME_TIMEOUT: Duration = Duration::from_secs(5);
 /// The event loop is given this long at a time while a frame is waited for: far less than a
@@ -26,41 +22,36 @@ const FRAME_POLL: Duration = Duration::from_millis(1);
 /// sets as one glyph each, never joined into a ligature.
 const TYPED_KEYS: [(u16, &str); 5] = [(0x00, "a"), (0x0B, "b"), (0x08, "c"), (0x02, "d"), (0x0E, "e")];
 
-/// Types into a text field of the kit in a window, a key at a time, and counts for each key
-/// the frames run after it before the first that shows its glyph. A key goes through the input
-/// methods of the system as a key of the keyboard does. The window runs a frame at every
-/// refresh of the display, as a window with something in motion does, so the frame of a
-/// keypress is the first that runs after it.
+/// The placeholder of the field of the catalog the keys are typed into.
+const FIELD_PLACEHOLDER: &str = "Name";
+
+/// Types into the first text field of the page of the text fields of the catalog, a key at a
+/// time, and counts for each key the frames run after it before the first that shows its glyph.
+/// A key goes through the input methods of the system as a key of the keyboard does. The
+/// window runs a frame at every refresh of the display, as a window with something in motion
+/// does, so the frame of a keypress is the first that runs after it.
 pub fn run(scenario: &str, budget: &InputLatencyBudget) -> Result<Verdict, BenchError> {
     let main_thread = MainThreadMarker::new().expect("the harness runs on the main thread");
-    let application = Application::new(Styles::of_kit())?;
-    let value = application.update(|runtime| runtime.signal(String::new()));
-    let options = WindowOptions {
-        title: String::from("morok: input latency"),
-        content_size: CONTENT_SIZE,
-        blur_behind: false,
-    };
-    let mut field = None;
-    let window = application.open_window(&options, |mount| {
-        let built = TextField::new(value).placeholder("Type here").mount(mount);
-        field = Some(built);
-        built
-    });
-    let field = field.expect("the window mounted its root component");
-    wait_for_first_frame(&application, &window)?;
+    let catalog = Catalog::launch(Page::TextFields)?;
+    let application = catalog.application();
+    let windows = catalog.windows();
+    let window = &windows[0];
+    wait_for_first_frame(application, window)?;
     let focused = window.with_tree(|tree| {
-        let input = *tree.children(field).last().expect("the field holds its line");
-        tree.focus(input)
+        let field = text_input_with_placeholder(tree, FIELD_PLACEHOLDER).expect("the page shows the field of the name");
+        tree.focus(field)
     });
     assert!(focused, "the line of the field takes focus");
     let native_window = NSApplication::sharedApplication(main_thread)
         .windows()
-        .firstObject()
-        .expect("the application has opened its window");
+        .to_vec()
+        .into_iter()
+        .find(|native| native.isVisible() && native.title().to_string() == WINDOW_TITLE)
+        .expect("the catalog has opened its window");
     let mut keys = TYPED_KEYS.iter().cycle();
     let mut type_key = || {
         let (key_code, character) = keys.next().expect("the typed keys cycle");
-        late_frames_of_keypress(&application, &window, &native_window, *key_code, character)
+        late_frames_of_keypress(application, window, &native_window, *key_code, character)
     };
     for _ in 0..budget.warm_up_keypresses {
         type_key()?;
@@ -126,12 +117,26 @@ fn wait_for_next_frame(application: &Application, window: &Window, run: u64) -> 
     }
 }
 
-/// Whether the last display list draws a glyph for every character of the focused text.
+/// The line of text the user edits that shows `placeholder` while it is empty.
+fn text_input_with_placeholder(tree: &ElementTree, placeholder: &str) -> Option<morok::core::ElementId> {
+    let mut unvisited = vec![tree.root()];
+    while let Some(element) = unvisited.pop() {
+        if tree.role(element) == Role::TextInput && tree.placeholder(element) == placeholder {
+            return Some(element);
+        }
+        unvisited.extend(tree.children(element));
+    }
+    None
+}
+
+/// Whether the last display list draws a glyph for every character of the focused text, in
+/// the part of the list that draws the focused text and nothing else.
 fn shows_every_character(tree: &ElementTree) -> bool {
     let Some(focused) = tree.focused_text_input() else {
         return false;
     };
-    let display_list = tree.display_list();
+    let mut display_list = DisplayList::default();
+    tree.subtree_display_list(focused, &mut display_list);
     let drawn: usize = display_list
         .items()
         .iter()

@@ -10,14 +10,15 @@ use crate::token_family::TokenFamily;
 use crate::token_name::TokenName;
 use crate::token_name_error::TokenNameError;
 use crate::token_value::TokenValue;
+use crate::tokens_block::TokensBlock;
 
 const ROOT_SELECTOR: &str = ":root";
 const DARK_MEDIA_QUERY: &str = "@media(prefers-color-scheme:dark)";
 
 /// The token blocks of a tokens file; a block the file does not have is `None` and already reported.
 pub(crate) struct TokensStylesheet {
-    pub(crate) light: Option<Vec<TokenDeclaration>>,
-    pub(crate) dark: Option<Vec<TokenDeclaration>>,
+    pub(crate) light: Option<TokensBlock>,
+    pub(crate) dark: Option<TokensBlock>,
 }
 
 pub(crate) fn parse(source: &SourceFile, diagnostics: &mut Vec<Diagnostic>) -> TokensStylesheet {
@@ -44,8 +45,8 @@ enum Nesting {
 struct Reader<'a> {
     source: &'a SourceFile,
     diagnostics: &'a mut Vec<Diagnostic>,
-    light: Option<Vec<TokenDeclaration>>,
-    dark: Option<Vec<TokenDeclaration>>,
+    light: Option<TokensBlock>,
+    dark: Option<TokensBlock>,
 }
 
 impl Reader<'_> {
@@ -95,9 +96,13 @@ impl Reader<'_> {
         let declarations = input
             .parse_nested_block(|tokens_block| Ok::<_, ParseError<()>>(self.declarations(tokens_block)))
             .expect("a tokens block is read to its end");
+        let block = Some(TokensBlock {
+            root: prelude,
+            declarations,
+        });
         match scheme {
-            ColorScheme::Light => self.light = Some(declarations),
-            ColorScheme::Dark => self.dark = Some(declarations),
+            ColorScheme::Light => self.light = block,
+            ColorScheme::Dark => self.dark = block,
         }
     }
 

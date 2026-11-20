@@ -15,6 +15,7 @@ use crate::render::rounded_rect::RoundedRect;
 /// | box | the outer edge | the inner edge | the border: top, right, bottom, left | the fill |
 /// | shadow | the blurred shape | the box that hides it | the shadow | blur deviation |
 /// | inset shadow | the blurred opening | the box that shows it | the shadow | blur deviation |
+/// | ring sector | the square of the outer circle | — | the fill | inner radius, outer radius, start and end angle |
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Pod, Zeroable)]
 pub(crate) struct RectInstance {

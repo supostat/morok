@@ -4,6 +4,7 @@ use std::time::{Duration, Instant};
 use morok_platform::{CoreTextShaper, ImageStatus, OffscreenTarget, Renderer};
 use morok_style::ColorScheme;
 
+use crate::canvas_shapes_painter::CanvasShapesPainter;
 use crate::case::Case;
 use crate::case_rendering::CaseRendering;
 use crate::compiled_suite::CompiledSuite;
@@ -55,9 +56,11 @@ impl MorokSide {
             scene.frame(case.viewport, &mut self.text_shaper, Duration::ZERO);
             scene.frame(case.viewport, &mut self.text_shaper, after);
         }
+        let mut target = OffscreenTarget::new(&self.renderer, case.viewport, DEVICE_SCALE);
+        target.set_canvas_painter(Box::new(CanvasShapesPainter::new(scene.canvases().to_vec())));
         let tree = scene.tree();
         Rendering {
-            image: OffscreenTarget::new(&self.renderer, case.viewport, DEVICE_SCALE).render(tree.display_list()),
+            image: target.render(tree.display_list(), tree.theme()),
             boxes: scene.element_boxes(scene.elements().into_iter().map(|element| tree.surface_box(element))),
         }
     }

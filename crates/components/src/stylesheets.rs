@@ -1,5 +1,12 @@
 use crate::stylesheet_source::StylesheetSource;
 
+/// The canonical tokens of the kit the build compiled the stylesheets against. An application
+/// compiles its own tokens file over them: it defines every one of them.
+pub const KIT_TOKENS: StylesheetSource = StylesheetSource {
+    path: "design/system/tokens.css",
+    text: include_str!("../../../design/system/tokens.css"),
+};
+
 /// The stylesheets of the components, in the order the build compiles them: the order of
 /// their paths. A host that compiles them first, in this order, and its own stylesheets after
 /// them gets a style sheet in which every class of the kit has the ID the components know it by.

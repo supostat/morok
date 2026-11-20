@@ -2,6 +2,7 @@ use std::ffi::c_void;
 use std::ptr::NonNull;
 
 use morok_core::{DisplayList, Size};
+use morok_style::Theme;
 use objc2::rc::Retained;
 use objc2::runtime::ProtocolObject;
 use objc2_metal::{
@@ -68,10 +69,11 @@ impl OffscreenTarget {
         self.frame_renderer.set_canvas_painter(painter);
     }
 
-    /// Draws the display list on a transparent surface and returns without waiting for the GPU.
-    pub fn draw(&mut self, display_list: &DisplayList) {
+    /// Draws the display list on a transparent surface, its canvases under `theme`, and returns
+    /// without waiting for the GPU.
+    pub fn draw(&mut self, display_list: &DisplayList, theme: &Theme) {
         self.frame_renderer
-            .render(display_list, &self.geometry, &self.texture, None);
+            .render(display_list, theme, &self.geometry, &self.texture, None);
     }
 
     /// Blocks until the GPU has drawn every display list handed to it.
@@ -79,9 +81,10 @@ impl OffscreenTarget {
         self.frame_renderer.wait_until_rendered();
     }
 
-    /// Draws the display list on a transparent surface and returns the frame.
-    pub fn render(&mut self, display_list: &DisplayList) -> FrameImage {
-        self.draw(display_list);
+    /// Draws the display list on a transparent surface, its canvases under `theme`, and returns
+    /// the frame.
+    pub fn render(&mut self, display_list: &DisplayList, theme: &Theme) -> FrameImage {
+        self.draw(display_list, theme);
         self.wait_until_drawn();
         let TargetGeometry {
             pixel_width: width,

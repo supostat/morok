@@ -9,18 +9,22 @@ mod motion;
 mod overlays;
 mod primitives;
 mod scaffold;
+mod screens;
 mod scroll;
 mod select_combobox;
 mod table;
 mod text_fields;
 
-use morok_components::STYLESHEETS;
+use morok_components::{KIT_TOKENS, STYLESHEETS};
 use morok_css::SourceFile;
 
 use crate::suite::Suite;
 
+/// The name that stands for every suite at once.
+pub const ALL: &str = "all";
+
 /// The names of all suites.
-pub const NAMES: [&str; 13] = [
+pub const NAMES: [&str; 14] = [
     primitives::NAME,
     effects::NAME,
     icons_images::NAME,
@@ -34,6 +38,7 @@ pub const NAMES: [&str; 13] = [
     overlays::NAME,
     select_combobox::NAME,
     scaffold::NAME,
+    screens::NAME,
 ];
 
 pub fn named(name: &str) -> Option<Suite> {
@@ -51,8 +56,14 @@ pub fn named(name: &str) -> Option<Suite> {
         overlays::NAME => Some(overlays::suite()),
         select_combobox::NAME => Some(select_combobox::suite()),
         scaffold::NAME => Some(scaffold::suite()),
+        screens::NAME => Some(screens::suite()),
         _ => None,
     }
+}
+
+/// The canonical tokens of the kit, which the cases of the kit's own suites are styled with.
+fn kit_tokens() -> SourceFile {
+    SourceFile::new(KIT_TOKENS.path, KIT_TOKENS.text)
 }
 
 /// The stylesheet of a component as the kit ships it, by its path from the root of the workspace.

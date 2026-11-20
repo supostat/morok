@@ -106,6 +106,14 @@ impl Surfaces {
         slot.surface.as_mut().expect(CLOSED_SURFACE)
     }
 
+    /// Restyles every surface with `theme`: the values of the tokens its style sheet was
+    /// compiled against.
+    pub fn set_theme(&mut self, theme: &Theme) {
+        for surface in self.slots.iter_mut().filter_map(|slot| slot.surface.as_mut()) {
+            surface.tree.set_theme(theme.clone());
+        }
+    }
+
     /// Asks the host of every surface for a frame. A frame begins with a flush of the effects,
     /// so this is how a signal written between frames gets shown.
     pub fn request_frames(&mut self) {

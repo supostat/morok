@@ -6,9 +6,21 @@ use crate::diagnostics::Diagnostics;
 
 #[derive(Debug)]
 pub(crate) enum BuildError {
-    Unreadable { path: PathBuf, error: io::Error },
+    Unreadable {
+        path: PathBuf,
+        error: io::Error,
+    },
     Rejected(Diagnostics),
-    Unwritable { path: PathBuf, error: io::Error },
+    Unwritable {
+        path: PathBuf,
+        error: io::Error,
+    },
+    /// Two tokens files an application switches to have one name, which names what they
+    /// generate.
+    SameThemesFile {
+        first: PathBuf,
+        second: PathBuf,
+    },
 }
 
 impl fmt::Display for BuildError {
@@ -19,6 +31,12 @@ impl fmt::Display for BuildError {
             Self::Unwritable { path, error } => {
                 write!(formatter, "morok-css: cannot write {}: {error}", path.display())
             }
+            Self::SameThemesFile { first, second } => write!(
+                formatter,
+                "morok-css: {} and {} have one name; the tokens files an application switches to are told apart by their names",
+                first.display(),
+                second.display()
+            ),
         }
     }
 }

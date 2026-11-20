@@ -1,5 +1,6 @@
 mod bench_error;
 mod budgets;
+mod catalog_idle;
 mod check;
 pub mod cold_start_application;
 mod cold_start_budget;
@@ -29,10 +30,12 @@ pub mod scenarios;
 mod scene;
 mod scene_content;
 mod scene_tree;
+mod screen_frames;
 mod scroll_gate;
 pub mod scroll_scenario;
 mod stage;
 mod stage_budgets;
+mod surface_pipeline;
 mod verdict;
 
 pub use bench_error::BenchError;
@@ -53,6 +56,7 @@ pub use reference_scene::ReferenceScene;
 pub use scene::Scene;
 pub use scene_content::SceneContent;
 pub use scene_tree::SceneTree;
+pub use screen_frames::ScreenFrames;
 pub use stage::Stage;
 pub use stage_budgets::StageBudgets;
 pub use verdict::Verdict;

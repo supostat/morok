@@ -91,6 +91,11 @@ impl<Content> Window<Content> {
         self.view.viewport()
     }
 
+    /// Device pixels per CSS pixel on the screen the window is shown on.
+    pub fn scale(&self) -> f32 {
+        self.view.scale()
+    }
+
     /// Resizes the window so that its surface takes `content_size` CSS pixels.
     pub fn set_content_size(&self, content_size: Size) {
         self.native.setContentSize(ns_size(content_size));

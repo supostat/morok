@@ -2,6 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+use morok_components::KIT_TOKENS;
 use morok_core::{Rect, Size};
 use morok_css::SourceFile;
 use morok_platform::FrameImage;
@@ -130,6 +131,7 @@ fn plates(stylesheet: &'static str) -> Suite {
     };
     Suite {
         name: "plates",
+        tokens: SourceFile::new(KIT_TOKENS.path, KIT_TOKENS.text),
         component_stylesheets: Vec::new(),
         stylesheets: vec![SourceFile::new("plates.css", stylesheet)],
         cases: vec![

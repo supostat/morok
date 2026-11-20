@@ -18,25 +18,129 @@ use crate::tokens_stylesheet;
 /// A token with a value of the same kind in both schemes.
 struct TokenPair {
     name: TokenName,
+    /// Where the light scheme declares the token.
+    name_span: Span,
     light: TokenValue,
     dark: TokenValue,
 }
 
+/// The tokens a file declares, in its order, with the `:root` selector of its light scheme.
+struct DeclaredTokens {
+    pairs: Vec<TokenPair>,
+    light_root: Span,
+}
+
 /// Compiles a tokens file into typed token IDs and the light and dark theme tables.
 pub fn compile_tokens(source: &SourceFile) -> Result<CompiledTokens, Diagnostics> {
+    declared_tokens(source).map(|declared| tables(declared.pairs))
+}
+
+/// Compiles the tokens file of an application over the tokens of the kit. The file defines
+/// every token of the kit, and may define tokens of its own: a token of the kit keeps the ID
+/// the kit gave it, so the tables of the kit's components read the application's values, and a
+/// token of the application's own gets an ID after those of the kit, in the order of the file.
+pub fn compile_application_tokens(kit: &CompiledTokens, source: &SourceFile) -> Result<CompiledTokens, Diagnostics> {
+    let declared = declared_tokens(source)?;
+    let mut diagnostics = Vec::new();
+    report_undefined(
+        source,
+        kit,
+        &declared,
+        "the tokens file of an application defines every token of the kit",
+        &mut diagnostics,
+    );
+    if diagnostics.is_empty() {
+        Ok(tables(in_order_of(kit, declared.pairs)))
+    } else {
+        Err(Diagnostics::new(diagnostics))
+    }
+}
+
+/// Compiles a tokens file an application switches to over its first tokens file: it defines
+/// exactly the tokens of `first`, which keep their IDs, so the style sheet compiled over the
+/// first file is restyled by the values of this one.
+pub fn compile_alternate_tokens(first: &CompiledTokens, source: &SourceFile) -> Result<CompiledTokens, Diagnostics> {
+    let declared = declared_tokens(source)?;
+    let mut diagnostics = Vec::new();
+    report_undefined(
+        source,
+        first,
+        &declared,
+        "a tokens file the application switches to defines every token of its first tokens file",
+        &mut diagnostics,
+    );
+    for pair in &declared.pairs {
+        if first.id(pair.name.as_str()).is_none() {
+            diagnostics.push(Diagnostic::new(
+                source,
+                pair.name_span,
+                format!("`{}` is not a token of the first tokens file", pair.name),
+                "a tokens file the application switches to defines the tokens of its first one and no other",
+            ));
+        }
+    }
+    if diagnostics.is_empty() {
+        Ok(tables(in_order_of(first, declared.pairs)))
+    } else {
+        Err(Diagnostics::new(diagnostics))
+    }
+}
+
+fn declared_tokens(source: &SourceFile) -> Result<DeclaredTokens, Diagnostics> {
     let mut diagnostics = Vec::new();
     let stylesheet = tokens_stylesheet::parse(source, &mut diagnostics);
     let (Some(light), Some(dark)) = (stylesheet.light, stylesheet.dark) else {
         return Err(Diagnostics::new(diagnostics));
     };
-    let light = first_declarations(source, ColorScheme::Light, light, &mut diagnostics);
-    let dark = first_declarations(source, ColorScheme::Dark, dark, &mut diagnostics);
+    let light_root = light.root;
+    let light = first_declarations(source, ColorScheme::Light, light.declarations, &mut diagnostics);
+    let dark = first_declarations(source, ColorScheme::Dark, dark.declarations, &mut diagnostics);
     let pairs = paired(source, &light, &dark, &mut diagnostics);
     if diagnostics.is_empty() {
-        Ok(tables(pairs))
+        Ok(DeclaredTokens { pairs, light_root })
     } else {
         Err(Diagnostics::new(diagnostics))
     }
+}
+
+/// Reports every token of `base` the file does not define, at its light `:root` block.
+fn report_undefined(
+    source: &SourceFile,
+    base: &CompiledTokens,
+    declared: &DeclaredTokens,
+    hint: &str,
+    diagnostics: &mut Vec<Diagnostic>,
+) {
+    let defined: HashSet<&str> = declared.pairs.iter().map(|pair| pair.name.as_str()).collect();
+    for entry in &base.entries {
+        if !defined.contains(entry.name.as_str()) {
+            diagnostics.push(Diagnostic::new(
+                source,
+                declared.light_root,
+                format!("`--{}` is not defined", entry.name),
+                hint,
+            ));
+        }
+    }
+}
+
+/// The pairs with the tokens of `base` first, in the order of `base`, and the others after
+/// them in their order. Every token of `base` is among the pairs.
+fn in_order_of(base: &CompiledTokens, pairs: Vec<TokenPair>) -> Vec<TokenPair> {
+    let mut by_name: HashMap<String, TokenPair> = HashMap::with_capacity(pairs.len());
+    let mut own_names = Vec::new();
+    for pair in pairs {
+        if base.id(pair.name.as_str()).is_none() {
+            own_names.push(pair.name.as_str().to_owned());
+        }
+        by_name.insert(pair.name.as_str().to_owned(), pair);
+    }
+    base.entries
+        .iter()
+        .map(|entry| &entry.name)
+        .chain(&own_names)
+        .map(|name| by_name.remove(name).expect("every token of the base is defined"))
+        .collect()
 }
 
 fn first_declarations(
@@ -90,6 +194,7 @@ fn paired(
         if light_value.kind() == dark_value.kind() {
             pairs.push(TokenPair {
                 name: light_declaration.name.clone(),
+                name_span: light_declaration.name_span,
                 light: light_value.clone(),
                 dark: dark_value.clone(),
             });

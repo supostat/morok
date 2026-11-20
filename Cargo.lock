@@ -1193,6 +1193,7 @@ name = "morok-bench"
 version = "0.1.0"
 dependencies = [
  "morok",
+ "morok-catalog",
  "morok-core",
  "morok-css",
  "morok-platform",
@@ -1202,6 +1203,20 @@ dependencies = [
  "objc2-foundation 0.3.2",
  "serde",
  "toml",
+]
+
+[[package]]
+name = "morok-catalog"
+version = "0.1.0"
+dependencies = [
+ "morok",
+ "morok-components",
+ "morok-css",
+ "objc2 0.6.5",
+ "objc2-app-kit 0.3.2",
+ "objc2-core-foundation",
+ "objc2-core-graphics",
+ "objc2-foundation 0.3.2",
 ]
 
 [[package]]
@@ -1277,6 +1292,7 @@ dependencies = [
  "chromiumoxide",
  "cssparser",
  "futures",
+ "morok-catalog",
  "morok-components",
  "morok-core",
  "morok-css",

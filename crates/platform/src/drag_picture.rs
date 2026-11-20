@@ -1,6 +1,7 @@
 use std::ffi::c_void;
 
 use morok_core::{DisplayList, Rect};
+use morok_style::Theme;
 use objc2::AnyThread;
 use objc2::rc::Retained;
 use objc2_app_kit::NSImage;
@@ -28,11 +29,12 @@ pub(crate) struct DragPicture {
 }
 
 impl DragPicture {
-    /// Draws `picture`, the display list of the source alone, which covers `covered` of a
-    /// surface of `geometry`. Returns none when it covers no pixel of the surface.
+    /// Draws `picture`, the display list of the source alone under `theme`, which covers
+    /// `covered` of a surface of `geometry`. Returns none when it covers no pixel of the surface.
     pub(crate) fn render(
         renderer: &Renderer,
         picture: &DisplayList,
+        theme: &Theme,
         covered: &Rect,
         geometry: &TargetGeometry,
     ) -> Option<Self> {
@@ -43,7 +45,7 @@ impl DragPicture {
         if shown.is_empty() {
             return None;
         }
-        let surface = OffscreenTarget::new(renderer, geometry.viewport, geometry.scale).render(picture);
+        let surface = OffscreenTarget::new(renderer, geometry.viewport, geometry.scale).render(picture, theme);
         let row_length = shown.width * BYTES_PER_PIXEL;
         let mut pixels = Vec::with_capacity(shown.height * row_length);
         for row in shown.y..shown.y + shown.height {

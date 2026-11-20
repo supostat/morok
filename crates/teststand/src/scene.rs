@@ -1,10 +1,11 @@
 use std::time::Duration;
 
 use morok_components::view::{Mount, SurfaceId, Surfaces};
-use morok_core::{ElementId, ElementTree, Point, Rect, Role, Size, TextSelection, TextShaper};
+use morok_core::{CanvasId, ElementId, ElementTree, Point, Rect, Role, Size, TextSelection, TextShaper};
 use morok_reactive::Runtime;
 use morok_style::{States, StyleSheet, Theme};
 
+use crate::canvas_shape::CanvasShape;
 use crate::element_box::ElementBox;
 use crate::media_source::{IconSource, ImageSource};
 use crate::rendering::DEVICE_SCALE;
@@ -27,6 +28,8 @@ pub struct Scene {
     images: Vec<(ElementId, ImageSource)>,
     /// The `Scroll` elements the case scrolls, with the offsets it asks for.
     scroll_offsets: Vec<(ElementId, Point)>,
+    /// The canvases of the scene with the shapes they are filled with.
+    canvases: Vec<(CanvasId, Vec<CanvasShape>)>,
 }
 
 impl Scene {
@@ -42,6 +45,7 @@ impl Scene {
             icons: Vec::new(),
             images: Vec::new(),
             scroll_offsets: Vec::new(),
+            canvases: Vec::new(),
         }
     }
 
@@ -116,6 +120,28 @@ impl Scene {
         let element = self.add_with_role(parent, Role::Image, class_names);
         self.images.push((element, image));
         element
+    }
+
+    /// Fills the canvas with the shapes, in their order: both sides draw them into every
+    /// element that hands the application this canvas.
+    pub fn draw_canvas(&mut self, canvas: CanvasId, shapes: Vec<CanvasShape>) {
+        self.canvases.retain(|(drawn, _)| *drawn != canvas);
+        self.canvases.push((canvas, shapes));
+    }
+
+    /// The canvases of the scene with the shapes they are filled with.
+    pub(crate) fn canvases(&self) -> &[(CanvasId, Vec<CanvasShape>)] {
+        &self.canvases
+    }
+
+    /// The shapes the canvas of the element is filled with; none for a canvas the case leaves
+    /// empty.
+    pub(crate) fn canvas_shapes_of(&self, element: ElementId) -> &[CanvasShape] {
+        let canvas = self.tree().canvas(element);
+        self.canvases
+            .iter()
+            .find(|(drawn, _)| Some(*drawn) == canvas)
+            .map_or(&[], |(_, shapes)| shapes.as_slice())
     }
 
     /// Scrolls a `Scroll` element to the offset; both sides keep it within the limits of the
@@ -258,6 +284,7 @@ impl Scene {
                     (true, Role::Text) => TEXT_NODE,
                     (true, Role::Icon) => "icon",
                     (true, Role::Image) => "image",
+                    (true, Role::Canvas) => "canvas",
                     (true, _) if element == self.root() => ROOT_NODE,
                     (true, _) => "element",
                 };

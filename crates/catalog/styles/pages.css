@@ -1,0 +1,198 @@
+/* The pages of the component families: a title over sections, each a caption over the
+   components of the family in their states. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-6);
+}
+
+/* A page that scrolls under the overlays it opens over the room it has. */
+.page-layers {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.page-layers > .scroll-view {
+  flex-grow: 1;
+  min-height: 0;
+}
+
+/* A page whose one component takes all the room the page has. */
+.page.filled {
+  height: 100%;
+}
+
+.page-title {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--text-weight-semibold);
+  line-height: var(--text-leading-tight);
+}
+
+.page-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.page-section.filled {
+  flex-grow: 1;
+  min-height: 0;
+}
+
+.page-caption {
+  color: var(--color-text-3);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  font-weight: var(--text-weight-semibold);
+  letter-spacing: 0.6px;
+}
+
+.page-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.page-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 320px;
+}
+
+.page-note {
+  color: var(--color-text-2);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  line-height: var(--text-leading);
+}
+
+/* Lists, trees and tables in views of their own size. */
+.page-row > .scroll-view,
+.page-row > .table {
+  flex-shrink: 0;
+  width: 240px;
+  height: 180px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}
+
+.page-section.filled > .table {
+  flex-grow: 1;
+  min-height: 0;
+}
+
+.page-tabbed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 420px;
+}
+
+.page-tab-panel {
+  padding: var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-text-2);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+}
+
+/* A split view put in a box of its own on the page of the scaffolding. */
+.page-split {
+  height: 160px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background-color: var(--color-surface);
+}
+
+.page-pane {
+  padding: var(--space-3);
+  color: var(--color-text-2);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+}
+
+.page-bars {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.page-sidebar {
+  width: 200px;
+  height: 200px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.page-sidebar > .sidebar {
+  height: 100%;
+}
+
+.icon-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.icon-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: 84px;
+  padding: var(--space-3) var(--space-1);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-text-2);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+}
+
+.icon-glyph {
+  width: 20px;
+  height: 20px;
+  color: var(--color-text);
+}
+
+.icon-sizes {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-4);
+  color: var(--color-accent);
+}
+
+.icon-glyph.small {
+  width: 14px;
+  height: 14px;
+}
+
+.icon-glyph.large {
+  width: 28px;
+  height: 28px;
+}
+
+.icon-glyph.accent {
+  color: var(--color-accent);
+}
+
+/* What a control was given, read back under it. */
+.page-readout {
+  color: var(--color-text-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
