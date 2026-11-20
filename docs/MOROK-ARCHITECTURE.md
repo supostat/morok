@@ -73,8 +73,10 @@ the budget gates) and `crates/xtask` (formatting, clippy and comment rules).
 ## 4. Surfaces and the application
 
 - A **surface** owns one tree root, its layout and its drawable. The main window, every further
-  window and every overlay (popover, tooltip, menu, select, toast) are surfaces; `Surfaces` holds
-  them by `SurfaceId`, with one signal graph serving them all.
+  window and every overlay (popover, tooltip, menu, the dropdown of select and combobox) are
+  surfaces; `Surfaces` holds them by `SurfaceId`, with one signal graph serving them all. Toasts,
+  dialogs and sheets are no surfaces of their own: they are drawn in the tree of the surface they
+  belong to.
 - The **application** owns the signal graph, the surfaces, the Core Text shaper and the shared GPU
   resources (device, pipelines, atlases, image textures). A window is a platform window whose
   content is a surface of the application; overlays are borderless windows placed against an
@@ -155,9 +157,11 @@ event ─► signals/effects ─► style(flags) ─► layout(dirty) ─► dis
 - Main window: `NSWindow` + an `NSView` with a `CAMetalLayer`. The frame and traffic lights are
   system-provided.
 - Blur behind the window — `NSVisualEffectView` under a transparent Metal layer.
-- Overlays from etalons (`Popover`, `Tooltip`, `Menu`, `Select`, `Combobox`, `Toast`) — a separate
+- Overlays from etalons (`Popover`, `Tooltip`, `Menu`, `Select`, `Combobox`) — a separate
   borderless window with its own Metal layer, positioned relative to its anchor, able to extend past
   the main window and the screen edge (flipping sides).
+- `ToastStack`, `Dialog` and `Sheet` stay inside the window: toasts stack in the bottom right
+  corner of its surface, a dialog and a sheet stand over a scrim that covers it.
 - `ContextMenu`: `native` mode (`NSMenu`, the default) or `custom` (a Metal window).
 - Menu bar, file dialogs, printing — system APIs.
 
