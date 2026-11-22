@@ -1,13 +1,14 @@
 #![allow(dead_code)]
 
 use std::process::ExitCode;
+use std::time::Duration;
 
 use morok::core::{Point, Size};
 use objc2::rc::Retained;
 use objc2::runtime::AnyObject;
 use objc2::{MainThreadMarker, msg_send};
-use objc2_app_kit::{NSApplication, NSEvent, NSEventModifierFlags, NSEventType, NSView, NSWindow};
-use objc2_foundation::{NSArray, NSPoint, NSString};
+use objc2_app_kit::{NSApplication, NSEvent, NSEventMask, NSEventModifierFlags, NSEventType, NSView, NSWindow};
+use objc2_foundation::{NSArray, NSDate, NSDefaultRunLoopMode, NSPoint, NSString};
 
 /// What a test that runs on the main thread expected and did not see. Such a test checks
 /// everything it can in one run of the application and reports at the end.
@@ -32,6 +33,37 @@ impl Expectations {
             ExitCode::FAILURE
         }
     }
+}
+
+/// How long the system has at most to bring the application to the front.
+const COMING_TO_FRONT: Duration = Duration::from_secs(3);
+
+/// Brings the application to the front, as a launch by the user does, and returns whether it
+/// came there: its windows then take the keyboard and show what the windows of the active
+/// application show. The event loop of a test hands the application no events of the system,
+/// so the events that tell it of its activation are handed to it here; the events of the mouse
+/// and the keyboard stay in the queue.
+pub(crate) fn bring_to_front(main_thread: MainThreadMarker) -> bool {
+    let application = NSApplication::sharedApplication(main_thread);
+    #[expect(
+        deprecated,
+        reason = "a process started behind the active application comes to the front only when it insists"
+    )]
+    application.activateIgnoringOtherApps(true);
+    let deadline = NSDate::dateWithTimeIntervalSinceNow(COMING_TO_FRONT.as_secs_f64());
+    // SAFETY: the name is a constant of Foundation.
+    let mode = unsafe { NSDefaultRunLoopMode };
+    while !application.isActive()
+        && let Some(event) = application.nextEventMatchingMask_untilDate_inMode_dequeue(
+            NSEventMask::AppKitDefined,
+            Some(&deadline),
+            mode,
+            true,
+        )
+    {
+        application.sendEvent(&event);
+    }
+    application.isActive()
 }
 
 /// Makes the events `AppKit` would send for a mouse and a keyboard and gives them to a window

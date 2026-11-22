@@ -21,6 +21,7 @@ morok-style.workspace = true
 objc2.workspace = true
 objc2-app-kit = { workspace = true, features = [
   "NSApplication",
+  "NSColor",
   "NSDragging",
   "NSEvent",
   "NSGraphicsContext",
@@ -28,11 +29,20 @@ objc2-app-kit = { workspace = true, features = [
   "NSMenuItem",
   "NSPasteboard",
   "NSResponder",
+  "NSScreen",
   "NSView",
   "NSVisualEffectView",
   "NSWindow",
 ] }
-objc2-foundation = { workspace = true, features = ["NSArray", "NSGeometry", "NSString"] }
+objc2-core-foundation = { workspace = true, features = ["CFCGTypes"] }
+objc2-core-graphics = { workspace = true, features = [
+  "CGBitmapContext",
+  "CGColorSpace",
+  "CGContext",
+  "CGImage",
+  "CGWindow",
+] }
+objc2-foundation = { workspace = true, features = ["NSArray", "NSDate", "NSGeometry", "NSRunLoop", "NSString"] }
 
 [[test]]
 name = "button_interaction"

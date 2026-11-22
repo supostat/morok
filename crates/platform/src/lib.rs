@@ -13,6 +13,7 @@ mod frame_statistics;
 mod image_statistics;
 mod image_status;
 mod input_translation;
+mod main_queue;
 mod media;
 mod menu_bar;
 mod native_menu;

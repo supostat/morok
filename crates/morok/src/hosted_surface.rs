@@ -25,9 +25,10 @@ const CLOSED_SURFACE_NODE: NodeId = NodeId(0);
 /// overlay. It gives the surface the input of its window, runs the frames of its tree and
 /// tells the window which overlays are opened over the surface.
 ///
-/// The surface of a window is closed when the window lets go of this value. The surface of an
-/// overlay is closed by the component that opened it, a frame before its window goes: until
-/// then the window is answered as an empty surface would answer it.
+/// The surface of a window is closed when the window closes on its own or lets go of this
+/// value, whichever comes first. The surface of an overlay is closed by the component that
+/// opened it, a frame before its window goes: until then the window is answered as an empty
+/// surface would answer it.
 #[derive(Debug)]
 pub(crate) struct HostedSurface {
     pub(crate) state: Rc<RefCell<ApplicationState>>,
@@ -72,6 +73,15 @@ impl HostedSurface {
     fn told_of(&mut self, update: TreeUpdate) -> TreeUpdate {
         self.accessibility_focus = update.focus;
         update
+    }
+
+    /// Closes the surface when it is the surface of a window and still open: an overlay is
+    /// closed by the component that opened it, or with the surface it is opened over.
+    fn close_window_surface(&self) {
+        let state = &mut *self.state.borrow_mut();
+        if state.surfaces.contains(self.surface) && state.surfaces.parent_of(self.surface).is_none() {
+            state.surfaces.close(&mut state.runtime, self.surface);
+        }
     }
 }
 
@@ -124,6 +134,12 @@ impl SurfaceContent for HostedSurface {
             .surface_mut(self.surface)
             .tree_mut()
             .set_reduced_motion(reduces_motion);
+    }
+
+    /// Everything mounted on the surface of a closed window goes at once, with the overlays
+    /// opened over it, rather than when the application lets go of the window.
+    fn window_closed(&mut self) {
+        self.close_window_surface();
     }
 
     fn pointer_input(&mut self, input: &PointerInput) {
@@ -510,12 +526,8 @@ fn state_while_open(state: &RefCell<ApplicationState>, surface: SurfaceId) -> Op
 }
 
 impl Drop for HostedSurface {
-    /// The surface of a window goes with its window; an overlay is closed by the component
-    /// that opened it, or with the surface it is opened over.
+    /// The surface of a window goes with its window.
     fn drop(&mut self) {
-        let state = &mut *self.state.borrow_mut();
-        if state.surfaces.contains(self.surface) && state.surfaces.parent_of(self.surface).is_none() {
-            state.surfaces.close(&mut state.runtime, self.surface);
-        }
+        self.close_window_surface();
     }
 }

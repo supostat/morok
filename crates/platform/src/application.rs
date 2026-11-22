@@ -1,7 +1,5 @@
-use std::cell::Cell;
 use std::time::Duration;
 
-use dispatch2::{DispatchQueue, MainThreadBound};
 use morok_style::ColorScheme;
 use objc2::MainThreadMarker;
 use objc2::rc::Retained;
@@ -9,6 +7,7 @@ use objc2_app_kit::{NSApplication, NSApplicationActivationPolicy, NSWorkspace};
 use objc2_foundation::{NSDate, NSRunLoop};
 
 use crate::appearance::{Appearance, color_scheme_of};
+use crate::main_queue;
 use crate::render::renderer::Renderer;
 use crate::renderer_error::RendererError;
 use crate::surface_settings::SurfaceSettings;
@@ -79,14 +78,7 @@ impl Application {
     /// where a handler does what it cannot do in place — open or close a window — because
     /// the application is in the middle of telling it of the event.
     pub fn run_soon(&self, work: impl FnOnce() + 'static) {
-        let work: Box<dyn FnOnce()> = Box::new(work);
-        let work = MainThreadBound::new(Cell::new(Some(work)), self.main_thread);
-        DispatchQueue::main().exec_async(move || {
-            let main_thread = MainThreadMarker::new().expect("the main queue runs on the main thread");
-            if let Some(work) = work.get(main_thread).take() {
-                work();
-            }
-        });
+        main_queue::run_soon(Box::new(work), self.main_thread);
     }
 
     pub(crate) fn main_thread(&self) -> MainThreadMarker {

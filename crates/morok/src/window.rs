@@ -7,9 +7,9 @@ use morok_platform::{FrameImage, FrameStatistics, OffscreenTarget};
 use crate::hosted_surface::HostedSurface;
 use crate::shared_canvas_painter::SharedCanvasPainter;
 
-/// A window of an application: one surface with a tree of its own, on screen for as long as
-/// this value lives. A window is not dropped while the application handles an event or runs
-/// [`Application::update`](crate::Application::update).
+/// A window of an application: one surface with a tree of its own, on screen until this value
+/// is dropped or the button of its frame closes it. A window is not dropped while the
+/// application handles an event or runs [`Application::update`](crate::Application::update).
 #[derive(Debug)]
 pub struct Window {
     pub(crate) platform: morok_platform::Window<HostedSurface>,
@@ -34,10 +34,27 @@ impl Window {
         self.platform.frame_statistics()
     }
 
+    /// Whether the window is on screen: false once the button of its frame closed it.
+    pub fn is_open(&self) -> bool {
+        self.platform.is_open()
+    }
+
+    /// Names what runs once the button of the frame closed the window. Everything mounted on
+    /// its surface is gone by then; the handler runs on the next turn of the run loop, where it
+    /// may drop this value, and dropping it closes nothing again. It takes the place of a
+    /// handler named before; named after the window closed, it runs on the next turn too.
+    pub fn on_closed(&self, handler: impl FnOnce() + 'static) {
+        self.platform.on_closed(handler);
+    }
+
     /// The last frame of the window drawn again off screen, as the renderer of the application
     /// drew it on screen: the display list the tree built last, at the scale of the screen the
     /// window is on, its canvases drawn by the painter of the application. The overlays opened
     /// over the window are windows of their own and are not in it.
+    ///
+    /// # Panics
+    ///
+    /// When the frame closed the window: its surface is gone.
     pub fn frame_image(&self) -> FrameImage {
         let mut target = OffscreenTarget::new(self.application.renderer(), self.viewport(), self.platform.scale());
         target.set_canvas_painter(Box::new(self.canvas_painter.clone()));
@@ -50,6 +67,10 @@ impl Window {
 
     /// Reads or changes the tree of the window directly. A change the tree notices asks for a
     /// frame by itself.
+    ///
+    /// # Panics
+    ///
+    /// When the frame closed the window: its surface is gone.
     pub fn with_tree<Outcome>(&self, access: impl FnOnce(&mut ElementTree) -> Outcome) -> Outcome {
         self.platform.update(|content| {
             let state = &mut *content.state.borrow_mut();

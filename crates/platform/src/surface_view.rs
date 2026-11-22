@@ -20,8 +20,8 @@ use objc2_app_kit::{
     NSAppearanceCustomization, NSApplication, NSApplicationDidResignActiveNotification, NSDragOperation,
     NSDraggingContext, NSDraggingDestination, NSDraggingInfo, NSDraggingSession, NSDraggingSource, NSEvent,
     NSResponder, NSTextInputClient, NSTrackingArea, NSTrackingAreaOptions, NSView, NSWindow,
-    NSWindowDidBecomeKeyNotification, NSWindowDidMoveNotification, NSWindowDidResignKeyNotification, NSWorkspace,
-    NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification,
+    NSWindowDidBecomeKeyNotification, NSWindowDidMoveNotification, NSWindowDidResignKeyNotification,
+    NSWindowWillCloseNotification, NSWorkspace, NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification,
 };
 use objc2_core_foundation::CGSize;
 use objc2_core_graphics::{CGColorSpace, kCGColorSpaceSRGB};
@@ -41,6 +41,7 @@ use crate::frame_loop::FrameLoop;
 use crate::frame_requester::FrameRequester;
 use crate::frame_statistics::FrameStatistics;
 use crate::input_translation;
+use crate::main_queue;
 use crate::menu_bar;
 use crate::menu_bar::menu_bar_target::MenuBarTarget;
 use crate::native_menu;
@@ -100,6 +101,10 @@ pub(crate) struct SurfaceState {
     registered_drop_types: Cell<Option<u64>>,
     /// The picture of the last drag the view began in the system.
     handed_picture: RefCell<Option<DragPicture>>,
+    /// Whether the view closed, with its window or on its own.
+    is_closed: Cell<bool>,
+    /// What runs once the window closed on its own.
+    closed_handler: RefCell<Option<Box<dyn FnOnce()>>>,
 }
 
 define_class!(
@@ -169,6 +174,13 @@ define_class!(
         #[unsafe(method(windowDidResignKey:))]
         fn window_did_resign_key(&self, notification: &NSNotification) {
             self.window_key_state_changed(notification, false);
+        }
+
+        #[unsafe(method(windowWillClose:))]
+        fn window_will_close(&self, notification: &NSNotification) {
+            if self.is_about_own_window(notification) {
+                self.window_closed();
+            }
         }
 
         #[unsafe(method(accessibilityChildren))]
@@ -489,6 +501,8 @@ impl SurfaceView {
             drop_types: RefCell::new(Vec::new()),
             registered_drop_types: Cell::new(None),
             handed_picture: RefCell::new(None),
+            is_closed: Cell::new(false),
+            closed_handler: RefCell::new(None),
             overlays: RefCell::new(Vec::new()),
             overlay_requests: RefCell::new(Vec::new()),
         };
@@ -539,6 +553,12 @@ impl SurfaceView {
                 observer,
                 sel!(windowDidMove:),
                 Some(NSWindowDidMoveNotification),
+                None,
+            );
+            window_notifications.addObserver_selector_name_object(
+                observer,
+                sel!(windowWillClose:),
+                Some(NSWindowWillCloseNotification),
                 None,
             );
         }
@@ -621,9 +641,11 @@ impl SurfaceView {
         }
     }
 
-    /// The window closes: its overlays close with it, and the display link, which holds the
-    /// view, and the notifications of the system let go of it.
+    /// The window closes: its overlays close with it, the menu bar forgets the menus of the
+    /// view, and the display link, which holds the view, and the notifications of the system
+    /// let go of it.
     pub(crate) fn close(&self) {
+        self.ivars().is_closed.set(true);
         drop(self.ivars().overlays.take());
         menu_bar::forget(self, self.mtm());
         drop(self.ivars().menu_bar_target.take());
@@ -635,6 +657,32 @@ impl SurfaceView {
                 .notificationCenter()
                 .removeObserver(observer);
             NSNotificationCenter::defaultCenter().removeObserver(observer);
+        }
+    }
+
+    pub(crate) fn is_closed(&self) -> bool {
+        self.ivars().is_closed.get()
+    }
+
+    /// Names what runs on a later turn of the run loop once the window closed on its own, in
+    /// place of what was named before; once it has closed, on the next turn.
+    pub(crate) fn set_closed_handler(&self, handler: Box<dyn FnOnce()>) {
+        if self.is_closed() {
+            main_queue::run_soon(handler, self.mtm());
+        } else {
+            self.ivars().closed_handler.replace(Some(handler));
+        }
+    }
+
+    /// The window closed on its own, by the button of its frame or a command of the system,
+    /// while the value that owns it lives on: the view closes as it would with that value, its
+    /// content hears of it, and the handler named for it runs on the next turn of the run loop,
+    /// where it may drop that value.
+    fn window_closed(&self) {
+        self.close();
+        self.content().borrow_mut().window_closed();
+        if let Some(handler) = self.ivars().closed_handler.take() {
+            main_queue::run_soon(handler, self.mtm());
         }
     }
 

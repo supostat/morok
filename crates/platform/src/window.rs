@@ -20,8 +20,8 @@ use crate::surface_settings::SurfaceSettings;
 use crate::surface_view::SurfaceView;
 use crate::window_options::WindowOptions;
 
-/// A window of the system showing one surface. Closing follows the value: the window is on
-/// screen for as long as it lives.
+/// A window of the system showing one surface. The window is on screen until the value is
+/// dropped or the button of its frame closes it, whichever comes first.
 pub struct Window<Content> {
     native: Retained<NSWindow>,
     view: Retained<SurfaceView>,
@@ -97,6 +97,19 @@ impl<Content> Window<Content> {
         self.view.scale()
     }
 
+    /// Whether the window is on screen: false once the button of its frame closed it.
+    pub fn is_open(&self) -> bool {
+        !self.view.is_closed()
+    }
+
+    /// Names what runs once the button of the frame, or a command of the system, closed the
+    /// window: on the next turn of the run loop, where it may drop this value. It takes the
+    /// place of a handler named before; named after the window closed, it runs on the next
+    /// turn too.
+    pub fn on_closed(&self, handler: impl FnOnce() + 'static) {
+        self.view.set_closed_handler(Box::new(handler));
+    }
+
     /// Resizes the window so that its surface takes `content_size` CSS pixels.
     pub fn set_content_size(&self, content_size: Size) {
         self.native.setContentSize(ns_size(content_size));
@@ -130,7 +143,11 @@ impl<Content> Debug for Window<Content> {
 }
 
 impl<Content> Drop for Window<Content> {
+    /// A window its frame closed is not closed again.
     fn drop(&mut self) {
+        if self.view.is_closed() {
+            return;
+        }
         self.view.close();
         self.native.close();
     }

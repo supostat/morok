@@ -1,4 +1,4 @@
-use std::cell::{Ref, RefCell};
+use std::cell::{Cell, Ref, RefCell};
 use std::rc::{Rc, Weak};
 
 use morok::core::Size;
@@ -54,6 +54,14 @@ impl CatalogLink {
         }
     }
 
+    /// Lets go of the windows the button of their frame closed; nothing once the catalog has
+    /// closed.
+    fn forget_closed_windows(&self) {
+        if let Some(shared) = self.shared.upgrade() {
+            shared.windows.borrow_mut().retain(Window::is_open);
+        }
+    }
+
     /// Runs `work` with the application of the catalog once the event the application is
     /// handling is over; nothing runs once the catalog has closed.
     fn defer(&self, work: impl FnOnce(&Application) + 'static) {
@@ -69,6 +77,8 @@ impl CatalogLink {
 struct Shared {
     application: Application,
     windows: RefCell<Vec<Window>>,
+    /// How many windows the catalog has opened, the closed ones among them.
+    opened_windows: Cell<usize>,
     appearance: Signal<Appearance>,
     token_set: Signal<TokenSet>,
 }
@@ -89,6 +99,7 @@ impl Catalog {
             shared: Rc::new(Shared {
                 application,
                 windows: RefCell::new(Vec::new()),
+                opened_windows: Cell::new(0),
                 appearance,
                 token_set,
             }),
@@ -102,7 +113,8 @@ impl Catalog {
         &self.shared.application
     }
 
-    /// The windows of the catalog, in the order they were opened.
+    /// The windows of the catalog, in the order they were opened. A window the button of its
+    /// frame closed leaves them on the next turn of the run loop.
     pub fn windows(&self) -> Ref<'_, [Window]> {
         Ref::map(self.shared.windows.borrow(), Vec::as_slice)
     }
@@ -124,7 +136,8 @@ impl Catalog {
     /// When called while the application tells a handler of an event: a handler opens a window
     /// through [`open_window_later`](Self::open_window_later).
     pub fn open_window(&self, page: Page) {
-        let number = self.shared.windows.borrow().len() + 1;
+        let number = self.shared.opened_windows.get() + 1;
+        self.shared.opened_windows.set(number);
         let title = if number == 1 {
             String::from(WINDOW_TITLE)
         } else {
@@ -139,6 +152,8 @@ impl Catalog {
             .shared
             .application
             .open_window(&options, |mount| catalog_window::mount(mount, self, page));
+        let closing = self.link();
+        window.on_closed(move || closing.forget_closed_windows());
         self.shared.windows.borrow_mut().push(window);
     }
 

@@ -32,6 +32,11 @@ pub trait SurfaceContent {
     /// The user turned "Reduce motion" on or off in the accessibility settings of the system.
     fn reduced_motion_changed(&mut self, reduces_motion: bool);
 
+    /// The window closed on its own, by the button of its frame or a command of the system,
+    /// while the value that owns it lives on: the surface shows nowhere from now on. A content
+    /// that holds nothing beyond what its window shows keeps this.
+    fn window_closed(&mut self) {}
+
     /// The pointer moved over the surface, pressed or released a button on it, or left it.
     fn pointer_input(&mut self, input: &PointerInput);
 
