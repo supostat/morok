@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use std::ffi::c_void;
 use std::process::ExitCode;
 use std::time::Duration;
 
@@ -7,7 +8,14 @@ use morok::core::{Point, Size};
 use objc2::rc::Retained;
 use objc2::runtime::AnyObject;
 use objc2::{MainThreadMarker, msg_send};
-use objc2_app_kit::{NSApplication, NSEvent, NSEventMask, NSEventModifierFlags, NSEventType, NSView, NSWindow};
+use objc2_app_kit::{
+    NSApplication, NSEvent, NSEventMask, NSEventModifierFlags, NSEventType, NSScreen, NSView, NSWindow,
+};
+use objc2_core_foundation::{CGPoint, CGRect, CGSize};
+use objc2_core_graphics::{
+    CGBitmapContextCreate, CGColorSpace, CGContext, CGImage, CGImageAlphaInfo, CGWindowImageOption, CGWindowListOption,
+    kCGColorSpaceSRGB,
+};
 use objc2_foundation::{NSArray, NSDate, NSDefaultRunLoopMode, NSPoint, NSString};
 
 /// What a test that runs on the main thread expected and did not see. Such a test checks
@@ -64,6 +72,64 @@ pub(crate) fn bring_to_front(main_thread: MainThreadMarker) -> bool {
         application.sendEvent(&event);
     }
     application.isActive()
+}
+
+/// The pixels the screen shows along a row of the desktop that starts at `start` and is
+/// `length` points long: of `window` alone, or with the windows under it as well. One pixel to
+/// a point, red, green, blue and alpha each; none when the system hands no picture of it.
+pub(crate) fn screen_row(
+    window: &NSWindow,
+    start: NSPoint,
+    length: f64,
+    with_windows_under: bool,
+    main_thread: MainThreadMarker,
+) -> Option<Vec<[u8; 4]>> {
+    let desktop_height = NSScreen::screens(main_thread).firstObject()?.frame().size.height;
+    // The desktop is measured upwards from the bottom of the main screen, a capture downwards
+    // from its top.
+    let row = CGRect::new(
+        CGPoint::new(start.x, desktop_height - start.y),
+        CGSize::new(length, 1.0),
+    );
+    let windows = if with_windows_under {
+        CGWindowListOption::OptionOnScreenBelowWindow | CGWindowListOption::OptionIncludingWindow
+    } else {
+        CGWindowListOption::OptionIncludingWindow
+    };
+    #[expect(deprecated, reason = "the workspace has no binding of ScreenCaptureKit")]
+    let shown = objc2_core_graphics::CGWindowListCreateImage(
+        row,
+        windows,
+        u32::try_from(window.windowNumber()).ok()?,
+        CGWindowImageOption::NominalResolution,
+    )?;
+    let width = CGImage::width(Some(&shown));
+    Some(pixels_of(&shown)?.into_iter().take(width).collect())
+}
+
+/// The pixels of an image drawn whole into a bitmap of its size, rows from the top.
+fn pixels_of(image: &CGImage) -> Option<Vec<[u8; 4]>> {
+    let (width, height) = (CGImage::width(Some(image)), CGImage::height(Some(image)));
+    let mut pixels = vec![[0_u8; 4]; width * height];
+    // SAFETY: the name is a constant of Core Graphics.
+    let color_space = CGColorSpace::with_name(Some(unsafe { kCGColorSpaceSRGB }));
+    // SAFETY: the buffer holds `height` rows of `width` pixels of red, green, blue and alpha,
+    // premultiplied, and outlives the context, which is dropped before it is read.
+    let context = unsafe {
+        CGBitmapContextCreate(
+            pixels.as_mut_ptr().cast::<c_void>(),
+            width,
+            height,
+            8,
+            width * 4,
+            color_space.as_deref(),
+            CGImageAlphaInfo::PremultipliedLast.0,
+        )
+    }?;
+    let whole = CGRect::new(CGPoint::ZERO, CGSize::new(width as f64, height as f64));
+    CGContext::draw_image(Some(&context), whole, Some(image));
+    drop(context);
+    Some(pixels)
 }
 
 /// Makes the events `AppKit` would send for a mouse and a keyboard and gives them to a window

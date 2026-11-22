@@ -1,6 +1,6 @@
 use std::cell::Cell;
 
-use morok_core::{OverlaySide, Point, Rect, Size};
+use morok_core::{PlacedOverlay, Point, Rect, Size};
 use objc2::MainThreadOnly;
 use objc2::rc::Retained;
 use objc2_app_kit::{NSWindow, NSWindowOrderingMode};
@@ -22,7 +22,7 @@ pub(crate) struct ShownOverlay {
     /// Whether the window was put on screen: it is, once it has a place.
     is_on_screen: Cell<bool>,
     /// Where the overlay lies, as its content was told last.
-    placed: Cell<Option<(OverlaySide, Point)>>,
+    placed: Cell<Option<PlacedOverlay>>,
 }
 
 impl ShownOverlay {
@@ -55,9 +55,10 @@ impl ShownOverlay {
     }
 
     /// Puts the window where the request asks: its panel against the anchor on the surface of
-    /// `parent`, flipped where the room of the screen ends. Returns the side of the anchor
-    /// the overlay lies on and the top left corner of its surface in CSS pixels of the surface
-    /// of `parent`, when either changed since the overlay was placed last.
+    /// `parent`, flipped where the room of the screen ends and moved along the anchor where
+    /// an edge of that room stops it. Returns where the overlay lies — its surface in CSS
+    /// pixels of the surface of `parent`, the side of the anchor and how far the edges of the
+    /// room moved it along that side — when any of it changed since it was placed last.
     pub(crate) fn place(
         &self,
         parent: &SurfaceView,
@@ -65,7 +66,7 @@ impl ShownOverlay {
         request: &OverlayRequest,
         screen: ScreenSpace,
         room: Rect,
-    ) -> Option<(OverlaySide, Point)> {
+    ) -> Option<PlacedOverlay> {
         let scale = parent_window.backingScaleFactor() as f32;
         let anchor = screen.of_view_rect(parent, parent_window, request.anchor);
         let placed = request.placement.place(anchor, request.panel.size(), room);
@@ -96,13 +97,16 @@ impl ShownOverlay {
             }
         }
         let parent_corner = screen.of_view_rect(parent, parent_window, Rect::ZERO).origin();
-        let placement = (
-            placed.side,
-            Point {
+        let placement = PlacedOverlay {
+            frame: Rect {
                 x: surface_corner.x - parent_corner.x,
                 y: surface_corner.y - parent_corner.y,
+                width: request.size.width,
+                height: request.size.height,
             },
-        );
+            side: placed.side,
+            edge_shift: placed.edge_shift,
+        };
         (self.placed.replace(Some(placement)) != Some(placement)).then_some(placement)
     }
 }

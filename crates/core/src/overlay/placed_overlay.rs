@@ -9,4 +9,8 @@ pub struct PlacedOverlay {
     /// The side of the anchor it lies on: the side asked for, or the opposite one when the
     /// overlay flipped.
     pub side: OverlaySide,
+    /// How far the edges of the bounds moved the overlay along the edge of its anchor to keep
+    /// it inside them, from where its placement put it: to the right or downwards when
+    /// positive, nothing when it fit there.
+    pub edge_shift: f32,
 }

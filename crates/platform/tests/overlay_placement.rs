@@ -7,8 +7,8 @@ use std::time::Duration;
 
 use morok_core::accesskit::{ActionRequest, TreeUpdate};
 use morok_core::{
-    ElementTree, FrameScheduler, KeyEvent, OverlayAlignment, OverlayInput, OverlayPlacement, OverlaySide, Point,
-    PointerInput, Rect, ScrollInput, Size,
+    ElementTree, FrameScheduler, KeyEvent, OverlayAlignment, OverlayInput, OverlayPlacement, OverlaySide,
+    PlacedOverlay, Point, PointerInput, Rect, ScrollInput, Size,
 };
 use morok_platform::{Application, OverlayId, OverlayRequest, SurfaceContent, SurfaceSettings, Window, WindowOptions};
 use morok_style::ColorScheme;
@@ -57,7 +57,7 @@ struct AnchoredScene {
     scene: WindowScene,
     anchor: Option<Rect>,
     /// Where the window said it placed the overlay, every time it said so.
-    placements: Vec<(OverlaySide, Point)>,
+    placements: Vec<PlacedOverlay>,
 }
 
 impl SurfaceContent for AnchoredScene {
@@ -114,8 +114,8 @@ impl SurfaceContent for AnchoredScene {
         Rc::new(RefCell::new(content))
     }
 
-    fn overlay_placed(&mut self, _overlay: OverlayId, side: OverlaySide, origin: Point) {
-        self.placements.push((side, origin));
+    fn overlay_placed(&mut self, _overlay: OverlayId, placed: PlacedOverlay) {
+        self.placements.push(placed);
     }
 }
 
@@ -228,9 +228,12 @@ fn an_overlay_lands_under_its_anchor(
     };
     let is_told_once = matches!(
         placements.as_slice(),
-        [(OverlaySide::Below, corner)]
-            if (corner.x - surface_corner.x).abs() <= CORNER_TOLERANCE
-                && (corner.y - surface_corner.y).abs() <= CORNER_TOLERANCE
+        [placed]
+            if placed.side == OverlaySide::Below
+                && (placed.frame.x - surface_corner.x).abs() <= CORNER_TOLERANCE
+                && (placed.frame.y - surface_corner.y).abs() <= CORNER_TOLERANCE
+                && placed.frame.size() == OVERLAY_SURFACE
+                && placed.edge_shift.abs() <= CORNER_TOLERANCE
     );
     expectations.expect(
         is_told_once,
@@ -307,9 +310,50 @@ fn an_overlay_flips_over_its_anchor_at_the_bottom_of_the_screen(
     );
     let last_placement = window.update(|content| content.placements[placements_before..].last().copied());
     expectations.expect(
-        last_placement.is_some_and(|(side, _)| side == OverlaySide::Above),
+        last_placement.is_some_and(|placed| placed.side == OverlaySide::Above),
         "the content is told that its overlay flipped",
         &format!("{last_placement:?}"),
+    );
+}
+
+fn a_panel_the_right_edge_of_the_screen_pushes_reports_its_shift(
+    window: &Window<AnchoredScene>,
+    windows: &Windows,
+    expectations: &mut Expectations,
+) {
+    let in_the_corner = Rect::new(340.0, 60.0, 50.0, 28.0);
+    let parent = windows.parent();
+    let room = parent
+        .screen()
+        .expect("the window of the test is on a screen")
+        .visibleFrame();
+    let room_right = room.origin.x + room.size.width;
+
+    // The window ends at the right edge of the room: under the anchor, 60 px from that edge,
+    // there are 140 px too few for a panel 200 px wide.
+    parent.setFrameOrigin(NSPoint::new(
+        room_right - parent.frame().size.width,
+        room.origin.y + 260.0,
+    ));
+    anchor_overlay(window, Some(in_the_corner));
+    run_main_loop(ONE_CHANGE);
+
+    let panel = windows.panel_on_desktop();
+    let anchor = windows.on_desktop(in_the_corner);
+    let expected_shift = (room_right - f64::from(PANEL.width) - anchor.origin.x) as f32;
+    expectations.expect(
+        panel.is_some_and(|panel| (panel.origin.x + panel.size.width - room_right).abs() <= TOLERANCE),
+        "the right edge of the room of the screen stops the panel",
+        &format!("the panel is at {panel:?}, the room ends at {room_right}"),
+    );
+    let last_placement = window.update(|content| content.placements.last().copied());
+    expectations.expect(
+        expected_shift < 0.0
+            && last_placement.is_some_and(|placed| {
+                placed.side == OverlaySide::Below && (placed.edge_shift - expected_shift).abs() <= CORNER_TOLERANCE
+            }),
+        "the content is told how far the edge pushed its overlay to the left",
+        &format!("{last_placement:?}, expected a shift of {expected_shift}"),
     );
 }
 
@@ -380,6 +424,7 @@ fn main() -> ExitCode {
     an_overlay_extends_past_the_window_it_is_opened_over(&window, &windows, &mut expectations);
     an_overlay_flips_over_its_anchor_at_the_bottom_of_the_screen(&window, &windows, &mut expectations);
     a_moved_window_takes_its_overlay_along_and_places_it_again(&windows, &mut expectations);
+    a_panel_the_right_edge_of_the_screen_pushes_reports_its_shift(&window, &windows, &mut expectations);
     an_overlay_the_content_asks_for_no_longer_leaves_the_screen(&window, &windows, &mut expectations);
 
     expectations.report("overlay placement")

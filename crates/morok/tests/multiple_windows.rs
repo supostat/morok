@@ -1,7 +1,6 @@
 mod support;
 
 use std::cell::{Cell, RefCell};
-use std::ffi::c_void;
 use std::process::ExitCode;
 use std::rc::Rc;
 use std::time::Duration;
@@ -15,11 +14,6 @@ use objc2::{MainThreadMarker, MainThreadOnly};
 use objc2_app_kit::{
     NSApplication, NSBackingStoreType, NSColor, NSEventModifierFlags, NSMenu, NSScreen, NSVisualEffectView, NSWindow,
     NSWindowStyleMask,
-};
-use objc2_core_foundation::{CGPoint, CGRect, CGSize};
-use objc2_core_graphics::{
-    CGBitmapContextCreate, CGColorSpace, CGContext, CGImage, CGImageAlphaInfo, CGWindowImageOption, CGWindowListOption,
-    kCGColorSpaceSRGB,
 };
 use objc2_foundation::{NSPoint, NSRect, NSSize};
 use support::{EventSource, Expectations};
@@ -275,47 +269,15 @@ impl Drop for Backdrop {
 /// points left of the edge to as far right of it, red, green, blue and alpha each. None when
 /// the system hands no picture of the screen.
 fn row_across(window: &NSWindow, edge: f64, main_thread: MainThreadMarker) -> Option<Vec<[u8; 4]>> {
-    let screen_height = NSScreen::screens(main_thread).firstObject()?.frame().size.height;
     let content = window.contentRectForFrameRect(window.frame());
     let middle = content.origin.y + content.size.height / 2.0;
-    let row = CGRect::new(
-        CGPoint::new(edge - ROW_REACH, screen_height - middle),
-        CGSize::new(2.0 * ROW_REACH, 1.0),
-    );
-    #[expect(deprecated, reason = "the workspace has no binding of ScreenCaptureKit")]
-    let shown = objc2_core_graphics::CGWindowListCreateImage(
-        row,
-        CGWindowListOption::OptionOnScreenBelowWindow | CGWindowListOption::OptionIncludingWindow,
-        u32::try_from(window.windowNumber()).ok()?,
-        CGWindowImageOption::NominalResolution,
-    )?;
-    let pixels = pixels_of(&shown)?;
-    Some(pixels.into_iter().take(CGImage::width(Some(&shown))).collect())
-}
-
-/// The pixels of an image drawn whole into a bitmap of its size, rows from the top.
-fn pixels_of(image: &CGImage) -> Option<Vec<[u8; 4]>> {
-    let (width, height) = (CGImage::width(Some(image)), CGImage::height(Some(image)));
-    let mut pixels = vec![[0_u8; 4]; width * height];
-    // SAFETY: the name is a constant of Core Graphics.
-    let color_space = CGColorSpace::with_name(Some(unsafe { kCGColorSpaceSRGB }));
-    // SAFETY: the buffer holds `height` rows of `width` pixels of red, green, blue and alpha,
-    // premultiplied, and outlives the context, which is dropped before it is read.
-    let context = unsafe {
-        CGBitmapContextCreate(
-            pixels.as_mut_ptr().cast::<c_void>(),
-            width,
-            height,
-            8,
-            width * 4,
-            color_space.as_deref(),
-            CGImageAlphaInfo::PremultipliedLast.0,
-        )
-    }?;
-    let whole = CGRect::new(CGPoint::ZERO, CGSize::new(width as f64, height as f64));
-    CGContext::draw_image(Some(&context), whole, Some(image));
-    drop(context);
-    Some(pixels)
+    support::screen_row(
+        window,
+        NSPoint::new(edge - ROW_REACH, middle),
+        2.0 * ROW_REACH,
+        true,
+        main_thread,
+    )
 }
 
 /// How much redder than blue the pixel is; negative when it is bluer.

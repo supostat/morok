@@ -1,11 +1,13 @@
 mod support;
 
+use std::borrow::Cow;
 use std::time::Duration;
 
 use morok_components::styles::CLASSES;
 use morok_components::view::{Mount, SurfaceId};
 use morok_components::{
-    Button, ContextMenu, Dialog, KitIcon, Menu, MenuItem, Popover, Sheet, Toast, ToastStack, ToastTone, Tooltip,
+    Button, ContextMenu, Dialog, KitIcon, Menu, MenuItem, Popover, ScrollView, Sheet, Toast, ToastStack, ToastTone,
+    Tooltip,
 };
 use morok_core::accesskit::Role as AccessibleRole;
 use morok_core::{
@@ -13,11 +15,36 @@ use morok_core::{
     PointerButton, PointerInputKind, Rect, Role, Size,
 };
 use morok_reactive::Signal;
-use morok_style::States;
+use morok_style::{Declaration, Display, FlexDirection, LengthPercentage, LengthPercentageAuto, Pixels, States};
 use support::Stage;
 
 /// The room an overlay surface leaves around its panel for the shadow of the panel.
 const SHADOW_ROOM: f32 = 32.0;
+/// The radius of the corners of a popover: its arrow stays on the straight part of its edge.
+const POPOVER_CORNER: f32 = 12.0;
+
+fn pixels(length: f32) -> LengthPercentageAuto {
+    LengthPercentageAuto::LengthPercentage(LengthPercentage {
+        pixels: Pixels(length),
+        fraction: None,
+        tokens: Cow::Borrowed(&[]),
+    })
+}
+
+/// A column of eight rows 50 pixels high.
+fn rows(mount: &mut Mount<'_>) -> ElementId {
+    let rows: Vec<ElementId> = (0..8)
+        .map(|_| mount.element().inline(Declaration::Height(pixels(50.0))).id())
+        .collect();
+    let mut column = mount.element();
+    column
+        .inline(Declaration::Display(Display::Flex))
+        .inline(Declaration::FlexDirection(FlexDirection::Column));
+    for row in rows {
+        column.child(row);
+    }
+    column.id()
+}
 
 /// A stage with a button that opens and closes what `attach` ties to it.
 fn stage_with_trigger(
@@ -260,6 +287,107 @@ mod popover {
             stage.tree_of(overlay).classes(arrow),
             [CLASSES.popover_arrow, CLASSES.above],
             "the arrow points down at the anchor from a popover that flipped over it"
+        );
+    }
+
+    #[test]
+    fn the_wheel_over_the_room_around_a_popover_scrolls_the_view_under_it() {
+        let mut stage = Stage::new();
+        let is_open = stage.runtime.signal(true);
+        stage.mount(move |mount| {
+            let trigger = Button::new("Open").mount(mount);
+            Popover::new(is_open).title("Xcode cache").attach(mount, trigger);
+            trigger
+        });
+        let view = stage.mount(|mount| {
+            let view = ScrollView::new(rows).label("Files").mount(mount);
+            mount
+                .build(view)
+                .inline(Declaration::Width(pixels(400.0)))
+                .inline(Declaration::Height(pixels(200.0)));
+            view
+        });
+        stage.frame_all();
+        stage.frame_all();
+        let viewport = stage.children(view)[0];
+        let overlay = overlay_over(&stage, stage.surface);
+        let panel = stage
+            .surfaces
+            .overlay_geometry(overlay)
+            .expect("the anchor has a box after the frame")
+            .panel;
+        let middle_of_panel = Point {
+            x: panel.x + panel.width / 2.0,
+            y: panel.y + panel.height / 2.0,
+        };
+        let under_the_panel = Point {
+            x: middle_of_panel.x,
+            y: panel.bottom() + SHADOW_ROOM / 2.0,
+        };
+
+        stage.wheel_on(overlay, middle_of_panel, Point { x: 0.0, y: 60.0 });
+        stage.frame_all();
+        assert_eq!(
+            stage.tree().scroll_offset(viewport),
+            Point::default(),
+            "the wheel over the panel is the popover's own"
+        );
+
+        stage.wheel_on(overlay, under_the_panel, Point { x: 0.0, y: 60.0 });
+        stage.frame_all();
+        assert_eq!(
+            stage.tree().scroll_offset(viewport),
+            Point { x: 0.0, y: 60.0 },
+            "the wheel over the room under the panel scrolls the view that lies there"
+        );
+    }
+
+    #[test]
+    fn an_edge_of_the_screen_moves_a_popover_along_its_anchor_and_the_arrow_back_within_its_edge() {
+        let (mut stage, trigger, _) = popover();
+        click(&mut stage, trigger);
+        let overlay = overlay_over(&stage, stage.surface);
+        let panel = panel_of(&stage, overlay);
+        let arrow = stage.tree_of(overlay).children(panel)[0];
+        let (panel_box, arrow_box) = (
+            stage.tree_of(overlay).border_box(panel),
+            stage.tree_of(overlay).border_box(arrow),
+        );
+        let from_start = arrow_box.x - panel_box.x;
+        let displacement_with_window_at = |stage: &mut Stage, left: f32| {
+            let corner = Point { x: left, y: 0.0 };
+            stage.frame_all_with_window_at(corner);
+            stage.frame_all_with_window_at(corner);
+            stage.tree_of(overlay).displacement(arrow)
+        };
+
+        // The anchor starts at 600 px of a screen 800 px wide: the right edge pushes the panel
+        // of 260 px 60 px to the left.
+        assert_eq!(
+            displacement_with_window_at(&mut stage, 600.0),
+            Some(Point { x: 60.0, y: 0.0 }),
+            "the arrow moves as far to the right, back over the anchor"
+        );
+        assert_eq!(
+            displacement_with_window_at(&mut stage, 780.0),
+            Some(Point {
+                x: panel_box.width - POPOVER_CORNER - arrow_box.width - from_start,
+                y: 0.0
+            }),
+            "a push of 240 px takes the arrow no further than the corner on the right"
+        );
+        assert_eq!(
+            displacement_with_window_at(&mut stage, -100.0),
+            Some(Point {
+                x: POPOVER_CORNER - from_start,
+                y: 0.0
+            }),
+            "a push to the right takes the arrow no further than the corner on the left"
+        );
+        assert_eq!(
+            displacement_with_window_at(&mut stage, 0.0),
+            Some(Point::default()),
+            "a popover no edge moves has its arrow where its stylesheet puts it"
         );
     }
 

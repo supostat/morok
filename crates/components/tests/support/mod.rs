@@ -8,8 +8,9 @@ use morok_components::view::{Mount, SurfaceId, Surfaces};
 use morok_core::accesskit::{Action, ActionData, ActionRequest, Node, NodeId, TreeId, TreeUpdate};
 use morok_core::{
     CaretLine, CaretLines, CaretStop, ElementId, ElementTree, FontId, FontMetrics, FontRequest, ItemRange, Key,
-    KeyEvent, KeyPhase, Modifiers, OverlaySide, Point, PointerButton, PointerInput, PointerInputKind, Rect,
-    ShapedGlyph, ShapedLine, ShapedRun, ShapedText, Size, TextExtent, TextRequest, TextShaper,
+    KeyEvent, KeyPhase, Modifiers, PlacedOverlay, Point, PointerButton, PointerInput, PointerInputKind, Rect,
+    ScrollInput, ScrollPhase, ShapedGlyph, ShapedLine, ShapedRun, ShapedText, Size, TextExtent, TextRequest,
+    TextShaper,
 };
 use morok_reactive::Runtime;
 
@@ -193,6 +194,27 @@ impl Stage {
         self.frame_overlays_of(self.surface, Point::default());
     }
 
+    /// Runs one frame of every surface as [`frame_all`](Self::frame_all) does, with the window
+    /// of the stage at `corner` of the screen instead of its top left corner.
+    pub(crate) fn frame_all_with_window_at(&mut self, corner: Point) {
+        self.time += FRAME_INTERVAL;
+        self.frame_of(self.surface, VIEWPORT);
+        self.frame_overlays_of(self.surface, corner);
+    }
+
+    /// The wheel scrolls by `delta` over a point of a surface, as the window of that surface
+    /// reports it.
+    pub(crate) fn wheel_on(&mut self, surface: SurfaceId, position: Point, delta: Point) {
+        self.surfaces.scroll_input(
+            surface,
+            &ScrollInput {
+                position,
+                delta,
+                phase: ScrollPhase::Discrete,
+            },
+        );
+    }
+
     /// Runs one frame of every surface, a frame interval after the frame before.
     pub(crate) fn frame_all(&mut self) {
         self.frame_all_after(FRAME_INTERVAL);
@@ -206,16 +228,17 @@ impl Stage {
     /// Where the stage placed the top left corner of an overlay opened over its surface, in
     /// CSS pixels of that surface.
     pub(crate) fn origin_of(&self, overlay: SurfaceId) -> Point {
-        let (_, corner) = self
-            .placement_of(overlay, Point::default())
-            .expect("the overlay has an anchor to be placed against");
-        corner
+        self.placement_of(overlay, Point::default())
+            .expect("the overlay has an anchor to be placed against")
+            .frame
+            .origin()
     }
 
     /// Where a window would place the overlay whose parent has its top left corner at
-    /// `parent_corner` of the screen: the side of its anchor, and the top left corner of the
-    /// overlay on the screen. None while its anchor has no box.
-    fn placement_of(&self, overlay: SurfaceId, parent_corner: Point) -> Option<(OverlaySide, Point)> {
+    /// `parent_corner` of the screen: the surface of the overlay on the screen, the side of
+    /// its anchor and how far the edges of the screen moved it along that side. None while
+    /// its anchor has no box.
+    fn placement_of(&self, overlay: SurfaceId, parent_corner: Point) -> Option<PlacedOverlay> {
         let geometry = self.surfaces.overlay_geometry(overlay)?;
         let anchor_on_screen = Rect {
             x: geometry.anchor.x + parent_corner.x,
@@ -225,11 +248,15 @@ impl Stage {
         let placed = geometry
             .placement
             .place(anchor_on_screen, geometry.panel.size(), SCREEN);
-        let corner = Point {
-            x: placed.frame.x - geometry.panel.x,
-            y: placed.frame.y - geometry.panel.y,
-        };
-        Some((placed.side, corner))
+        Some(PlacedOverlay {
+            frame: Rect {
+                x: placed.frame.x - geometry.panel.x,
+                y: placed.frame.y - geometry.panel.y,
+                width: geometry.size.width,
+                height: geometry.size.height,
+            },
+            ..placed
+        })
     }
 
     /// Runs the frame of a surface that is open at the time of the stage.
@@ -262,15 +289,19 @@ impl Stage {
             if !self.surfaces.contains(overlay) {
                 continue;
             }
-            let Some((side, corner)) = self.placement_of(overlay, parent_corner) else {
+            let Some(placed) = self.placement_of(overlay, parent_corner) else {
                 continue;
             };
-            let corner_on_parent = Point {
-                x: corner.x - parent_corner.x,
-                y: corner.y - parent_corner.y,
+            let corner = placed.frame.origin();
+            let on_parent = PlacedOverlay {
+                frame: Rect {
+                    x: corner.x - parent_corner.x,
+                    y: corner.y - parent_corner.y,
+                    ..placed.frame
+                },
+                ..placed
             };
-            self.surfaces
-                .overlay_placed(&mut self.runtime, overlay, side, corner_on_parent);
+            self.surfaces.overlay_placed(&mut self.runtime, overlay, on_parent);
             self.frame_overlays_of(overlay, corner);
         }
     }

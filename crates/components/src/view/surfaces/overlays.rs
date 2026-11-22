@@ -1,5 +1,7 @@
-use morok_core::{ElementId, ElementTree, KeyEvent, OverlaySide, Point, PointerInput, PointerInputKind, Rect, Role};
-use morok_reactive::{Runtime, Signal};
+use morok_core::{
+    ElementId, ElementTree, KeyEvent, PlacedOverlay, Point, PointerInput, PointerInputKind, Rect, Role, ScrollInput,
+};
+use morok_reactive::Runtime;
 use morok_style::States;
 
 use crate::styles::CLASSES;
@@ -8,6 +10,7 @@ use crate::view::overlay::Overlay;
 use crate::view::overlay_anchor::OverlayAnchor;
 use crate::view::overlay_attachment::OverlayAttachment;
 use crate::view::overlay_geometry::OverlayGeometry;
+use crate::view::overlay_place::OverlayPlace;
 use crate::view::surface::Surface;
 use crate::view::surface_id::SurfaceId;
 use crate::view::surfaces::Surfaces;
@@ -20,10 +23,11 @@ const NOT_AN_OVERLAY: &str = "the surface is an overlay";
 impl Surfaces {
     /// Opens an overlay over `parent`: a surface of its own, styled as `parent` is, that shows
     /// the element `content` builds with room around it for its shadow. `content` is handed
-    /// the side of the anchor the host places the overlay on, which changes when the overlay
-    /// flips. The overlay belongs to `owner`, an element of `parent`: it is closed once that
-    /// element is removed, and when `parent` is closed. The host of `parent` shows it after
-    /// the next frame of `parent`.
+    /// where the host places the overlay: the side of the anchor, which changes when the
+    /// overlay flips, and how far the edges of the screen move it along that side. The overlay
+    /// belongs to `owner`, an element of `parent`: it is closed once that element is removed,
+    /// and when `parent` is closed. The host of `parent` shows it after the next frame of
+    /// `parent`.
     ///
     /// # Panics
     ///
@@ -35,7 +39,7 @@ impl Surfaces {
         parent: SurfaceId,
         owner: ElementId,
         overlay: Overlay,
-        content: impl FnOnce(&mut Mount<'_>, Signal<OverlaySide>) -> ElementId,
+        content: impl FnOnce(&mut Mount<'_>, OverlayPlace) -> ElementId,
     ) -> SurfaceId {
         let opened_over = self.surface_mut(parent);
         opened_over.tree.request_frame();
@@ -47,11 +51,14 @@ impl Surfaces {
         let frame = tree.create(Role::Element);
         tree.add_class(frame, CLASSES.overlay_surface);
         tree.append_child(tree.root(), frame);
-        let mut placed_side = None;
+        let mut placed = None;
         let panel = self.mount(runtime, opened, frame, |mount| {
-            let side = mount.runtime().signal(overlay.placement.side);
-            placed_side = Some(side);
-            content(mount, side)
+            let place = OverlayPlace {
+                side: mount.runtime().signal(overlay.placement.side),
+                edge_shift: mount.runtime().signal(0.0),
+            };
+            placed = Some(place);
+            content(mount, place)
         });
         self.surface_mut(opened).overlay = Some(OverlayAttachment {
             parent,
@@ -62,7 +69,7 @@ impl Surfaces {
             frame,
             panel,
             anchor_box: None,
-            side: placed_side.expect("mounting calls the component"),
+            place: placed.expect("mounting calls the component"),
             origin: None,
             passes_pointer_on: false,
         });
@@ -129,24 +136,22 @@ impl Surfaces {
         })
     }
 
-    /// The host placed the overlay: on `side` of its anchor, with the top left corner of its
-    /// surface at `origin` in CSS pixels of the surface it is opened over.
+    /// The host placed the overlay: `placed` holds the rectangle of its surface in CSS pixels
+    /// of the surface it is opened over, the side of its anchor it lies on, and how far the
+    /// edges of the screen moved it along that side.
     ///
     /// # Panics
     ///
     /// When the surface is no overlay.
-    pub fn overlay_placed(
-        &mut self,
-        runtime: &mut Runtime<Self>,
-        overlay: SurfaceId,
-        side: OverlaySide,
-        origin: Point,
-    ) {
+    pub fn overlay_placed(&mut self, runtime: &mut Runtime<Self>, overlay: SurfaceId, placed: PlacedOverlay) {
         let attachment = self.attachment_mut(overlay);
-        attachment.origin = Some(origin);
-        let placed_side = attachment.side;
-        if runtime.untracked(|runtime| runtime.get(placed_side)) != side {
-            runtime.set(placed_side, side);
+        attachment.origin = Some(placed.frame.origin());
+        let place = attachment.place;
+        if runtime.untracked(|runtime| runtime.get(place.side)) != placed.side {
+            runtime.set(place.side, placed.side);
+        }
+        if runtime.untracked(|runtime| runtime.get(place.edge_shift)).to_bits() != placed.edge_shift.to_bits() {
+            runtime.set(place.edge_shift, placed.edge_shift);
         }
     }
 
@@ -202,6 +207,38 @@ impl Surfaces {
         } else if matches!(input.kind, PointerInputKind::Pressed { .. }) {
             self.dismiss(runtime, surface);
         }
+    }
+
+    /// Takes a scroll of the wheel or the trackpad over a surface, as the host of that surface
+    /// saw it. Over the room an overlay leaves around its panel the scroll belongs to the
+    /// surface under the overlay, which scrolls in its own coordinates.
+    pub fn scroll_input(&mut self, surface: SurfaceId, input: &ScrollInput) {
+        let (under, position) = self.surface_taking_pointer(surface, input.position);
+        let scrolled = ScrollInput { position, ..*input };
+        self.surface_mut(under).scroll_input(&scrolled);
+    }
+
+    /// The surface that takes the pointer at `position` of `under`, with the place of the
+    /// pointer on it: the room an overlay leaves around its panel belongs to the surface the
+    /// overlay is opened over. An overlay the host has not placed yet keeps the pointer.
+    pub(super) fn surface_taking_pointer(&mut self, under: SurfaceId, position: Point) -> (SurfaceId, Point) {
+        let (mut surface, mut at) = (under, position);
+        while let Some(attachment) = &self.surface(surface).overlay {
+            let (parent, panel) = (attachment.parent, attachment.panel);
+            let Some(origin) = attachment.origin else {
+                break;
+            };
+            let tree = &mut self.surface_mut(surface).tree;
+            if tree.element_at(at).is_some_and(|hit| is_inside(tree, panel, hit)) {
+                break;
+            }
+            at = Point {
+                x: at.x + origin.x,
+                y: at.y + origin.y,
+            };
+            surface = parent;
+        }
+        (surface, at)
     }
 
     /// Takes a key that went down or up on the surface that has the keyboard. Returns whether
@@ -323,7 +360,7 @@ fn pointer_belongs_to(tree: &mut ElementTree, panel: ElementId, position: Point)
 }
 
 /// Whether `element` is `subtree` or lies inside it.
-pub(super) fn is_inside(tree: &ElementTree, subtree: ElementId, element: ElementId) -> bool {
+fn is_inside(tree: &ElementTree, subtree: ElementId, element: ElementId) -> bool {
     let mut around = Some(element);
     while let Some(current) = around {
         if current == subtree {

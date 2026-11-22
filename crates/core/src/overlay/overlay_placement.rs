@@ -25,18 +25,29 @@ impl OverlayPlacement {
     /// The overlay lies on the side asked for when it fits between the anchor and the edge of
     /// the bounds there, flips to the opposite side when it fits only there, and takes the
     /// roomier of the two when it fits on neither. It is then moved the least that keeps it
-    /// inside the bounds; an overlay larger than the bounds starts at their start.
+    /// inside the bounds; an overlay larger than the bounds starts at their start. How far
+    /// that moved it along the edge of the anchor is reported with it.
     pub fn place(&self, anchor: Rect, size: Size, bounds: Rect) -> PlacedOverlay {
         let lies_on = self.side_with_room(anchor, size, bounds);
         let origin = self.origin_on(lies_on, anchor, size);
+        let kept = Point {
+            x: kept_inside(origin.x, size.width, bounds.x, bounds.right()),
+            y: kept_inside(origin.y, size.height, bounds.y, bounds.bottom()),
+        };
+        let edge_shift = if lies_on.is_vertical() {
+            kept.x - origin.x
+        } else {
+            kept.y - origin.y
+        };
         PlacedOverlay {
             frame: Rect {
-                x: kept_inside(origin.x, size.width, bounds.x, bounds.right()),
-                y: kept_inside(origin.y, size.height, bounds.y, bounds.bottom()),
+                x: kept.x,
+                y: kept.y,
                 width: size.width,
                 height: size.height,
             },
             side: lies_on,
+            edge_shift,
         }
     }
 
@@ -112,6 +123,7 @@ mod tests {
     use crate::geometry::size::Size;
     use crate::overlay::overlay_alignment::OverlayAlignment;
     use crate::overlay::overlay_side::OverlaySide;
+    use crate::overlay::placed_overlay::PlacedOverlay;
 
     const SCREEN: Rect = Rect::new(0.0, 0.0, 1000.0, 800.0);
     const PANEL: Size = Size {
@@ -189,19 +201,79 @@ mod tests {
             Rect::new(300.0, 0.0, 200.0, 500.0),
             "and it starts at the top of the bounds"
         );
+        assert_eq!(
+            placed.edge_shift.to_bits(),
+            0.0_f32.to_bits(),
+            "a move across its side is no move along it"
+        );
     }
 
     #[test]
-    fn an_overlay_is_moved_along_the_edge_to_stay_inside_the_bounds() {
-        let at_the_right_edge = Rect::new(950.0, 200.0, 40.0, 28.0);
-        let at_the_left_edge = Rect::new(10.0, 200.0, 40.0, 28.0);
+    fn an_overlay_is_moved_along_the_edge_to_stay_inside_the_bounds_and_reports_how_far() {
+        let below = placement(OverlaySide::Below, OverlayAlignment::Start);
+        let right = placement(OverlaySide::Right, OverlayAlignment::Start);
 
-        let pushed_left =
-            placement(OverlaySide::Below, OverlayAlignment::Start).place(at_the_right_edge, PANEL, SCREEN);
-        let pushed_right = placement(OverlaySide::Below, OverlayAlignment::End).place(at_the_left_edge, PANEL, SCREEN);
+        let at_the_right_edge = below.place(Rect::new(950.0, 200.0, 40.0, 28.0), PANEL, SCREEN);
+        let at_the_left_edge = placement(OverlaySide::Below, OverlayAlignment::End).place(
+            Rect::new(10.0, 200.0, 40.0, 28.0),
+            PANEL,
+            SCREEN,
+        );
+        let at_the_bottom_edge = right.place(Rect::new(300.0, 760.0, 40.0, 28.0), PANEL, SCREEN);
+        let at_the_top_edge = placement(OverlaySide::Right, OverlayAlignment::End).place(
+            Rect::new(300.0, 10.0, 40.0, 28.0),
+            PANEL,
+            SCREEN,
+        );
 
-        assert_eq!(pushed_left.frame, Rect::new(800.0, 232.0, 200.0, 120.0));
-        assert_eq!(pushed_right.frame, Rect::new(0.0, 232.0, 200.0, 120.0));
+        assert_eq!(
+            at_the_right_edge,
+            PlacedOverlay {
+                frame: Rect::new(800.0, 232.0, 200.0, 120.0),
+                side: OverlaySide::Below,
+                edge_shift: -150.0,
+            }
+        );
+        assert_eq!(
+            at_the_left_edge,
+            PlacedOverlay {
+                frame: Rect::new(0.0, 232.0, 200.0, 120.0),
+                side: OverlaySide::Below,
+                edge_shift: 150.0,
+            }
+        );
+        assert_eq!(
+            at_the_bottom_edge,
+            PlacedOverlay {
+                frame: Rect::new(344.0, 680.0, 200.0, 120.0),
+                side: OverlaySide::Right,
+                edge_shift: -80.0,
+            }
+        );
+        assert_eq!(
+            at_the_top_edge,
+            PlacedOverlay {
+                frame: Rect::new(344.0, 0.0, 200.0, 120.0),
+                side: OverlaySide::Right,
+                edge_shift: 82.0,
+            }
+        );
+    }
+
+    #[test]
+    fn an_overlay_that_fits_where_its_placement_puts_it_is_not_moved_along_its_side() {
+        let anchor = Rect::new(300.0, 200.0, 80.0, 28.0);
+
+        let placed = placement(OverlaySide::Below, OverlayAlignment::Center).place(anchor, PANEL, SCREEN);
+
+        assert_eq!(
+            placed,
+            PlacedOverlay {
+                frame: Rect::new(240.0, 232.0, 200.0, 120.0),
+                side: OverlaySide::Below,
+                edge_shift: 0.0,
+            }
+        );
     }
 
     #[test]

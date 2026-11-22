@@ -11,6 +11,7 @@ use morok::{Application, Styles, Window, WindowOptions};
 use objc2::MainThreadMarker;
 use objc2::rc::Retained;
 use objc2_app_kit::{NSApplication, NSWindow};
+use objc2_foundation::NSPoint;
 use support::{EventSource, Expectations};
 
 const CONTENT_SIZE: Size = Size {
@@ -39,6 +40,23 @@ const LIST_INSET: f32 = 5.0;
 const LIST_ROW_HEIGHT: f32 = 26.0;
 /// How far a window may lie from where it is expected: windows lie on whole pixels.
 const TOLERANCE: f64 = 0.5;
+/// How far the opener starts from the right edge of the room of the screen when the window
+/// stands at that edge: a panel 260 px wide that starts where the opener does is pushed
+/// 150 px to the left.
+const OPENER_TO_EDGE: f64 = 110.0;
+/// How far the right edge pushes the panel at least.
+const LEAST_PUSH: f64 = 100.0;
+/// How far above the top edge of a popover panel a row runs through the half of its arrow
+/// that sticks out of it, in points.
+const ARROW_ROW: f64 = 3.0;
+/// Where the middle of the arrow lies from the left edge of a panel nothing pushes: past the
+/// border of 1 px, 28 px in, and half of the 10 px of the arrow.
+const ARROW_MIDDLE: f64 = 34.0;
+/// How far the middle of the arrow may lie from where it is expected: it is found in pixels.
+const ARROW_TOLERANCE: f64 = 1.0;
+/// The alpha from which a pixel of an overlay window is opaque: the arrow is, the shadow
+/// around the panel is not.
+const OPAQUE: u8 = 250;
 
 /// What the root component of the window built.
 #[derive(Clone, Copy, Debug)]
@@ -277,6 +295,64 @@ fn a_press_outside_the_popover_closes_its_window(stage: &mut Stage) {
     );
 }
 
+fn a_popover_the_right_edge_of_the_screen_pushes_points_its_arrow_at_its_opener(stage: &mut Stage) {
+    let window = stage.source.window();
+    let Some(room) = window.screen().map(|screen| screen.visibleFrame()) else {
+        return;
+    };
+    let first_place = window.frame().origin;
+    let opener = stage.box_of(stage.built.opener);
+    let room_right = room.origin.x + room.size.width;
+    window.setFrameOrigin(NSPoint::new(
+        room_right - OPENER_TO_EDGE - f64::from(opener.x),
+        first_place.y,
+    ));
+    stage.application.run_for(ONE_CHANGE);
+    let opener_left = window.contentRectForFrameRect(window.frame()).origin.x + f64::from(opener.x);
+
+    stage.click(stage.built.opener);
+
+    let overlay = stage.overlay_window();
+    let panel_left = overlay
+        .as_ref()
+        .map(|overlay| overlay.frame().origin.x + f64::from(SHADOW_ROOM));
+    stage.expectations.expect(
+        panel_left.is_some_and(|panel_left| panel_left < opener_left - LEAST_PUSH),
+        "the right edge of the screen pushes the panel of the popover to the left of its opener",
+        &format!("the panel starts at {panel_left:?}, the opener at {opener_left}"),
+    );
+    let arrow_middle = overlay.as_ref().and_then(|overlay| {
+        let frame = overlay.frame();
+        let panel_top = frame.origin.y + frame.size.height - f64::from(SHADOW_ROOM);
+        let row = support::screen_row(
+            overlay,
+            NSPoint::new(frame.origin.x, panel_top + ARROW_ROW),
+            frame.size.width,
+            false,
+            stage.main_thread,
+        )?;
+        Some(frame.origin.x + middle_of_opaque(&row)?)
+    });
+    let pointed_at = opener_left + ARROW_MIDDLE;
+    stage.expectations.expect(
+        arrow_middle.is_some_and(|middle| (middle - pointed_at).abs() <= ARROW_TOLERANCE),
+        "the arrow of the pushed popover points at its opener where it would if nothing pushed it",
+        &format!("the arrow is at {arrow_middle:?}, expected at {pointed_at}"),
+    );
+
+    stage.click(stage.built.opener);
+    window.setFrameOrigin(first_place);
+    stage.application.run_for(ONE_CHANGE);
+}
+
+/// The middle of the opaque pixels of a row, in pixels from its start; none when no pixel of
+/// it is opaque.
+fn middle_of_opaque(row: &[[u8; 4]]) -> Option<f64> {
+    let first = row.iter().position(|pixel| pixel[3] >= OPAQUE)?;
+    let last = row.iter().rposition(|pixel| pixel[3] >= OPAQUE)?;
+    Some((first + last + 1) as f64 / 2.0)
+}
+
 fn the_list_of_a_select_opens_in_a_window_that_takes_the_pointer_and_never_the_keyboard(stage: &mut Stage) {
     stage.click(stage.built.select);
 
@@ -392,6 +468,7 @@ fn main() -> ExitCode {
     a_press_inside_the_popover_reaches_its_content_and_keeps_it_open(&mut stage);
     escape_in_the_popover_closes_its_window(&mut stage);
     a_press_outside_the_popover_closes_its_window(&mut stage);
+    a_popover_the_right_edge_of_the_screen_pushes_points_its_arrow_at_its_opener(&mut stage);
     the_list_of_a_select_opens_in_a_window_that_takes_the_pointer_and_never_the_keyboard(&mut stage);
     the_keys_of_the_window_of_a_select_choose_from_its_open_list(&mut stage);
     a_click_on_a_row_of_the_list_of_a_select_chooses_its_option(&mut stage);

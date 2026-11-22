@@ -66,8 +66,9 @@ impl Popover {
     }
 
     /// Shows the popover under `anchor`, an element of the surface of `mount`, while the
-    /// signal holds: it flips over the anchor where the screen ends. A press on the anchor
-    /// is left to the anchor, which opens and closes the popover.
+    /// signal holds: it flips over the anchor where the screen ends, and where an edge of the
+    /// screen moves it along the anchor its arrow moves back to point at the anchor. A press
+    /// on the anchor is left to the anchor, which opens and closes the popover.
     pub fn attach(self, mount: &mut Mount<'_>, anchor: ElementId) {
         let Self { is_open, panel } = self;
         show_overlay_while(
@@ -81,14 +82,15 @@ impl Popover {
                     on_dismiss: Box::new(move |runtime| runtime.set(is_open, false)),
                 },
             },
-            move |mount, side| panel.mount(mount, &side.into()),
+            move |mount, place| panel.mount(mount, &place.side.into(), &place.edge_shift.into()),
         );
     }
 
     /// Builds the panel of the popover on the surface of `mount` itself, as it lies on
-    /// `side` of what it belongs to, for a host that shows the panel in a place of its own.
+    /// `side` of what it belongs to, for a host that shows the panel in a place of its own:
+    /// where its placement puts it, moved by no edge.
     pub fn mount_panel(self, mount: &mut Mount<'_>, side: impl Into<Property<OverlaySide>>) -> ElementId {
-        self.panel.mount(mount, &side.into())
+        self.panel.mount(mount, &side.into(), &Property::Fixed(0.0))
     }
 }
 

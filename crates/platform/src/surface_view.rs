@@ -945,8 +945,8 @@ impl SurfaceView {
                 .iter()
                 .find(|shown| shown.id() == request.id)
                 .and_then(|shown| shown.place(self, &window, request, screen, room));
-            if let Some((side, origin)) = moved {
-                self.content().borrow_mut().overlay_placed(request.id, side, origin);
+            if let Some(placed) = moved {
+                self.content().borrow_mut().overlay_placed(request.id, placed);
             }
         }
         state.overlay_requests.replace(requests);

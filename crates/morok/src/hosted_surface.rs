@@ -8,7 +8,7 @@ use morok_components::view::SurfaceId;
 use morok_core::accesskit::{ActionRequest, Node, NodeId, Role, TreeId, TreeInfo, TreeUpdate};
 use morok_core::{
     DisplayList, DragOutcome, ElementId, ElementTree, FrameScheduler, KeyEvent, Modifiers, NativeMenu, NativeMenuItem,
-    OverlaySide, Payload, PayloadType, Point, PointerInput, Rect, ScrollInput, Size, TextCommand,
+    Payload, PayloadType, PlacedOverlay, Point, PointerInput, Rect, ScrollInput, Size, TextCommand,
 };
 use morok_platform::{
     FocusedText, OverlayId, OverlayRequest, PasteboardClipboard, SurfaceContent, SurfaceKey, SurfaceSettings,
@@ -176,7 +176,7 @@ impl SurfaceContent for HostedSurface {
         let Some(mut state) = state_while_open(&self.state, self.surface) else {
             return;
         };
-        state.surfaces.surface_mut(self.surface).scroll_input(input);
+        state.surfaces.scroll_input(self.surface, input);
     }
 
     fn key_input(&mut self, event: &KeyEvent) -> bool {
@@ -356,15 +356,15 @@ impl SurfaceContent for HostedSurface {
         )))
     }
 
-    fn overlay_placed(&mut self, overlay: OverlayId, side: OverlaySide, origin: Point) {
-        let placed = *self
+    fn overlay_placed(&mut self, overlay: OverlayId, placed: PlacedOverlay) {
+        let surface = *self
             .listed_overlays
             .iter()
             .find(|listed| listed.serial() == overlay.0)
             .expect("a window places the overlays it was told of");
         let state = &mut *self.state.borrow_mut();
-        state.surfaces.overlay_placed(&mut state.runtime, placed, side, origin);
-        Self::request_frame_for_queued_effects(state, placed);
+        state.surfaces.overlay_placed(&mut state.runtime, surface, placed);
+        Self::request_frame_for_queued_effects(state, surface);
     }
 
     fn dismiss_overlays(&mut self) {

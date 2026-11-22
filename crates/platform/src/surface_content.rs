@@ -5,8 +5,8 @@ use std::time::Duration;
 
 use morok_core::accesskit::{ActionRequest, TreeUpdate};
 use morok_core::{
-    DragOutcome, ElementTree, FrameScheduler, KeyEvent, Modifiers, NativeMenu, NativeMenuItem, OverlaySide, Payload,
-    PayloadType, Point, PointerInput, Rect, ScrollInput, Size, TextCommand,
+    DragOutcome, ElementTree, FrameScheduler, KeyEvent, Modifiers, NativeMenu, NativeMenuItem, Payload, PayloadType,
+    PlacedOverlay, Point, PointerInput, Rect, ScrollInput, Size, TextCommand,
 };
 use morok_style::ColorScheme;
 
@@ -130,9 +130,10 @@ pub trait SurfaceContent {
         panic!("the content listed {overlay:?} and gives no content for it");
     }
 
-    /// The window placed an overlay: on `side` of its anchor, with the top left corner of its
-    /// surface at `origin` in CSS pixels of this surface. Told when either changes.
-    fn overlay_placed(&mut self, _overlay: OverlayId, _side: OverlaySide, _origin: Point) {}
+    /// The window placed an overlay: `placed` holds the rectangle of its surface in CSS pixels
+    /// of this surface, the side of its anchor it lies on, and how far the edges of the screen
+    /// moved it along that side. Told when any of it changes.
+    fn overlay_placed(&mut self, _overlay: OverlayId, _placed: PlacedOverlay) {}
 
     /// The user turned away from the surface and its overlays: went to another application,
     /// or to a window that shows no surface.

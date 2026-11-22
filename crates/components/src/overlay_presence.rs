@@ -1,7 +1,7 @@
-use morok_core::{ElementId, OverlaySide};
-use morok_reactive::{Runtime, Signal, Source};
+use morok_core::ElementId;
+use morok_reactive::{Runtime, Source};
 
-use crate::view::{Mount, Overlay, Surfaces};
+use crate::view::{Mount, Overlay, OverlayPlace, Surfaces};
 
 /// Keeps an overlay open over the surface of `mount` for as long as `shown` holds a key, and
 /// opens it anew when the key changes: `overlay` says where the overlay for the key goes and
@@ -11,7 +11,7 @@ pub(crate) fn show_overlay_for<Key: Clone + PartialEq + 'static>(
     owner: ElementId,
     shown: impl Into<Source<Option<Key>>>,
     overlay: impl Fn(&mut Runtime<Surfaces>, &Key) -> Overlay + 'static,
-    content: impl Fn(&mut Mount<'_>, Signal<OverlaySide>) -> ElementId + 'static,
+    content: impl Fn(&mut Mount<'_>, OverlayPlace) -> ElementId + 'static,
 ) {
     let shown = shown.into();
     let parent = mount.surface_id;
@@ -41,7 +41,7 @@ pub(crate) fn show_overlay_while(
     owner: ElementId,
     is_open: impl Into<Source<bool>>,
     overlay: impl Fn(&mut Runtime<Surfaces>) -> Overlay + 'static,
-    content: impl Fn(&mut Mount<'_>, Signal<OverlaySide>) -> ElementId + 'static,
+    content: impl Fn(&mut Mount<'_>, OverlayPlace) -> ElementId + 'static,
 ) {
     let is_open = is_open.into();
     let shown = mount.runtime.memo(move |runtime| runtime.get(is_open).then_some(()));

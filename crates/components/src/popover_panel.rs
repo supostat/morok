@@ -1,5 +1,5 @@
 use morok_core::accesskit::Role as AccessibleRole;
-use morok_core::{ElementId, OverlaySide};
+use morok_core::{ElementId, ElementTree, OverlaySide, Point};
 
 use crate::panel_content::PanelContent;
 use crate::styles::CLASSES;
@@ -18,8 +18,14 @@ pub(crate) struct PopoverPanel {
 
 impl PopoverPanel {
     /// Builds the panel with its arrow on the edge that faces the anchor: the top edge for a
-    /// popover below its anchor, the bottom edge for one above it.
-    pub(crate) fn mount(&self, mount: &mut Mount<'_>, side: &Property<OverlaySide>) -> ElementId {
+    /// popover below its anchor, the bottom edge for one above it. Where an edge of the screen
+    /// moved the panel along the anchor by `edge_shift`, the arrow moves back against it.
+    pub(crate) fn mount(
+        &self,
+        mount: &mut Mount<'_>,
+        side: &Property<OverlaySide>,
+        edge_shift: &Property<f32>,
+    ) -> ElementId {
         let is_above = match *side {
             Property::Fixed(side) => Property::Fixed(side == OverlaySide::Above),
             Property::Bound(side) => mount
@@ -31,6 +37,9 @@ impl PopoverPanel {
             .element()
             .class(CLASSES.popover_arrow)
             .class_when(CLASSES.above, is_above)
+            .bind(edge_shift.clone(), |tree, arrow, edge_shift| {
+                point_back_at_anchor(tree, arrow, *edge_shift);
+            })
             .id();
         let title = self
             .title
@@ -51,5 +60,24 @@ impl PopoverPanel {
             panel.child(part);
         }
         panel.id()
+    }
+}
+
+/// Moves the arrow against `edge_shift` from where its stylesheet puts it, so that it points
+/// at the anchor again, as far as the straight part of the edge of the panel reaches: the
+/// arrow stays clear of the rounded corners. The panel was laid out before the host placed it.
+fn point_back_at_anchor(tree: &mut ElementTree, arrow: ElementId, edge_shift: f32) {
+    let moved_by = if edge_shift == 0.0 {
+        0.0
+    } else {
+        let panel = tree.parent(arrow).expect("the arrow lies in its panel");
+        let (panel_box, arrow_box) = (tree.border_box(panel), tree.border_box(arrow));
+        let corners = tree.style(panel).paint.border_radius;
+        let first = panel_box.x + corners.top_left.max(corners.bottom_left);
+        let last = panel_box.right() - corners.top_right.max(corners.bottom_right) - arrow_box.width;
+        (arrow_box.x - edge_shift).min(last).max(first) - arrow_box.x
+    };
+    if moved_by != 0.0 || tree.displacement(arrow).is_some() {
+        tree.set_displacement(arrow, Point { x: moved_by, y: 0.0 });
     }
 }

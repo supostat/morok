@@ -1,7 +1,6 @@
 use morok_core::{DragOutcome, Point, PointerButton, PointerInput, PointerInputKind};
 use morok_reactive::Runtime;
 
-use super::overlays::is_inside;
 use crate::view::carried_drag::CarriedDrag;
 use crate::view::surface_id::SurfaceId;
 use crate::view::surfaces::Surfaces;
@@ -155,28 +154,5 @@ impl Surfaces {
             DragOutcome::Cancelled
         };
         self.surface_mut(source).end_pointer_drag(runtime, outcome);
-    }
-
-    /// The surface that takes the pointer at `position` of `under`, with the place of the
-    /// pointer on it: the room an overlay leaves around its panel belongs to the surface the
-    /// overlay is opened over. An overlay the host has not placed yet keeps the pointer.
-    fn surface_taking_pointer(&mut self, under: SurfaceId, position: Point) -> (SurfaceId, Point) {
-        let (mut surface, mut at) = (under, position);
-        while let Some(attachment) = &self.surface(surface).overlay {
-            let (parent, panel) = (attachment.parent, attachment.panel);
-            let Some(origin) = attachment.origin else {
-                break;
-            };
-            let tree = &mut self.surface_mut(surface).tree;
-            if tree.element_at(at).is_some_and(|hit| is_inside(tree, panel, hit)) {
-                break;
-            }
-            at = Point {
-                x: at.x + origin.x,
-                y: at.y + origin.y,
-            };
-            surface = parent;
-        }
-        (surface, at)
     }
 }
