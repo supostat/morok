@@ -16,7 +16,7 @@ use morok::{Application, Styles, Window, WindowOptions};
 use objc2::rc::Retained;
 use objc2::runtime::{AnyObject, NSObject};
 use objc2::{DefinedClass, MainThreadMarker, MainThreadOnly, define_class, msg_send};
-use objc2_app_kit::{NSDragOperation, NSPasteboard, NSPasteboardTypeFileURL};
+use objc2_app_kit::{NSApplication, NSDragOperation, NSPasteboard, NSPasteboardTypeFileURL, NSWindow};
 use objc2_foundation::{NSPoint, NSString};
 use support::{EventSource, Expectations};
 
@@ -89,11 +89,47 @@ impl StagedDrag {
 struct Built {
     /// A box the pointer drags out of the window.
     card: ElementId,
+    /// A box the pointer drags across the windows of the application.
+    row: ElementId,
     /// A box that takes files.
     shelf: ElementId,
     shelf_is_under_drag: Signal<bool>,
     taken_by_shelf: Signal<Payload>,
     card_drag_ended: Signal<Option<DragOutcome>>,
+    row_drag_ended: Signal<Option<DragOutcome>>,
+}
+
+/// The type of the application's own a row is dragged in.
+const ROW_TYPE: &str = "com.example.board.row";
+
+/// What the row carries.
+fn row_payload() -> Payload {
+    Payload {
+        custom: vec![CustomData {
+            type_name: String::from(ROW_TYPE),
+            bytes: vec![3, 1, 4],
+        }],
+        ..Payload::default()
+    }
+}
+
+/// A point far enough from `point` for a press there to become a drag.
+fn beside(point: Point) -> Point {
+    Point {
+        x: point.x + 12.0,
+        ..point
+    }
+}
+
+/// The point of the surface of `window` that lies on the screen where `at` of the surface of
+/// `other` lies; both surfaces take `CONTENT_SIZE`.
+fn same_place(window: &NSWindow, other: &NSWindow, at: Point) -> Point {
+    let in_other = NSPoint::new(f64::from(at.x), f64::from(CONTENT_SIZE.height - at.y));
+    let in_window = window.convertPointFromScreen(other.convertPointToScreen(in_other));
+    Point {
+        x: in_window.x as f32,
+        y: CONTENT_SIZE.height - in_window.y as f32,
+    }
 }
 
 /// The window of the test with what the expectations read of it.
@@ -123,10 +159,11 @@ impl Stage {
     /// A window on a card that hands its drag to the system and a shelf that takes files.
     fn open(main_thread: MainThreadMarker) -> Self {
         let application = Application::new(Styles::of_kit()).expect("this Mac runs Metal 4");
-        let (shelf_is_under_drag, taken_by_shelf, card_drag_ended) = application.update(|runtime| {
+        let (shelf_is_under_drag, taken_by_shelf, card_drag_ended, row_drag_ended) = application.update(|runtime| {
             (
                 runtime.signal(false),
                 runtime.signal(Payload::default()),
+                runtime.signal(None),
                 runtime.signal(None),
             )
         });
@@ -172,14 +209,32 @@ impl Stage {
                     Propagation::Continue
                 })
                 .id();
+            let row = mount
+                .element()
+                .class(CLASSES.button)
+                .drag_source(|_| {
+                    Some(DragStart {
+                        payload: row_payload(),
+                        reach: DragReach::Surface,
+                    })
+                })
+                .on_event(move |runtime, event| {
+                    if let ElementEvent::DragEnded(outcome) = event {
+                        runtime.set(row_drag_ended, Some(*outcome));
+                    }
+                    Propagation::Continue
+                })
+                .id();
             built = Some(Built {
                 card,
+                row,
                 shelf,
                 shelf_is_under_drag,
                 taken_by_shelf,
                 card_drag_ended,
+                row_drag_ended,
             });
-            mount.element().child(card).child(shelf).id()
+            mount.element().child(card).child(shelf).child(row).id()
         });
         let pasteboard = NSPasteboard::pasteboardWithUniqueName();
         pasteboard.clearContents();
@@ -288,6 +343,105 @@ impl Stage {
     }
 }
 
+impl Stage {
+    /// A second window beside the first, with a rack that takes rows.
+    fn open_second_window(&self) -> (Window, Retained<NSWindow>, Rack) {
+        let (is_under_drag, taken) = self
+            .application
+            .update(|runtime| (runtime.signal(false), runtime.signal(Payload::default())));
+        let options = WindowOptions {
+            title: String::from("morok: drag windows, the second"),
+            content_size: CONTENT_SIZE,
+            blur_behind: false,
+        };
+        let mut element = None;
+        let second = self.application.open_window(&options, |mount| {
+            let rack = mount
+                .element()
+                .class(CLASSES.button)
+                .drop_target(&[PayloadType::Custom(String::from(ROW_TYPE))])
+                .on_event(move |runtime, event| {
+                    if let ElementEvent::Drag(drag) = event {
+                        match drag.kind {
+                            DragEventKind::Entered => runtime.set(is_under_drag, true),
+                            DragEventKind::Moved => {}
+                            DragEventKind::Left => runtime.set(is_under_drag, false),
+                            DragEventKind::Dropped => {
+                                runtime.set(is_under_drag, false);
+                                runtime.set(taken, drag.payload.clone());
+                            }
+                        }
+                    }
+                    Propagation::Continue
+                })
+                .id();
+            element = Some(rack);
+            mount.element().child(rack).id()
+        });
+        let first = self.source.window();
+        let second_native = NSApplication::sharedApplication(self.main_thread)
+            .windows()
+            .to_vec()
+            .into_iter()
+            .find(|window| window.windowNumber() != first.windowNumber() && window.isVisible())
+            .expect("the application has opened its second window");
+        let centered = first.frame();
+        let gap = 24.0;
+        let left = centered.origin.x - centered.size.width.midpoint(gap);
+        first.setFrameOrigin(NSPoint::new(left, centered.origin.y));
+        second_native.setFrameOrigin(NSPoint::new(left + centered.size.width + gap, centered.origin.y));
+        let rack = Rack {
+            element: element.expect("the second window mounted its rack"),
+            is_under_drag,
+            taken,
+        };
+        (second, second_native, rack)
+    }
+
+    fn a_drag_goes_from_one_window_to_a_target_in_another(&mut self) {
+        let (second, second_native, rack) = self.open_second_window();
+        self.application.run_for(SETTLING);
+        let over_rack = second.with_tree(|tree| {
+            let rack_box = tree.border_box(rack.element);
+            Point {
+                x: rack_box.x + rack_box.width / 2.0,
+                y: rack_box.y + rack_box.height / 2.0,
+            }
+        });
+        let over_rack_from_first = same_place(self.source.window(), &second_native, over_rack);
+        let on_row = self.middle_of(self.built.row);
+
+        self.source.press(on_row);
+        self.source.drag_to(beside(on_row));
+        self.source.drag_to(over_rack_from_first);
+        let is_under_drag = self.application.update(|runtime| runtime.get(rack.is_under_drag));
+        self.expectations.expect(
+            is_under_drag,
+            "the rack of the second window hears the drag of the row come over it",
+            &format!("under the drag: {is_under_drag}, the pointer at {over_rack_from_first:?} of the first window"),
+        );
+
+        self.source.release(over_rack_from_first);
+        let (taken, ended) = self
+            .application
+            .update(|runtime| (runtime.get(rack.taken), runtime.get(self.built.row_drag_ended)));
+        self.expectations.expect(
+            taken == row_payload() && ended == Some(DragOutcome::Dropped),
+            "the row is dropped on the rack of the second window, and hears that it was",
+            &format!("taken: {taken:?}, ended: {ended:?}"),
+        );
+        drop(second);
+    }
+}
+
+/// The drop target of the second window, and the signals its drags write.
+#[derive(Clone, Copy, Debug)]
+struct Rack {
+    element: ElementId,
+    is_under_drag: Signal<bool>,
+    taken: Signal<Payload>,
+}
+
 fn main() -> ExitCode {
     let main_thread = MainThreadMarker::new().expect("the test runs on the main thread");
     let mut stage = Stage::open(main_thread);
@@ -295,6 +449,7 @@ fn main() -> ExitCode {
     stage.the_window_asks_the_system_for_the_drags_its_components_take();
     stage.a_file_another_application_drags_is_dropped_on_a_component();
     stage.a_component_hands_its_drag_to_the_system_and_hears_its_end();
+    stage.a_drag_goes_from_one_window_to_a_target_in_another();
 
     // SAFETY: a pasteboard with a unique name is released once nothing reads it any more.
     let (): () = unsafe { msg_send![&*stage.pasteboard, releaseGlobally] };

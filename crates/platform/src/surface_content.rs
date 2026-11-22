@@ -13,6 +13,7 @@ use morok_style::ColorScheme;
 use crate::focused_text::FocusedText;
 use crate::overlay::overlay_id::OverlayId;
 use crate::overlay::overlay_request::OverlayRequest;
+use crate::surface_key::SurfaceKey;
 use crate::surface_settings::SurfaceSettings;
 use crate::system_drag_request::SystemDragRequest;
 
@@ -33,6 +34,22 @@ pub trait SurfaceContent {
 
     /// The pointer moved over the surface, pressed or released a button on it, or left it.
     fn pointer_input(&mut self, input: &PointerInput);
+
+    /// What names the surface among the surfaces of the application, for the content of
+    /// another surface a pointer pressed there goes over this one; none for a content that
+    /// takes nothing a pointer brings from another surface.
+    fn surface_key(&self) -> Option<SurfaceKey> {
+        None
+    }
+
+    /// The pointer moved, or the primary button came up, while the button pressed on this
+    /// surface is down and the pointer is over `under`, another surface of the application and
+    /// the topmost one there, at `position` in CSS pixels of `under`. `input` tells it in CSS
+    /// pixels of this surface, as [`pointer_input`](Self::pointer_input) does. A content that
+    /// carries nothing over other surfaces keeps this, which takes the input as any other.
+    fn pointer_input_over(&mut self, input: &PointerInput, _under: SurfaceKey, _position: Point) {
+        self.pointer_input(input);
+    }
 
     /// The wheel or the trackpad scrolled over the surface.
     fn scroll_input(&mut self, input: &ScrollInput);

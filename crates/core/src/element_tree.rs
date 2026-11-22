@@ -942,8 +942,8 @@ impl ElementTree {
     ///
     /// Escape cancels the drag the pointer carries over the surface, and does nothing else.
     pub fn key_input(&mut self, event: &KeyEvent, handler: &mut dyn InputHandler) -> bool {
-        if event.cancels_drag() && self.carries_surface_drag() {
-            self.cancel_surface_drag(handler);
+        if event.is_plain_escape() && self.pointer_drag().is_some() {
+            self.cancel_pointer_drag(handler);
             return true;
         }
         if event.shows_keyboard_use() {

@@ -1,6 +1,4 @@
-use morok_core::{
-    ElementId, ElementTree, Key, KeyEvent, KeyPhase, OverlaySide, Point, PointerInput, PointerInputKind, Rect, Role,
-};
+use morok_core::{ElementId, ElementTree, KeyEvent, OverlaySide, Point, PointerInput, PointerInputKind, Rect, Role};
 use morok_reactive::{Runtime, Signal};
 use morok_style::States;
 
@@ -158,8 +156,13 @@ impl Surfaces {
     /// Over the room an overlay leaves around its panel the pointer belongs to the surface
     /// under the overlay, which hears of it in its own coordinates. A press dismisses every
     /// overlay it lands outside of: an overlay keeps the presses on its panel, on the overlays
-    /// opened over it and on the element it is anchored to.
+    /// opened over it and on the element it is anchored to. A drag the pointer carries from
+    /// a component of the surface goes wherever the pointer goes.
     pub fn pointer_input(&mut self, runtime: &mut Runtime<Self>, surface: SurfaceId, input: &PointerInput) {
+        if self.surface(surface).tree.pointer_drag().is_some() {
+            self.drag_pointer(runtime, surface, input, surface, input.position);
+            return;
+        }
         let held = self.surface_mut(surface);
         let Some(attachment) = &held.overlay else {
             self.deliver_pointer(runtime, surface, input);
@@ -202,14 +205,20 @@ impl Surfaces {
     }
 
     /// Takes a key that went down or up on the surface that has the keyboard. Returns whether
-    /// it was used. Escape that nothing on an overlay used dismisses an overlay that takes the
-    /// keyboard.
+    /// it was used. Escape cancels the drag the pointer carries, over whichever surface it is,
+    /// and does nothing else; Escape that nothing on an overlay used dismisses an overlay that
+    /// takes the keyboard.
     pub fn key_input(&mut self, runtime: &mut Runtime<Self>, surface: SurfaceId, event: &KeyEvent) -> bool {
+        if event.is_plain_escape()
+            && let Some(source) = self.pointer_drag_source()
+        {
+            self.leave_carried_surface(runtime);
+            return self.surface_mut(source).key_input(runtime, event);
+        }
         if self.surface_mut(surface).key_input(runtime, event) {
             return true;
         }
-        let is_escape = event.phase == KeyPhase::Pressed && event.key == Key::Escape && event.modifiers.is_empty();
-        if is_escape && self.takes_keyboard(surface) {
+        if event.is_plain_escape() && self.takes_keyboard(surface) {
             self.dismiss(runtime, surface);
             return true;
         }
@@ -314,7 +323,7 @@ fn pointer_belongs_to(tree: &mut ElementTree, panel: ElementId, position: Point)
 }
 
 /// Whether `element` is `subtree` or lies inside it.
-fn is_inside(tree: &ElementTree, subtree: ElementId, element: ElementId) -> bool {
+pub(super) fn is_inside(tree: &ElementTree, subtree: ElementId, element: ElementId) -> bool {
     let mut around = Some(element);
     while let Some(current) = around {
         if current == subtree {

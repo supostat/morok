@@ -4,8 +4,8 @@ use std::path::PathBuf;
 
 use morok_core::{
     CustomData, DisplayItem, DisplayList, DragEventKind, DragOutcome, DragReach, DragStart, ElementId, Focusability,
-    Key, KeyChord, Modifiers, Payload, PayloadType, Point, PointerEventKind, Rect, Role, ShortcutScope, SystemDrag,
-    TextSelection,
+    Key, KeyChord, Modifiers, Payload, PayloadType, Point, PointerEventKind, PointerInputKind, Rect, Role,
+    ShortcutScope, SystemDrag, TextSelection,
 };
 use morok_style::States;
 use support::{InputLog, Scene};
@@ -441,6 +441,66 @@ fn escape_cancels_a_drag_and_reaches_nothing_else() {
     );
     assert_eq!(board.log.key_receivers(), [root, root]);
     assert_eq!(board.log.shortcuts.len(), 1);
+}
+
+#[test]
+fn a_tree_takes_the_drag_of_another_surface_and_its_drop_ends_the_session_of_the_source() {
+    let mut source = Board::dragging(card_payload());
+    let mut other = Board::new();
+    source.drag_card();
+    source.move_to(OVER_SHELF);
+    let carried = source
+        .scene
+        .tree
+        .pointer_drag()
+        .cloned()
+        .expect("the pointer drags the card");
+    assert_eq!(carried, card_payload());
+
+    source
+        .scene
+        .pointer(PointerInputKind::Exited, OVER_SHELF.0, OVER_SHELF.1, &mut source.log);
+    assert_eq!(
+        source.drag_events_of(source.shelf).last(),
+        Some(&DragEventKind::Left),
+        "the source lets go of its own target while the pointer is over the other surface"
+    );
+    assert_eq!(source.scene.tree.pointer_drag(), Some(&card_payload()));
+    let (tree, log) = (&mut other.scene.tree, &mut other.log);
+    assert!(tree.system_drag_entered(carried, point(OVER_SLOT), Modifiers::NONE, log));
+    assert_eq!(
+        tree.pointer_drag(),
+        None,
+        "the drag is not the pointer's on the other surface"
+    );
+    assert!(tree.system_drag_dropped(point(OVER_SLOT), Modifiers::NONE, log));
+    assert_eq!(
+        other.drag_events_of(other.slot),
+        [DragEventKind::Entered, DragEventKind::Moved, DragEventKind::Dropped]
+    );
+    assert_eq!(other.log.drag_event_payloads.last(), Some(&card_payload()));
+
+    source
+        .scene
+        .tree
+        .end_pointer_drag(DragOutcome::Dropped, &mut source.log);
+    assert_eq!(source.log.ended_drags, [(source.card, DragOutcome::Dropped)]);
+    assert_eq!(source.scene.tree.dragged_payload(), None);
+    assert!(
+        !source.is_hovered(source.shelf) && !source.is_hovered(source.card),
+        "the pointer is over the other surface"
+    );
+
+    source.drag_card();
+    source
+        .scene
+        .tree
+        .end_pointer_drag(DragOutcome::Cancelled, &mut source.log);
+    assert_eq!(
+        source.log.ended_drags.last(),
+        Some(&(source.card, DragOutcome::Cancelled)),
+        "a drag no target of the other surface took is cancelled"
+    );
 }
 
 #[test]

@@ -18,7 +18,8 @@ use crate::transfer::payload::Payload;
 use crate::transfer::payload_type::PayloadType;
 
 /// Drag and drop: the drag sources and the drop targets of the tree, the drag a source hands
-/// to the system, and the drag of the system the host of the tree carries over its surface.
+/// to the system, and the drags that began outside the tree — of the system, or of another
+/// surface of the application — that the host of the tree carries over its surface.
 impl ElementTree {
     pub fn is_drag_source(&self, element: ElementId) -> bool {
         self.elements[element].is_drag_source()
@@ -87,9 +88,10 @@ impl ElementTree {
         }
     }
 
-    /// A drag of the system came over the surface at `position`, carrying `payload`: the
-    /// pointer hovers nothing until the drag is over. Returns whether a drop target takes the
-    /// drag there.
+    /// A drag that began outside the tree came over the surface at `position`, carrying
+    /// `payload`: a drag of the system, or of another surface of the application, which the
+    /// host carries over this one. The pointer hovers nothing until the drag is over. Returns
+    /// whether a drop target takes the drag there.
     pub fn system_drag_entered(
         &mut self,
         payload: Payload,
@@ -116,8 +118,8 @@ impl ElementTree {
         drag.move_to(hit, &input)
     }
 
-    /// The drag of the system moved to `position`. Returns whether a drop target takes it
-    /// there; nothing takes a drag the tree was not told came over the surface.
+    /// The drag that began outside the tree moved to `position`. Returns whether a drop target
+    /// takes it there; nothing takes a drag the tree was not told came over the surface.
     pub fn system_drag_moved(&mut self, position: Point, modifiers: Modifiers, handler: &mut dyn InputHandler) -> bool {
         if !self.follows_system_drag() {
             return false;
@@ -130,15 +132,15 @@ impl ElementTree {
         DragRouter { pointer: &mut pointer }.move_to(hit, &input)
     }
 
-    /// The drag of the system left the surface, or ended somewhere else.
+    /// The drag that began outside the tree left the surface, or ended somewhere else.
     pub fn system_drag_exited(&mut self, handler: &mut dyn InputHandler) {
         if self.follows_system_drag() {
             self.system_drag_exited_any(handler);
         }
     }
 
-    /// The drag of the system was dropped at `position`. Returns whether a drop target took
-    /// it; nothing takes a drag the tree was not told came over the surface.
+    /// The drag that began outside the tree was dropped at `position`. Returns whether a drop
+    /// target took it; nothing takes a drag the tree was not told came over the surface.
     pub fn system_drag_dropped(
         &mut self,
         position: Point,
@@ -174,17 +176,45 @@ impl ElementTree {
         .write(subtree, picture)
     }
 
-    /// Whether the pointer carries a drag across the surface.
-    pub(super) fn carries_surface_drag(&self) -> bool {
+    /// What the drag the pointer carries from a source of the tree carries; none while the
+    /// pointer drags nothing. A drag that began outside the tree is not the pointer's here.
+    pub fn pointer_drag(&self) -> Option<&Payload> {
         self.input
             .drag
             .as_ref()
-            .is_some_and(|drag| drag.reach == DragReach::Surface)
+            .filter(|drag| drag.reach == DragReach::Surface)
+            .map(|drag| &drag.payload)
+    }
+
+    /// The drag the pointer carries from a source of the tree ended over another surface of
+    /// the application: dropped there, or cancelled, as `outcome` tells. The target it is over
+    /// here hears that it left, its source how it ended, and the pointer, which is over the
+    /// other surface, hovers nothing here.
+    ///
+    /// # Panics
+    ///
+    /// When the pointer carries no drag from a source of the tree.
+    pub fn end_pointer_drag(&mut self, outcome: DragOutcome, handler: &mut dyn InputHandler) {
+        assert!(
+            self.pointer_drag().is_some(),
+            "the pointer carries a drag from a source of the tree"
+        );
+        let last_seen = PointerInput {
+            kind: PointerInputKind::Exited,
+            position: self.input.pointer.unwrap_or_default(),
+            modifiers: self.input.pointer_modifiers,
+        };
+        self.input.pointer = None;
+        let mut pointer = PointerRouter {
+            targets: self.pointer_targets(),
+            handler,
+        };
+        DragRouter { pointer: &mut pointer }.end_without_drop(outcome, None, &last_seen);
     }
 
     /// Cancels the drag the pointer carries, where the pointer is: the target it is over hears
     /// that it left, the source that it was cancelled, and the pointer hovers what it is over.
-    pub(super) fn cancel_surface_drag(&mut self, handler: &mut dyn InputHandler) {
+    pub(super) fn cancel_pointer_drag(&mut self, handler: &mut dyn InputHandler) {
         let (hit, kind, position) = match self.input.pointer {
             Some(position) => (self.element_at(position), PointerInputKind::Moved, position),
             None => (None, PointerInputKind::Exited, Point::default()),
@@ -198,7 +228,7 @@ impl ElementTree {
             targets: self.pointer_targets(),
             handler,
         };
-        DragRouter { pointer: &mut pointer }.cancel(hit, &input);
+        DragRouter { pointer: &mut pointer }.end_without_drop(DragOutcome::Cancelled, hit, &input);
     }
 
     fn follows_system_drag(&self) -> bool {

@@ -25,4 +25,12 @@ impl SurfaceId {
     pub const fn serial(self) -> u64 {
         ((self.generation as u64) << 32) | self.index as u64
     }
+
+    /// The handle [`serial`](Self::serial) gave out `serial` for.
+    pub const fn of_serial(serial: u64) -> Self {
+        Self {
+            index: (serial & 0xFFFF_FFFF) as u32,
+            generation: (serial >> 32) as u32,
+        }
+    }
 }

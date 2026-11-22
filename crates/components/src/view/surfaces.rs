@@ -1,3 +1,4 @@
+mod dragging;
 mod overlays;
 
 use morok_core::{ElementId, IconId};
@@ -5,6 +6,7 @@ use morok_reactive::{Runtime, Scope};
 use morok_style::{StyleSheet, Theme};
 
 use crate::kit_icon::KitIcon;
+use crate::view::carried_drag::CarriedDrag;
 use crate::view::mount::Mount;
 use crate::view::surface::Surface;
 use crate::view::surface_id::SurfaceId;
@@ -21,6 +23,8 @@ pub struct Surfaces {
     free_indices: Vec<u32>,
     /// The IDs of the icons of the kit, by [`KitIcon`]; empty until the host registers them.
     kit_icon_ids: Vec<IconId>,
+    /// The drag of the pointer while it is over another surface than its source's.
+    carried_drag: Option<CarriedDrag>,
 }
 
 impl Surfaces {
@@ -65,7 +69,8 @@ impl Surfaces {
 
     /// Closes the surface: the overlays opened over it are closed first, then everything
     /// mounted on it is disposed and its tree is dropped. The host of the surface an overlay
-    /// was opened over hears of it in the next frame of that surface.
+    /// was opened over hears of it in the next frame of that surface. A drag carried from the
+    /// surface over another one leaves that one.
     ///
     /// # Panics
     ///
@@ -74,6 +79,7 @@ impl Surfaces {
         while let Some(overlay) = self.first_overlay_of(surface) {
             self.close(runtime, overlay);
         }
+        self.forget_carried_drag_of(runtime, surface);
         let slot = &mut self.slots[surface.index()];
         assert_eq!(slot.generation, surface.generation(), "{CLOSED_SURFACE}");
         let closed = slot.surface.take().expect(CLOSED_SURFACE);

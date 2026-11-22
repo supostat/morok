@@ -90,16 +90,17 @@ impl DragRouter<'_, '_> {
 
     /// Ends the drag where nothing takes it: it left the surface for good.
     pub(crate) fn give_up(&mut self, input: &PointerInput) {
-        self.cancel(None, input);
+        self.end_without_drop(DragOutcome::Cancelled, None, input);
     }
 
-    /// Ends the drag over `hit` without a drop: the target it is over hears that it left, the
-    /// source that it was cancelled, and the pointer hovers `hit` again.
-    pub(crate) fn cancel(&mut self, hit: Option<ElementId>, input: &PointerInput) {
+    /// Ends the drag with no drop on this surface: cancelled, or dropped on another surface.
+    /// The target it is over hears that it left, the source how it ended, and the pointer
+    /// hovers `hit` again.
+    pub(crate) fn end_without_drop(&mut self, outcome: DragOutcome, hit: Option<ElementId>, input: &PointerInput) {
         if let Some(target) = self.target() {
             self.tell(target, input, DragEventKind::Left);
         }
-        self.end(DragOutcome::Cancelled, hit, input);
+        self.end(outcome, hit, input);
     }
 
     /// The drag is over. The source of a drag the pointer carried hears how it ended, and the

@@ -3,6 +3,7 @@
 //! signal that changes updates exactly the elements bound to it, and no component runs again.
 
 mod action;
+mod carried_drag;
 mod child_fragments;
 mod element_builder;
 mod element_event;

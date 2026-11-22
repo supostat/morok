@@ -32,8 +32,9 @@ impl KeyEvent {
         self.is_press() && !self.modifiers.intersects(Modifiers::COMMAND.union(Modifiers::CONTROL))
     }
 
-    /// Whether the press is Escape with no modifier, which cancels a drag under way.
-    pub(crate) fn cancels_drag(&self) -> bool {
+    /// Whether the press is Escape with no modifier held: what cancels a drag under way, and
+    /// dismisses what takes the keyboard for a while.
+    pub fn is_plain_escape(&self) -> bool {
         self.is_press() && self.key == Key::Escape && self.modifiers.is_empty()
     }
 

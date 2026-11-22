@@ -11,7 +11,8 @@ use morok_core::{
     OverlaySide, Payload, PayloadType, Point, PointerInput, Rect, ScrollInput, Size, TextCommand,
 };
 use morok_platform::{
-    FocusedText, OverlayId, OverlayRequest, PasteboardClipboard, SurfaceContent, SurfaceSettings, SystemDragRequest,
+    FocusedText, OverlayId, OverlayRequest, PasteboardClipboard, SurfaceContent, SurfaceKey, SurfaceSettings,
+    SystemDragRequest,
 };
 use morok_style::ColorScheme;
 
@@ -131,6 +132,27 @@ impl SurfaceContent for HostedSurface {
         };
         let state = &mut *state;
         state.surfaces.pointer_input(&mut state.runtime, self.surface, input);
+        Self::request_frame_for_queued_effects(state, self.surface);
+    }
+
+    /// The key of a surface is the serial of its handle.
+    fn surface_key(&self) -> Option<SurfaceKey> {
+        Some(SurfaceKey(self.surface.serial()))
+    }
+
+    fn pointer_input_over(&mut self, input: &PointerInput, under: SurfaceKey, position: Point) {
+        let Some(mut state) = state_while_open(&self.state, self.surface) else {
+            return;
+        };
+        let state = &mut *state;
+        let under = SurfaceId::of_serial(under.0);
+        if state.surfaces.contains(under) {
+            state
+                .surfaces
+                .pointer_input_over(&mut state.runtime, self.surface, input, under, position);
+        } else {
+            state.surfaces.pointer_input(&mut state.runtime, self.surface, input);
+        }
         Self::request_frame_for_queued_effects(state, self.surface);
     }
 

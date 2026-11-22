@@ -90,7 +90,23 @@ impl EventSource {
 
     /// The primary button goes down and up at a point of the surface.
     pub(crate) fn click(&self, at: Point) {
+        self.press(at);
+        self.release(at);
+    }
+
+    /// The primary button goes down at a point of the surface.
+    pub(crate) fn press(&self, at: Point) {
         self.mouse(NSEventType::LeftMouseDown, at);
+    }
+
+    /// The pointer moves with the primary button down to a point the surface measures, which
+    /// may lie outside the window.
+    pub(crate) fn drag_to(&self, at: Point) {
+        self.mouse(NSEventType::LeftMouseDragged, at);
+    }
+
+    /// The primary button comes up at a point the surface measures.
+    pub(crate) fn release(&self, at: Point) {
         self.mouse(NSEventType::LeftMouseUp, at);
     }
 

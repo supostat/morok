@@ -278,8 +278,19 @@ impl Surface {
         self.tree.system_drag_ended(source, outcome, &mut dispatch);
     }
 
-    /// A drag of the system came over the surface at `position`, carrying `payload`. Returns
-    /// whether a drop target takes it there.
+    /// The drag the pointer carries from a component of the surface ended over another
+    /// surface, dropped there or cancelled: the component hears how it ended.
+    pub(crate) fn end_pointer_drag(&mut self, runtime: &mut Runtime<Surfaces>, outcome: DragOutcome) {
+        let mut dispatch = EventDispatch {
+            handlers: &mut self.event_handlers,
+            runtime,
+        };
+        self.tree.end_pointer_drag(outcome, &mut dispatch);
+    }
+
+    /// A drag that began outside the surface — a drag of the system, or of another surface of
+    /// the application — came over it at `position`, carrying `payload`. Returns whether a
+    /// drop target takes it there.
     pub fn system_drag_entered(
         &mut self,
         runtime: &mut Runtime<Surfaces>,
@@ -295,8 +306,8 @@ impl Surface {
             .system_drag_entered(payload, position, modifiers, &mut dispatch)
     }
 
-    /// The drag of the system moved to `position`. Returns whether a drop target takes it
-    /// there.
+    /// The drag that began outside the surface moved to `position`. Returns whether a drop
+    /// target takes it there.
     pub fn system_drag_moved(
         &mut self,
         runtime: &mut Runtime<Surfaces>,
@@ -310,7 +321,7 @@ impl Surface {
         self.tree.system_drag_moved(position, modifiers, &mut dispatch)
     }
 
-    /// The drag of the system left the surface, or ended somewhere else.
+    /// The drag that began outside the surface left it, or ended somewhere else.
     pub fn system_drag_exited(&mut self, runtime: &mut Runtime<Surfaces>) {
         let mut dispatch = EventDispatch {
             handlers: &mut self.event_handlers,
@@ -319,8 +330,8 @@ impl Surface {
         self.tree.system_drag_exited(&mut dispatch);
     }
 
-    /// The drag of the system was dropped at `position`. Returns whether a drop target took
-    /// it.
+    /// The drag that began outside the surface was dropped at `position`. Returns whether a
+    /// drop target took it.
     pub fn system_drag_dropped(
         &mut self,
         runtime: &mut Runtime<Surfaces>,

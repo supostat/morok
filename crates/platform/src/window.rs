@@ -13,6 +13,7 @@ use objc2_foundation::{NSPoint, NSRect, NSSize, NSString};
 
 use crate::application::Application;
 use crate::canvas::canvas_painter::CanvasPainter;
+use crate::frame_image::FrameImage;
 use crate::frame_statistics::FrameStatistics;
 use crate::surface_content::SurfaceContent;
 use crate::surface_settings::SurfaceSettings;
@@ -103,6 +104,13 @@ impl<Content> Window<Content> {
 
     pub fn frame_statistics(&self) -> FrameStatistics {
         self.view.statistics()
+    }
+
+    /// The picture the window gave the system for the last drag it began there, read back from
+    /// the image the dragging session shows under the pointer: rows from the top, in device
+    /// pixels. None while the window has begun no drag with a picture.
+    pub fn handed_drag_picture(&self) -> Option<FrameImage> {
+        self.view.handed_drag_picture()
     }
 
     /// Names who draws the canvases of the window.

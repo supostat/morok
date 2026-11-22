@@ -15,16 +15,19 @@ use morok_platform::{Application, PasteboardClipboard, SurfaceContent, SystemDra
 use morok_style::{ColorScheme, States};
 use objc2::rc::Retained;
 use objc2::runtime::{AnyObject, NSObject};
-use objc2::{DefinedClass, MainThreadMarker, MainThreadOnly, define_class, msg_send};
+use objc2::{ClassType, DefinedClass, MainThreadMarker, MainThreadOnly, define_class, msg_send};
 use objc2_app_kit::{
-    NSApplication, NSDragOperation, NSEvent, NSEventModifierFlags, NSEventType, NSPasteboard, NSView, NSWindow,
+    NSApplication, NSDragOperation, NSDraggingContext, NSDraggingSession, NSEvent, NSEventModifierFlags, NSEventType,
+    NSPasteboard, NSPasteboardNameDrag, NSView, NSWindow,
 };
 use objc2_foundation::NSPoint;
 use support::{Expectations, WindowScene, run_main_loop};
 
 const BOARD: &str = ".board { position: relative; width: 320px; height: 200px; background-color: var(--color-paper); }\n\
-    .card { position: absolute; left: 20px; top: 20px; width: 80px; height: 40px; \
+    .tray { position: absolute; left: 20px; top: 30px; width: 80px; height: 40px; overflow: hidden; }\n\
+    .card { position: absolute; left: 0px; top: -10px; width: 80px; height: 40px; \
             background-color: var(--color-red); }\n\
+    .stripe { height: 6px; background-color: var(--color-blue); }\n\
     .bin { position: absolute; left: 180px; top: 20px; width: 120px; height: 160px; \
            background-color: var(--color-green); }\n\
     .bin:hover { background-color: var(--color-blue); }";
@@ -284,7 +287,8 @@ struct Stage {
 }
 
 impl Stage {
-    /// A window on a board with a card that is a drag source and a bin that takes files.
+    /// A window on a board with a card that is a drag source and a bin that takes files. The
+    /// card has a stripe along its top, and a tray around it hides the stripe on the surface.
     fn open(application: &Application, main_thread: MainThreadMarker) -> Self {
         let options = WindowOptions {
             title: String::from("morok: system drag"),
@@ -297,7 +301,9 @@ impl Stage {
             let scene = &mut window_scene.scene;
             let root = scene.root();
             scene.add_classes(root, &["board"]);
-            let card = scene.add(root, &["card"]);
+            let tray = scene.add(root, &["tray"]);
+            let card = scene.add(tray, &["card"]);
+            scene.add(card, &["stripe"]);
             let bin = scene.add(root, &["bin"]);
             scene.tree.set_drag_source(card, true);
             scene.tree.set_drop_types(bin, &[PayloadType::Files]);
@@ -499,10 +505,11 @@ impl Stage {
             .update(|scene| (scene.heard.dragged_sources.clone(), scene.handed_pictures.clone()));
         let card_box = Rect::new(20.0, 20.0, 80.0, 40.0);
         self.expectations.expect(
-            sources == [self.card] && pictures == [(Some(card_box), 1)],
-            "the window takes the drag of the card with the picture of the card alone",
+            sources == [self.card] && pictures == [(Some(card_box), 2)],
+            "the window takes the drag of the card with the picture of the card and its stripe alone",
             &format!("{sources:?}, {pictures:?}"),
         );
+        self.the_picture_shows_the_whole_card_the_right_way_up(card_box);
 
         // The system follows the mouse of the user from here on; the release it waits for is
         // put into the queue of the application.
@@ -518,6 +525,168 @@ impl Stage {
     }
 }
 
+impl Stage {
+    /// The image the dragging session was given shows the card whole: its red middle, and at
+    /// its top the blue stripe the tray hides on the surface, at the top of the image.
+    fn the_picture_shows_the_whole_card_the_right_way_up(&mut self, card_box: Rect) {
+        let Some(picture) = self.window.handed_drag_picture() else {
+            self.expectations
+                .expect(false, "the window gave the dragging session a picture", "none");
+            return;
+        };
+        let scale = self.window.scale();
+        let expected_size = (
+            (card_box.width * scale).round() as usize,
+            (card_box.height * scale).round() as usize,
+        );
+        let middle_column = picture.width / 2;
+        let (top, middle, bottom) = (
+            picture.pixel(middle_column, 0),
+            picture.pixel(middle_column, picture.height / 2),
+            picture.pixel(middle_column, picture.height - 1),
+        );
+        self.expectations.expect(
+            (picture.width, picture.height) == expected_size && top == BLUE && middle == RED && bottom == RED,
+            "the picture is the card at the scale of the screen: its stripe on top, though the tray hides it, \
+             and red below",
+            &format!(
+                "{}x{} for {expected_size:?}; top {top:?}, middle {middle:?}, bottom {bottom:?}",
+                picture.width, picture.height
+            ),
+        );
+    }
+
+    fn a_drag_of_files_out_of_the_application_offers_a_file_address_for_each_and_a_copy(&mut self) {
+        let folder = TemporaryFolder::new("out");
+        let carried = folder.files(&["report.txt", "notes.txt"]);
+        self.window.update(|scene| {
+            scene.heard.drag_start = Some(DragStart {
+                payload: Payload {
+                    files: carried.clone(),
+                    ..Payload::default()
+                },
+                reach: DragReach::System,
+            });
+        });
+        self.mouse(NSEventType::LeftMouseDown, ON_CARD);
+        self.mouse(NSEventType::LeftMouseDragged, DRAGGED);
+
+        // SAFETY: the name is a constant of AppKit.
+        let drag_pasteboard = NSPasteboard::pasteboardWithName(unsafe { NSPasteboardNameDrag });
+        let item_types: Vec<Vec<String>> = drag_pasteboard
+            .pasteboardItems()
+            .map(|items| items.to_vec())
+            .unwrap_or_default()
+            .iter()
+            .map(|item| item.types().to_vec().iter().map(ToString::to_string).collect())
+            .collect();
+        let read = PasteboardClipboard::of(drag_pasteboard).read(&[PayloadType::Files]);
+        self.expectations.expect(
+            item_types.len() == carried.len()
+                && item_types
+                    .iter()
+                    .all(|types| types.iter().any(|name| name == "public.file-url"))
+                && read.files == carried,
+            "the drag pasteboard holds a file address for each file the source carries",
+            &format!("{item_types:?}, {:?}", read.files),
+        );
+
+        let outside = self.offered_operations(NSDraggingContext::OutsideApplication);
+        let inside = self.offered_operations(NSDraggingContext::WithinApplication);
+        self.expectations.expect(
+            outside.contains(NSDragOperation::Copy) && inside == NSDragOperation::Generic,
+            "the source lets the Finder copy the files, and leaves a drop inside the application to its target",
+            &format!("outside {outside:?}, inside {inside:?}"),
+        );
+
+        let released = self.mouse_event(NSEventType::LeftMouseUp, DRAGGED);
+        NSApplication::sharedApplication(self.main_thread).postEvent_atStart(&released, false);
+        run_main_loop(DRAG_ENDING);
+    }
+
+    fn files_and_a_folder_from_the_finder_reach_the_bin(&mut self) {
+        let folder = TemporaryFolder::new("in");
+        let mut dropped = folder.files(&["invoice.pdf", "photo.jpg"]);
+        dropped.push(folder.folder("projects"));
+        let pasteboard = NSPasteboard::pasteboardWithUniqueName();
+        PasteboardClipboard::of(pasteboard.clone()).write(&Payload {
+            files: dropped.clone(),
+            ..Payload::default()
+        });
+        let drag = StagedDrag::new(self.main_thread, pasteboard.clone());
+        drag.ivars().offered.set(NSDragOperation::Every);
+        drag.move_to(OVER_BIN);
+
+        let answer = self.drag_came_over(&drag);
+        let was_taken = self.drag_dropped(&drag);
+        let taken = self.window.update(|scene| {
+            scene
+                .heard
+                .drag_events
+                .last()
+                .map(|(_, kind, payload)| (*kind, payload.files.clone()))
+        });
+        self.expectations.expect(
+            answer == NSDragOperation::Copy && was_taken && taken == Some((DragEventKind::Dropped, dropped.clone())),
+            "a drag the Finder offers every operation for is answered with a copy, and the bin takes every path",
+            &format!("{answer:?}, taken: {was_taken}, {taken:?}"),
+        );
+        // SAFETY: a pasteboard with a unique name is released once nothing reads it any more.
+        let (): () = unsafe { msg_send![&*pasteboard, releaseGlobally] };
+    }
+
+    /// What the view, as the source of a drag, lets the destination in `context` do with it.
+    fn offered_operations(&self, context: NSDraggingContext) -> NSDragOperation {
+        // SAFETY: a dragging session is made as any object is; the source reads nothing of it.
+        let session: Retained<NSDraggingSession> = unsafe { msg_send![NSDraggingSession::class(), new] };
+        // SAFETY: the view implements the method of a dragging source, which takes a session
+        // and a context and answers with the operations it allows.
+        unsafe { msg_send![&*self.view, draggingSession: &*session, sourceOperationMaskForDraggingContext: context] }
+    }
+}
+
+/// A folder of real files the test makes in the temporary folder of the system and removes
+/// when it is dropped.
+struct TemporaryFolder {
+    path: PathBuf,
+}
+
+impl TemporaryFolder {
+    fn new(name: &str) -> Self {
+        let path = std::env::temp_dir().join(format!("morok-system-drag-{}-{name}", std::process::id()));
+        std::fs::create_dir_all(&path).expect("the temporary folder is made");
+        Self { path }
+    }
+
+    /// Makes files of the names inside the folder.
+    fn files(&self, names: &[&str]) -> Vec<PathBuf> {
+        names
+            .iter()
+            .map(|name| {
+                let file = self.path.join(name);
+                std::fs::write(&file, name).expect("the file is written");
+                file
+            })
+            .collect()
+    }
+
+    /// Makes a folder of the name inside the folder.
+    fn folder(&self, name: &str) -> PathBuf {
+        let folder = self.path.join(name);
+        std::fs::create_dir_all(&folder).expect("the folder is made");
+        folder
+    }
+}
+
+impl Drop for TemporaryFolder {
+    fn drop(&mut self) {
+        std::fs::remove_dir_all(&self.path).expect("the temporary folder is removed");
+    }
+}
+
+const RED: [u8; 4] = [255, 0, 0, 255];
+const BLUE: [u8; 4] = [0, 0, 255, 255];
+
 fn main() -> ExitCode {
     let main_thread = MainThreadMarker::new().expect("the test runs on the main thread");
     let application = Application::new().expect("this Mac runs Metal 4");
@@ -529,6 +698,8 @@ fn main() -> ExitCode {
     stage.a_drag_that_leaves_is_over_for_the_tree();
     stage.the_answer_follows_where_the_drag_began_and_what_its_source_allows();
     stage.a_source_hands_its_drag_to_the_system_with_its_picture();
+    stage.a_drag_of_files_out_of_the_application_offers_a_file_address_for_each_and_a_copy();
+    stage.files_and_a_folder_from_the_finder_reach_the_bin();
 
     // SAFETY: a pasteboard with a unique name is released once nothing reads it any more.
     let (): () = unsafe { msg_send![&*stage.pasteboard, releaseGlobally] };

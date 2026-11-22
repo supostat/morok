@@ -8,8 +8,8 @@ use morok_components::view::{Mount, SurfaceId, Surfaces};
 use morok_core::accesskit::{Action, ActionData, ActionRequest, Node, NodeId, TreeId, TreeUpdate};
 use morok_core::{
     CaretLine, CaretLines, CaretStop, ElementId, ElementTree, FontId, FontMetrics, FontRequest, ItemRange, Key,
-    KeyEvent, KeyPhase, Modifiers, Point, PointerButton, PointerInput, PointerInputKind, Rect, ShapedGlyph, ShapedLine,
-    ShapedRun, ShapedText, Size, TextExtent, TextRequest, TextShaper,
+    KeyEvent, KeyPhase, Modifiers, OverlaySide, Point, PointerButton, PointerInput, PointerInputKind, Rect,
+    ShapedGlyph, ShapedLine, ShapedRun, ShapedText, Size, TextExtent, TextRequest, TextShaper,
 };
 use morok_reactive::Runtime;
 
@@ -198,6 +198,40 @@ impl Stage {
         self.frame_all_after(FRAME_INTERVAL);
     }
 
+    /// Runs one frame of another surface the stage opened, as the window that shows it would.
+    pub(crate) fn frame_surface(&mut self, surface: SurfaceId) {
+        self.frame_of(surface, VIEWPORT);
+    }
+
+    /// Where the stage placed the top left corner of an overlay opened over its surface, in
+    /// CSS pixels of that surface.
+    pub(crate) fn origin_of(&self, overlay: SurfaceId) -> Point {
+        let (_, corner) = self
+            .placement_of(overlay, Point::default())
+            .expect("the overlay has an anchor to be placed against");
+        corner
+    }
+
+    /// Where a window would place the overlay whose parent has its top left corner at
+    /// `parent_corner` of the screen: the side of its anchor, and the top left corner of the
+    /// overlay on the screen. None while its anchor has no box.
+    fn placement_of(&self, overlay: SurfaceId, parent_corner: Point) -> Option<(OverlaySide, Point)> {
+        let geometry = self.surfaces.overlay_geometry(overlay)?;
+        let anchor_on_screen = Rect {
+            x: geometry.anchor.x + parent_corner.x,
+            y: geometry.anchor.y + parent_corner.y,
+            ..geometry.anchor
+        };
+        let placed = geometry
+            .placement
+            .place(anchor_on_screen, geometry.panel.size(), SCREEN);
+        let corner = Point {
+            x: placed.frame.x - geometry.panel.x,
+            y: placed.frame.y - geometry.panel.y,
+        };
+        Some((placed.side, corner))
+    }
+
     /// Runs the frame of a surface that is open at the time of the stage.
     fn frame_of(&mut self, surface: SurfaceId, viewport: Size) {
         if !self.surfaces.contains(surface) {
@@ -228,27 +262,15 @@ impl Stage {
             if !self.surfaces.contains(overlay) {
                 continue;
             }
-            let Some(geometry) = self.surfaces.overlay_geometry(overlay) else {
+            let Some((side, corner)) = self.placement_of(overlay, parent_corner) else {
                 continue;
-            };
-            let anchor_on_screen = Rect {
-                x: geometry.anchor.x + parent_corner.x,
-                y: geometry.anchor.y + parent_corner.y,
-                ..geometry.anchor
-            };
-            let placed = geometry
-                .placement
-                .place(anchor_on_screen, geometry.panel.size(), SCREEN);
-            let corner = Point {
-                x: placed.frame.x - geometry.panel.x,
-                y: placed.frame.y - geometry.panel.y,
             };
             let corner_on_parent = Point {
                 x: corner.x - parent_corner.x,
                 y: corner.y - parent_corner.y,
             };
             self.surfaces
-                .overlay_placed(&mut self.runtime, overlay, placed.side, corner_on_parent);
+                .overlay_placed(&mut self.runtime, overlay, side, corner_on_parent);
             self.frame_overlays_of(overlay, corner);
         }
     }
@@ -287,6 +309,26 @@ impl Stage {
             modifiers: Modifiers::NONE,
         };
         self.surfaces.pointer_input(&mut self.runtime, surface, &input);
+    }
+
+    /// What the pointer did while a press on `surface` holds it and it is over `under`, at
+    /// `position` of `surface` and at `under_position` of `under`, as the host of `surface`
+    /// tells it.
+    pub(crate) fn pointer_over(
+        &mut self,
+        surface: SurfaceId,
+        kind: PointerInputKind,
+        position: Point,
+        under: SurfaceId,
+        under_position: Point,
+    ) {
+        let input = PointerInput {
+            kind,
+            position,
+            modifiers: Modifiers::NONE,
+        };
+        self.surfaces
+            .pointer_input_over(&mut self.runtime, surface, &input, under, under_position);
     }
 
     /// Presses and releases a button at a point of a surface.

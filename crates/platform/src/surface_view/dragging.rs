@@ -53,6 +53,7 @@ impl SurfaceView {
                 dragged
             })
             .collect();
+        self.ivars().handed_picture.replace(picture);
         self.beginDraggingSessionWithItems_event_source(
             &NSArray::from_retained_slice(&dragged),
             event,

@@ -5,11 +5,14 @@ use morok_style::Theme;
 use objc2::AnyThread;
 use objc2::rc::Retained;
 use objc2_app_kit::NSImage;
+use objc2_core_foundation::{CGPoint, CGRect, CGSize};
 use objc2_core_graphics::{
-    CGBitmapContextCreate, CGBitmapContextCreateImage, CGColorSpace, CGImageAlphaInfo, kCGColorSpaceSRGB,
+    CGBitmapContextCreate, CGBitmapContextCreateImage, CGColorSpace, CGContext, CGImage, CGImageAlphaInfo,
+    kCGColorSpaceSRGB,
 };
 use objc2_foundation::NSSize;
 
+use crate::frame_image::FrameImage;
 use crate::render::offscreen_target::OffscreenTarget;
 use crate::render::pixel_rect::PixelRect;
 use crate::render::renderer::Renderer;
@@ -79,5 +82,38 @@ impl DragPicture {
                 shown.height as f32 / geometry.scale,
             ),
         })
+    }
+
+    /// The pixels of the image as a drawing of it shows them: drawn whole into a bitmap of its
+    /// size in device pixels, rows from the top. None when the image gives nothing to draw.
+    pub(crate) fn read_back(&self) -> Option<FrameImage> {
+        // SAFETY: no rectangle, context or hints are given: the image hands over its best
+        // representation whole.
+        let drawn = unsafe {
+            self.image
+                .CGImageForProposedRect_context_hints(std::ptr::null_mut(), None, None)
+        }?;
+        let (width, height) = (CGImage::width(Some(&drawn)), CGImage::height(Some(&drawn)));
+        let row_length = width * BYTES_PER_PIXEL;
+        let mut pixels = vec![0; height * row_length];
+        // SAFETY: the name is a constant of Core Graphics.
+        let color_space = CGColorSpace::with_name(Some(unsafe { kCGColorSpaceSRGB }));
+        // SAFETY: the buffer holds `height` rows of `width` pixels of red, green, blue and
+        // alpha, premultiplied, and outlives the context, which is dropped before it is read.
+        let context = unsafe {
+            CGBitmapContextCreate(
+                pixels.as_mut_ptr().cast::<c_void>(),
+                width,
+                height,
+                BITS_PER_CHANNEL,
+                row_length,
+                color_space.as_deref(),
+                CGImageAlphaInfo::PremultipliedLast.0,
+            )
+        }?;
+        let whole = CGRect::new(CGPoint::ZERO, CGSize::new(width as f64, height as f64));
+        CGContext::draw_image(Some(&context), whole, Some(&drawn));
+        drop(context);
+        Some(FrameImage { width, height, pixels })
     }
 }

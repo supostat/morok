@@ -37,7 +37,8 @@ impl PointerRouter<'_> {
                 DragRouter { pointer: self }.pointer_input(input, hit);
                 return;
             }
-            // The system delivers no pointer input while it carries a drag: the drag is over.
+            // No pointer input reaches the surface while its host carries a drag over it: the
+            // drag is over.
             Some(DragReach::System) => DragRouter { pointer: self }.give_up(input),
             None => {}
         }

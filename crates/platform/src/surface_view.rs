@@ -9,17 +9,18 @@ use std::time::Duration;
 
 use dispatch2::{DispatchQueue, MainThreadBound};
 use morok_core::{
-    DisplayList, ElementTree, FrameScheduler, KeyPhase, PayloadType, PointerButton, PointerInputKind, Size, TextCommand,
+    DisplayList, ElementTree, FrameScheduler, KeyPhase, PayloadType, Point, PointerButton, PointerInputKind, Size,
+    TextCommand,
 };
 use morok_style::{ColorScheme, Theme};
 use objc2::rc::{Retained, Weak};
 use objc2::runtime::{AnyObject, NSObjectProtocol, ProtocolObject, Sel};
 use objc2::{AnyThread, DefinedClass, MainThreadMarker, MainThreadOnly, Message, define_class, msg_send, sel};
 use objc2_app_kit::{
-    NSAppearanceCustomization, NSApplicationDidResignActiveNotification, NSDragOperation, NSDraggingContext,
-    NSDraggingDestination, NSDraggingInfo, NSDraggingSession, NSDraggingSource, NSEvent, NSResponder,
-    NSTextInputClient, NSTrackingArea, NSTrackingAreaOptions, NSView, NSWindow, NSWindowDidBecomeKeyNotification,
-    NSWindowDidMoveNotification, NSWindowDidResignKeyNotification, NSWorkspace,
+    NSAppearanceCustomization, NSApplication, NSApplicationDidResignActiveNotification, NSDragOperation,
+    NSDraggingContext, NSDraggingDestination, NSDraggingInfo, NSDraggingSession, NSDraggingSource, NSEvent,
+    NSResponder, NSTextInputClient, NSTrackingArea, NSTrackingAreaOptions, NSView, NSWindow,
+    NSWindowDidBecomeKeyNotification, NSWindowDidMoveNotification, NSWindowDidResignKeyNotification, NSWorkspace,
     NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification,
 };
 use objc2_core_foundation::CGSize;
@@ -34,6 +35,8 @@ use objc2_quartz_core::{CADisplayLink, CALayer, CAMetalDrawable, CAMetalLayer};
 use crate::accessibility::surface_accessibility::SurfaceAccessibility;
 use crate::appearance::color_scheme_of;
 use crate::canvas::canvas_painter::CanvasPainter;
+use crate::drag_picture::DragPicture;
+use crate::frame_image::FrameImage;
 use crate::frame_loop::FrameLoop;
 use crate::frame_requester::FrameRequester;
 use crate::frame_statistics::FrameStatistics;
@@ -49,6 +52,7 @@ use crate::render::renderer::{PIXEL_FORMAT, Renderer};
 use crate::render::screen_target::ScreenTarget;
 use crate::render::target_geometry::TargetGeometry;
 use crate::surface_content::SurfaceContent;
+use crate::surface_key::SurfaceKey;
 use crate::surface_settings::SurfaceSettings;
 use key_routing::KeyRouting;
 
@@ -94,6 +98,8 @@ pub(crate) struct SurfaceState {
     drop_types: RefCell<Vec<PayloadType>>,
     /// The revision of the payload types of the content the system was asked with last.
     registered_drop_types: Cell<Option<u64>>,
+    /// The picture of the last drag the view began in the system.
+    handed_picture: RefCell<Option<DragPicture>>,
 }
 
 define_class!(
@@ -199,7 +205,14 @@ define_class!(
 
         #[unsafe(method(mouseUp:))]
         fn mouse_up(&self, event: &NSEvent) {
-            self.pointer_released(event, PointerButton::Primary);
+            let click_count = input_translation::click_count(event);
+            self.held_pointer_input(
+                event,
+                PointerInputKind::Released {
+                    button: PointerButton::Primary,
+                    click_count,
+                },
+            );
         }
 
         #[unsafe(method(rightMouseDown:))]
@@ -229,7 +242,7 @@ define_class!(
 
         #[unsafe(method(mouseDragged:))]
         fn mouse_dragged(&self, event: &NSEvent) {
-            self.pointer_input(event, PointerInputKind::Moved);
+            self.held_pointer_input(event, PointerInputKind::Moved);
             self.begin_requested_drag(event);
         }
 
@@ -475,6 +488,7 @@ impl SurfaceView {
             shown_menu_bar: Cell::new(None),
             drop_types: RefCell::new(Vec::new()),
             registered_drop_types: Cell::new(None),
+            handed_picture: RefCell::new(None),
             overlays: RefCell::new(Vec::new()),
             overlay_requests: RefCell::new(Vec::new()),
         };
@@ -589,6 +603,12 @@ impl SurfaceView {
         self.ivars().statistics.get()
     }
 
+    /// The pixels of the picture of the last drag the view began in the system, read back from
+    /// the image the dragging session was given.
+    pub(crate) fn handed_drag_picture(&self) -> Option<FrameImage> {
+        self.ivars().handed_picture.borrow().as_ref()?.read_back()
+    }
+
     pub(crate) fn renderer(&self) -> &Renderer {
         &self.ivars().renderer
     }
@@ -686,6 +706,49 @@ impl SurfaceView {
     fn pointer_input(&self, event: &NSEvent, kind: PointerInputKind) {
         let input = input_translation::pointer_input(self, event, kind);
         self.content().borrow_mut().pointer_input(&input);
+    }
+
+    /// What the pointer did while the primary button pressed on the view is down. `AppKit`
+    /// sends it here wherever the pointer is; over another surface of the application the
+    /// content is told that surface and the place of the pointer on it as well.
+    fn held_pointer_input(&self, event: &NSEvent, kind: PointerInputKind) {
+        let input = input_translation::pointer_input(self, event, kind);
+        match self.other_surface_under(event) {
+            Some((under, position)) => self.content().borrow_mut().pointer_input_over(&input, under, position),
+            None => self.content().borrow_mut().pointer_input(&input),
+        }
+    }
+
+    /// The surface of the application topmost under the pointer of `event`, with the place of
+    /// the pointer on it in its CSS pixels; none when that is the surface of this view, when
+    /// no surface of the application is there, and when its content takes nothing a pointer
+    /// brings from another surface. The topmost is the frontmost visible window of the
+    /// application whose frame holds the point and that takes the pointer: the windows of
+    /// other applications do not count.
+    fn other_surface_under(&self, event: &NSEvent) -> Option<(SurfaceKey, Point)> {
+        let window = self.window()?;
+        let on_screen = window.convertPointToScreen(event.locationInWindow());
+        let topmost = NSApplication::sharedApplication(self.mtm())
+            .orderedWindows()
+            .to_vec()
+            .into_iter()
+            .find(|candidate| {
+                candidate.isVisible() && !candidate.ignoresMouseEvents() && holds(candidate.frame(), on_screen)
+            })?;
+        let content_view = topmost.contentView()?;
+        let view = surface_view_of(&content_view)?;
+        if std::ptr::eq(Retained::as_ptr(&view), self) {
+            return None;
+        }
+        let key = view.content().borrow().surface_key()?;
+        let in_view = view.convertPoint_fromView(topmost.convertPointFromScreen(on_screen), None);
+        Some((
+            key,
+            Point {
+                x: in_view.x as f32,
+                y: in_view.y as f32,
+            },
+        ))
     }
 
     /// Returns whether the content used the key.
@@ -876,7 +939,7 @@ impl SurfaceView {
             .object()
             .and_then(|object| object.downcast::<NSWindow>().ok())
             .and_then(|window| window.contentView())
-            .is_some_and(|content_view| is_or_holds_surface_view(&content_view));
+            .is_some_and(|content_view| surface_view_of(&content_view).is_some());
         if !shows_surface {
             self.user_turned_away();
         }
@@ -912,13 +975,23 @@ impl SurfaceView {
     }
 }
 
-/// Whether the content view of a window is the view of a surface, or holds one over the
-/// blurred backdrop of the window.
-fn is_or_holds_surface_view(content_view: &NSView) -> bool {
-    content_view.downcast_ref::<SurfaceView>().is_some()
-        || content_view
-            .subviews()
-            .to_vec()
-            .iter()
-            .any(|subview| subview.downcast_ref::<SurfaceView>().is_some())
+/// Whether the point lies in the rectangle, on its left or bottom edge included.
+fn holds(rect: NSRect, point: NSPoint) -> bool {
+    point.x >= rect.origin.x
+        && point.x < rect.origin.x + rect.size.width
+        && point.y >= rect.origin.y
+        && point.y < rect.origin.y + rect.size.height
+}
+
+/// The view of a surface the content view of a window is, or holds over the blurred backdrop
+/// of the window.
+fn surface_view_of(content_view: &NSView) -> Option<Retained<SurfaceView>> {
+    if let Some(view) = content_view.downcast_ref::<SurfaceView>() {
+        return Some(view.retain());
+    }
+    content_view
+        .subviews()
+        .to_vec()
+        .into_iter()
+        .find_map(|subview| subview.downcast::<SurfaceView>().ok())
 }

@@ -7,10 +7,10 @@ use crate::transfer::payload::Payload;
 #[derive(Debug)]
 pub(crate) struct DragSession {
     pub(crate) payload: Payload,
-    /// Who carries the drag across the surface: the pointer input of the tree, or the system
-    /// through the host of the tree.
+    /// Who carries the drag across the surface: the pointer input of the tree for a drag of
+    /// one of its sources, or the host of the tree for a drag that began outside it.
     pub(crate) reach: DragReach,
-    /// The drag source the pointer drags; none for a drag of the system, and once the source
-    /// left the tree.
+    /// The drag source the pointer drags; none for a drag that began outside the tree, and
+    /// once the source left the tree.
     pub(crate) source: Option<ElementId>,
 }
