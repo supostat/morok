@@ -7,7 +7,7 @@ use morok_components::view::SurfaceId;
 use morok_components::{Button, Combobox, Select};
 use morok_core::accesskit::{Live, Role as AccessibleRole};
 use morok_core::{
-    ElementId, Key, Modifiers, OverlayAlignment, OverlayInput, OverlaySide, Point, PointerButton, PointerInputKind,
+    ElementId, Key, Modifiers, Offset, OverlayAlignment, OverlayInput, OverlaySide, PointerButton, PointerInputKind,
     Size,
 };
 use morok_reactive::Signal;
@@ -475,7 +475,7 @@ mod select {
         let tree = stage.tree_of(overlay);
         assert_eq!(
             (tree.border_box(viewport).height, tree.scroll_offset(viewport).y),
-            (8.0 * ROW_HEIGHT, 701.0 * ROW_HEIGHT - 8.0 * ROW_HEIGHT),
+            (8.0 * ROW_HEIGHT, f64::from(701.0 * ROW_HEIGHT - 8.0 * ROW_HEIGHT)),
             "the list shows eight rows at once, the chosen option the last of them"
         );
         let rows = rows_of(&stage, overlay);
@@ -505,9 +505,9 @@ mod select {
         assert_eq!(highlighted_in(&stage, overlay), ["Option 999"]);
         assert_eq!(
             stage.tree_of(overlay).scroll_offset(viewport),
-            Point {
+            Offset {
                 x: 0.0,
-                y: 1000.0 * ROW_HEIGHT - 8.0 * ROW_HEIGHT,
+                y: f64::from(1000.0 * ROW_HEIGHT - 8.0 * ROW_HEIGHT),
             }
         );
         assert!(press(&mut stage, Key::Enter));

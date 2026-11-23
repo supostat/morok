@@ -14,8 +14,8 @@ pub(crate) fn local_transform(element: &Element) -> Transform {
         return shift;
     }
     let border_box = &element.border_box;
-    let origin_x = border_box.x + element.style.effects.transform_origin_x.against(border_box.width);
-    let origin_y = border_box.y + element.style.effects.transform_origin_y.against(border_box.height);
+    let origin_x = f64::from(border_box.x + element.style.effects.transform_origin_x.against(border_box.width));
+    let origin_y = f64::from(border_box.y + element.style.effects.transform_origin_y.against(border_box.height));
     Transform::translation(-origin_x, -origin_y)
         .then(&transform_of(&element.lists.transform, border_box))
         .then(&Transform::translation(origin_x, origin_y))

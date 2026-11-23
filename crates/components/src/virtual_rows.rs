@@ -1,4 +1,4 @@
-use morok_core::{ElementId, Point};
+use morok_core::{ElementId, Offset};
 use morok_reactive::{Memo, Signal, Source};
 use morok_style::{Declaration, Position, Side};
 
@@ -107,8 +107,8 @@ impl VirtualRows {
                         .child(content)
                         .id();
                     mount.effect(move |runtime, tree| {
-                        let row_top = length_of(runtime.get(index), row_height);
-                        tree.set_displacement(slot_element, Point { x: 0.0, y: row_top });
+                        let row_top = top_of(runtime.get(index), row_height);
+                        tree.set_displacement(slot_element, Offset { x: 0.0, y: row_top });
                     });
                     slot_element
                 },
@@ -127,7 +127,7 @@ impl VirtualRows {
         } = self;
         let row = row.into();
         mount.effect(move |runtime, tree| {
-            let top = length_of(runtime.get(row), row_height);
+            let top = top_of(runtime.get(row), row_height);
             let area = runtime.untracked(|runtime| runtime.get(followed_area));
             let offset = area.offset.y;
             let height = area.viewport.height - covered_top;
@@ -136,17 +136,18 @@ impl VirtualRows {
                 runtime.get(followed_area);
                 return;
             }
+            let bottom = top + f64::from(row_height);
             let goal = if top < offset {
                 Some(top)
-            } else if top + row_height > offset + height {
-                Some(top + row_height - height)
+            } else if bottom > offset + f64::from(height) {
+                Some(bottom - f64::from(height))
             } else {
                 None
             };
             if let Some(goal) = goal {
                 tree.scroll_to(
                     frame.viewport,
-                    Point {
+                    Offset {
                         x: area.offset.x,
                         y: goal,
                     },
@@ -172,12 +173,18 @@ fn rows_in(length: f32, row_height: f32) -> usize {
     clippy::cast_sign_loss,
     reason = "a length on a surface is far below the largest count of rows and not negative"
 )]
-fn whole_rows_in(length: f32, row_height: f32) -> usize {
-    (length / row_height).floor() as usize
+fn whole_rows_in(length: f64, row_height: f32) -> usize {
+    (length / f64::from(row_height)).floor() as usize
 }
 
-/// How long `rows` rows of `row_height` are.
-#[expect(clippy::cast_precision_loss, reason = "lengths on a surface are single precision")]
+/// Where the row of the index begins along the content.
+#[expect(clippy::cast_precision_loss, reason = "a count of rows is far below 2^53")]
+fn top_of(row: usize, row_height: f32) -> f64 {
+    row as f64 * f64::from(row_height)
+}
+
+/// How long `rows` rows of `row_height` are, as layout takes a length.
+#[expect(clippy::cast_precision_loss, reason = "layout lengths are single precision")]
 fn length_of(rows: usize, row_height: f32) -> f32 {
     rows as f32 * row_height
 }

@@ -4,10 +4,12 @@ use morok_style::{Declaration, LengthPercentage, LengthPercentageAuto, Pixels};
 use super::ElementTree;
 use crate::dirty::Dirty;
 use crate::element_id::ElementId;
+use crate::geometry::offset::Offset;
 use crate::geometry::point::Point;
 use crate::geometry::rect::Rect;
 use crate::geometry::sides::Sides;
 use crate::geometry::size::Size;
+use crate::geometry::transform::Transform;
 use crate::input::key::Key;
 use crate::input::key_event::KeyEvent;
 use crate::input::key_phase::KeyPhase;
@@ -22,9 +24,9 @@ use crate::scroll::sticky_shift::StickyPlace;
 use crate::style::positioning::Positioning;
 
 /// How far an arrow key, or an assistive technology asking for an item, scrolls.
-const LINE_LENGTH: f32 = 40.0;
+const LINE_LENGTH: f64 = 40.0;
 /// The share of the viewport a page key, or an assistive technology asking for a page, scrolls.
-const PAGE_SHARE: f32 = 0.875;
+const PAGE_SHARE: f64 = 0.875;
 /// The shortest a thumb gets however long the content is.
 const SHORTEST_THUMB: f32 = 24.0;
 /// The spring that takes content pulled past a limit back to it.
@@ -44,7 +46,7 @@ impl ElementTree {
     /// # Panics
     ///
     /// When the element is not of the `Scroll` role.
-    pub fn scroll_offset(&self, element: ElementId) -> Point {
+    pub fn scroll_offset(&self, element: ElementId) -> Offset {
         self.scroll_state(element).offset
     }
 
@@ -54,7 +56,7 @@ impl ElementTree {
     /// # Panics
     ///
     /// When the element is not of the `Scroll` role.
-    pub fn scroll_limit(&self, element: ElementId) -> Point {
+    pub fn scroll_limit(&self, element: ElementId) -> Offset {
         self.scroll_state(element).limit
     }
 
@@ -64,7 +66,7 @@ impl ElementTree {
     /// # Panics
     ///
     /// When the element is not of the `Scroll` role.
-    pub fn scroll_to(&mut self, element: ElementId, offset: Point) {
+    pub fn scroll_to(&mut self, element: ElementId, offset: Offset) {
         self.stop_returns(element);
         let state = self.scroll_state_mut(element);
         state.is_in_gesture = false;
@@ -84,7 +86,7 @@ impl ElementTree {
         if let Some(previous) = self.scroll_state(element).bars {
             for thumb in [previous.vertical, previous.horizontal].into_iter().flatten() {
                 self.elements[thumb].is_scroll_thumb = false;
-                self.elements[thumb].shift = Point::default();
+                self.elements[thumb].shift = Offset::default();
             }
         }
         for thumb in [bars.vertical, bars.horizontal].into_iter().flatten() {
@@ -119,7 +121,7 @@ impl ElementTree {
 
     /// How far the last frame moved a scroll thumb along its bar; none for an element that is
     /// no thumb.
-    pub fn scroll_thumb_travel(&self, element: ElementId) -> Option<Point> {
+    pub fn scroll_thumb_travel(&self, element: ElementId) -> Option<Offset> {
         let element = &self.elements[element];
         element.is_scroll_thumb.then_some(element.shift)
     }
@@ -183,9 +185,9 @@ impl ElementTree {
             return false;
         };
         let state = self.scroll_state(scroller);
-        let page = state.viewport.height * PAGE_SHARE;
+        let page = f64::from(state.viewport.height) * PAGE_SHARE;
         let now = state.offset;
-        let by = |x: f32, y: f32| Point {
+        let by = |x: f64, y: f64| Offset {
             x: now.x + x,
             y: now.y + y,
         };
@@ -196,8 +198,8 @@ impl ElementTree {
             (Key::ArrowLeft, Modifiers::NONE) => by(-LINE_LENGTH, 0.0),
             (Key::PageDown | Key::Space, Modifiers::NONE) => by(0.0, page),
             (Key::PageUp, Modifiers::NONE) | (Key::Space, Modifiers::SHIFT) => by(0.0, -page),
-            (Key::Home, Modifiers::NONE) => Point { x: now.x, y: 0.0 },
-            (Key::End, Modifiers::NONE) => Point {
+            (Key::Home, Modifiers::NONE) => Offset { x: now.x, y: 0.0 },
+            (Key::End, Modifiers::NONE) => Offset {
                 x: now.x,
                 y: state.limit.y,
             },
@@ -222,28 +224,28 @@ impl ElementTree {
         let now = state.offset;
         let unit = |length: f32| match request.data {
             Some(ActionData::ScrollUnit(ScrollUnit::Item)) => LINE_LENGTH,
-            _ => length * PAGE_SHARE,
+            _ => f64::from(length) * PAGE_SHARE,
         };
         let goal = match (request.action, &request.data) {
-            (Action::ScrollDown, _) => Point {
+            (Action::ScrollDown, _) => Offset {
                 x: now.x,
                 y: now.y + unit(state.viewport.height),
             },
-            (Action::ScrollUp, _) => Point {
+            (Action::ScrollUp, _) => Offset {
                 x: now.x,
                 y: now.y - unit(state.viewport.height),
             },
-            (Action::ScrollRight, _) => Point {
+            (Action::ScrollRight, _) => Offset {
                 x: now.x + unit(state.viewport.width),
                 y: now.y,
             },
-            (Action::ScrollLeft, _) => Point {
+            (Action::ScrollLeft, _) => Offset {
                 x: now.x - unit(state.viewport.width),
                 y: now.y,
             },
-            (Action::SetScrollOffset, Some(ActionData::SetScrollOffset(offset))) => Point {
-                x: offset.x as f32,
-                y: offset.y as f32,
+            (Action::SetScrollOffset, Some(ActionData::SetScrollOffset(offset))) => Offset {
+                x: offset.x,
+                y: offset.y,
             },
             _ => return false,
         };
@@ -332,7 +334,7 @@ impl ElementTree {
 
     /// Moves the content of the `Scroll` element to `goal` within its limits at once. Returns
     /// whether it moved.
-    fn move_scroll(&mut self, scroller: ElementId, goal: Point) -> bool {
+    fn move_scroll(&mut self, scroller: ElementId, goal: Offset) -> bool {
         self.stop_returns(scroller);
         let state = self.scroll_state_mut(scroller);
         let before = state.offset;
@@ -387,14 +389,14 @@ impl ElementTree {
             width: layout.size.width - layout.border.left - layout.border.right,
             height: layout.size.height - layout.border.top - layout.border.bottom,
         };
-        let limit = Point {
+        let limit = Offset {
             x: if style.scrolls_horizontally() {
-                layout.scroll_width()
+                f64::from(layout.scroll_width())
             } else {
                 0.0
             },
             y: if style.scrolls_vertically() {
-                layout.scroll_height()
+                f64::from(layout.scroll_height())
             } else {
                 0.0
             },
@@ -412,10 +414,10 @@ impl ElementTree {
         let returned_y = return_y.map(|spring| self.spring_sample(spring));
         let state = self.scroll_state_mut(scroller);
         if let Some(sample) = returned_x {
-            state.offset.x = sample.value;
+            state.offset.x = state.returns_to.x + f64::from(sample.value);
         }
         if let Some(sample) = returned_y {
-            state.offset.y = sample.value;
+            state.offset.y = state.returns_to.y + f64::from(sample.value);
         }
         let settled_x = returned_x.filter(|sample| sample.is_settled).and(return_x);
         let settled_y = returned_y.filter(|sample| sample.is_settled).and(return_y);
@@ -439,13 +441,14 @@ impl ElementTree {
         let state = self.scroll_state(scroller);
         let offset = state.offset;
         let goal = state.clamped(offset);
-        let is_past = |offset: f32, limit: f32| offset < 0.0 || offset > limit;
+        let is_past = |offset: f64, limit: f64| offset < 0.0 || offset > limit;
         let (is_past_x, is_past_y) = (is_past(offset.x, state.limit.x), is_past(offset.y, state.limit.y));
-        let return_x = is_past_x.then(|| self.start_spring(RETURN_SPRING, offset.x, goal.x, 0.0));
-        let return_y = is_past_y.then(|| self.start_spring(RETURN_SPRING, offset.y, goal.y, 0.0));
+        let return_x = is_past_x.then(|| self.start_spring(RETURN_SPRING, distance_past(offset.x, goal.x), 0.0, 0.0));
+        let return_y = is_past_y.then(|| self.start_spring(RETURN_SPRING, distance_past(offset.y, goal.y), 0.0, 0.0));
         let state = self.scroll_state_mut(scroller);
         state.return_x = return_x;
         state.return_y = return_y;
+        state.returns_to = goal;
     }
 
     fn stop_returns(&mut self, scroller: ElementId) {
@@ -466,14 +469,14 @@ impl ElementTree {
             if self.elements[current].scroll.is_some() {
                 let port = padding_box(&self.elements[current]);
                 let state = self.scroll_state_mut(current);
-                let goal = Point {
+                let goal = Offset {
                     x: revealing_offset(shown.x, shown.right(), port.x, port.width, state.offset.x),
                     y: revealing_offset(shown.y, shown.bottom(), port.y, port.height, state.offset.y),
                 };
                 state.is_in_gesture = false;
                 state.move_to(goal);
                 let offset = state.offset;
-                shown = Rect::new(shown.x - offset.x, shown.y - offset.y, shown.width, shown.height);
+                shown = Transform::translation(-offset.x, -offset.y).bounds_of(&shown);
                 self.stop_returns(current);
             }
             shown = local_transform(&self.elements[current]).bounds_of(&shown);
@@ -485,8 +488,7 @@ impl ElementTree {
     /// it shows; an element that is sticky no more goes back to where layout placed it.
     fn place_sticky_descendants(&mut self, scroller: ElementId) {
         let port = padding_box(&self.elements[scroller]);
-        let offset = self.scroll_state(scroller).shown;
-        let scrollport = Rect::new(port.x + offset.x, port.y + offset.y, port.width, port.height);
+        let shown = self.scroll_state(scroller).shown;
         self.pending.clear();
         self.pending.extend(&self.elements[scroller].children);
         while let Some(id) = self.pending.pop() {
@@ -502,11 +504,12 @@ impl ElementTree {
                         left: element.layout.margin.left,
                     },
                     containing_block: content_box(parent),
-                    scrollport,
+                    port,
+                    offset: shown,
                 }
                 .shift(&element.style.layout.inset)
             } else {
-                Point::default()
+                Offset::default()
             };
             if element.scroll.is_none() {
                 self.pending.extend(&element.children);
@@ -538,25 +541,29 @@ impl ElementTree {
         lengthens
     }
 
-    fn place_thumb(&mut self, thumb: ElementId, axis: ThumbAxis, viewport: f32, limit: f32, offset: f32) -> bool {
+    fn place_thumb(&mut self, thumb: ElementId, axis: ThumbAxis, viewport: f32, limit: f64, offset: f64) -> bool {
         let bar = self.elements[thumb].parent.expect("a thumb lies on its bar");
         let track = content_box(&self.elements[bar]);
         let track_length = match axis {
             ThumbAxis::Vertical => track.height,
             ThumbAxis::Horizontal => track.width,
         };
-        let content_length = viewport + limit;
+        let content_length = f64::from(viewport) + limit;
         let (length, travel) = if limit > 0.0 && content_length > 0.0 {
-            let length = (track_length * viewport / content_length)
+            let shown_share = f64::from(viewport) / content_length;
+            let length = ((f64::from(track_length) * shown_share) as f32)
                 .max(SHORTEST_THUMB)
                 .min(track_length);
-            (length, (track_length - length) * (offset / limit).clamp(0.0, 1.0))
+            (
+                length,
+                f64::from(track_length - length) * (offset / limit).clamp(0.0, 1.0),
+            )
         } else {
             (0.0, 0.0)
         };
         let shift = match axis {
-            ThumbAxis::Vertical => Point { x: 0.0, y: travel },
-            ThumbAxis::Horizontal => Point { x: travel, y: 0.0 },
+            ThumbAxis::Vertical => Offset { x: 0.0, y: travel },
+            ThumbAxis::Horizontal => Offset { x: travel, y: 0.0 },
         };
         if self.elements[thumb].shift != shift {
             self.elements[thumb].shift = shift;
@@ -589,9 +596,10 @@ enum ThumbAxis {
 
 /// The offset of one axis that brings the extent from `start` to `end` into a viewport of
 /// `length` from `port_start` with as little a scroll as it takes.
-fn revealing_offset(start: f32, end: f32, port_start: f32, length: f32, offset: f32) -> f32 {
-    let visible_start = port_start + offset;
-    let visible_end = visible_start + length;
+fn revealing_offset(start: f32, end: f32, port_start: f32, length: f32, offset: f64) -> f64 {
+    let (start, end) = (f64::from(start), f64::from(end));
+    let visible_start = f64::from(port_start) + offset;
+    let visible_end = visible_start + f64::from(length);
     if start < visible_start {
         offset - (visible_start - start)
     } else if end > visible_end {
@@ -599,6 +607,12 @@ fn revealing_offset(start: f32, end: f32, port_start: f32, length: f32, offset: 
     } else {
         offset
     }
+}
+
+/// How far an offset lies past the edge a spring takes it back to: the rubber band never pulls
+/// content a viewport past its limit, so single precision holds the distance.
+fn distance_past(offset: f64, edge: f64) -> f32 {
+    (offset - edge) as f32
 }
 
 /// The padding box of an element as layout placed it.

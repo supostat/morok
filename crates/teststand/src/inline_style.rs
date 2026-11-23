@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use morok_core::Point;
+use morok_core::Offset;
 use morok_style::{Declaration, LengthPercentage, LengthPercentageAuto, Position, Side};
 
 /// The declarations set on an element directly, written as the value of its `style` attribute.
@@ -12,7 +12,7 @@ use morok_style::{Declaration, LengthPercentage, LengthPercentageAuto, Position,
 /// # Panics
 ///
 /// When a declaration is one the stand writes no CSS for, or refers to a token.
-pub(crate) fn style_attribute(declarations: &[Declaration], displacement: Option<Point>) -> String {
+pub(crate) fn style_attribute(declarations: &[Declaration], displacement: Option<Offset>) -> String {
     let mut style = String::new();
     for declaration in declarations {
         let (property, value) = match declaration {
@@ -99,7 +99,7 @@ fn css_length(value: &LengthPercentageAuto) -> String {
 mod tests {
     use std::borrow::Cow;
 
-    use morok_core::Point;
+    use morok_core::Offset;
     use morok_style::{Declaration, LengthPercentage, LengthPercentageAuto, Pixels, Side};
 
     use super::style_attribute;
@@ -129,7 +129,7 @@ mod tests {
 
     #[test]
     fn a_displacement_is_written_as_a_translation_after_the_declarations() {
-        let moved = Some(Point { x: 120.0, y: 52.0 });
+        let moved = Some(Offset { x: 120.0, y: 52.0 });
 
         assert_eq!(
             style_attribute(&[Declaration::Height(length(26.0, None))], moved),

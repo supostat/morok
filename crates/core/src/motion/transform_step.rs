@@ -95,9 +95,10 @@ pub(crate) fn transform_of(steps: &[TransformStep], border_box: &Rect) -> Transf
 /// The transform of the first item of `steps` and the number of steps it takes.
 fn item_transform(steps: &[TransformStep], border_box: &Rect) -> (Transform, usize) {
     let matrix = match steps[0] {
-        TransformStep::Translate(x, y) => {
-            Transform::translation(x.against(border_box.width), y.against(border_box.height))
-        }
+        TransformStep::Translate(x, y) => Transform::translation(
+            f64::from(x.against(border_box.width)),
+            f64::from(y.against(border_box.height)),
+        ),
         TransformStep::Scale(x, y) => Transform::scaling(x, y),
         TransformStep::Rotate(degrees) => Transform::rotation(degrees),
         TransformStep::Blend { progress, from, to } => {

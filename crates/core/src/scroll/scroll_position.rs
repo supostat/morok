@@ -1,10 +1,10 @@
-use crate::geometry::point::Point;
+use crate::geometry::offset::Offset;
 
 /// How far the content of a `Scroll` element is scrolled and how far it can be.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub(crate) struct ScrollPosition {
-    pub(crate) offset: Point,
-    pub(crate) limit: Point,
+    pub(crate) offset: Offset,
+    pub(crate) limit: Offset,
 }
 
 /// What the node of an element tells of scrolling.

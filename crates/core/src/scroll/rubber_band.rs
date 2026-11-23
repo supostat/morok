@@ -1,11 +1,11 @@
 /// How strongly the edge resists a gesture that pulls the content past its limit: the smaller,
 /// the stiffer.
-const RESISTANCE: f32 = 0.55;
+const RESISTANCE: f64 = 0.55;
 
 /// The offset an axis shows when a gesture would put it at `unresisted` without resistance:
 /// within `0..=limit` the same, past an end only as far as the rubber band lets it go, which
 /// never reaches `dimension`, the length of the viewport.
-pub(crate) fn shown_offset(unresisted: f32, limit: f32, dimension: f32) -> f32 {
+pub(crate) fn shown_offset(unresisted: f64, limit: f64, dimension: f64) -> f64 {
     if unresisted < 0.0 {
         -stretch(-unresisted, dimension)
     } else if unresisted > limit {
@@ -16,7 +16,7 @@ pub(crate) fn shown_offset(unresisted: f32, limit: f32, dimension: f32) -> f32 {
 }
 
 /// The unresisted offset that shows `shown`: the inverse of [`shown_offset`].
-pub(crate) fn unresisted_offset(shown: f32, limit: f32, dimension: f32) -> f32 {
+pub(crate) fn unresisted_offset(shown: f64, limit: f64, dimension: f64) -> f64 {
     if shown < 0.0 {
         -pull(-shown, dimension)
     } else if shown > limit {
@@ -27,7 +27,7 @@ pub(crate) fn unresisted_offset(shown: f32, limit: f32, dimension: f32) -> f32 {
 }
 
 /// How far past the end the content shows for a pull of `distance`.
-fn stretch(distance: f32, dimension: f32) -> f32 {
+fn stretch(distance: f64, dimension: f64) -> f64 {
     if dimension <= 0.0 {
         return 0.0;
     }
@@ -35,7 +35,7 @@ fn stretch(distance: f32, dimension: f32) -> f32 {
 }
 
 /// The pull that shows the content `stretched` past the end.
-fn pull(stretched: f32, dimension: f32) -> f32 {
+fn pull(stretched: f64, dimension: f64) -> f64 {
     if dimension <= 0.0 {
         return 0.0;
     }
@@ -44,7 +44,7 @@ fn pull(stretched: f32, dimension: f32) -> f32 {
 }
 
 /// The farthest a stretch is taken back from: the rubber band only nears the whole viewport.
-const MOST_OF_THE_VIEWPORT: f32 = 0.99;
+const MOST_OF_THE_VIEWPORT: f64 = 0.99;
 
 #[cfg(test)]
 mod tests {

@@ -1,24 +1,26 @@
-use crate::geometry::point::Point;
+use crate::geometry::offset::Offset;
 use crate::geometry::rect::Rect;
 use crate::geometry::sides::Sides;
 use crate::style::resolved_length_or_auto::ResolvedLengthOrAuto;
 
 /// Where a sticky element stands against the scroll of its nearest `Scroll` ancestor: its box
-/// as layout placed it, its margins, the content box of its parent, which it never leaves, and
-/// the scrollport — the padding box of the `Scroll` element — in the coordinates of the content.
+/// as layout placed it, its margins, the content box of its parent, which it never leaves, the
+/// padding box of the `Scroll` element as layout placed it, and how far that element's content
+/// is scrolled.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct StickyPlace {
     pub(crate) border_box: Rect,
     pub(crate) margin: Sides<f32>,
     pub(crate) containing_block: Rect,
-    pub(crate) scrollport: Rect,
+    pub(crate) port: Rect,
+    pub(crate) offset: Offset,
 }
 
 impl StickyPlace {
     /// How far the element moves so that each edge with an inset stays that far inside the
     /// scrollport, as far as its margin box stays inside its containing block.
-    pub(crate) fn shift(&self, insets: &Sides<ResolvedLengthOrAuto>) -> Point {
-        Point {
+    pub(crate) fn shift(&self, insets: &Sides<ResolvedLengthOrAuto>) -> Offset {
+        Offset {
             x: axis_shift(
                 AxisSpan {
                     start: self.border_box.x,
@@ -27,7 +29,8 @@ impl StickyPlace {
                     margin_end: self.margin.right,
                 },
                 (self.containing_block.x, self.containing_block.right()),
-                (self.scrollport.x, self.scrollport.right()),
+                f64::from(self.port.x) + self.offset.x,
+                self.port.width,
                 (insets.left, insets.right),
             ),
             y: axis_shift(
@@ -38,7 +41,8 @@ impl StickyPlace {
                     margin_end: self.margin.bottom,
                 },
                 (self.containing_block.y, self.containing_block.bottom()),
-                (self.scrollport.y, self.scrollport.bottom()),
+                f64::from(self.port.y) + self.offset.y,
+                self.port.height,
                 (insets.top, insets.bottom),
             ),
         }
@@ -54,24 +58,27 @@ struct AxisSpan {
     margin_end: f32,
 }
 
+/// The shift along one axis of a scrollport `port_length` long that begins at `port_start` in
+/// the coordinates of the content.
 fn axis_shift(
     span: AxisSpan,
     (block_start, block_end): (f32, f32),
-    (port_start, port_end): (f32, f32),
+    port_start: f64,
+    port_length: f32,
     (start_inset, end_inset): (ResolvedLengthOrAuto, ResolvedLengthOrAuto),
-) -> f32 {
-    let port_length = port_end - port_start;
+) -> f64 {
+    let port_end = port_start + f64::from(port_length);
     let mut shift = 0.0;
     if let ResolvedLengthOrAuto::Length(inset) = start_inset {
-        let behind = port_start + inset.against(port_length) - span.start;
-        let room = block_end - (span.end + span.margin_end);
+        let behind = port_start + f64::from(inset.against(port_length)) - f64::from(span.start);
+        let room = f64::from(block_end - (span.end + span.margin_end));
         if behind > 0.0 {
             shift += behind.min(room.max(0.0));
         }
     }
     if let ResolvedLengthOrAuto::Length(inset) = end_inset {
-        let ahead = span.end + shift - (port_end - inset.against(port_length));
-        let room = span.start - span.margin_start - block_start;
+        let ahead = f64::from(span.end) + shift - (port_end - f64::from(inset.against(port_length)));
+        let room = f64::from(span.start - span.margin_start - block_start);
         if ahead > 0.0 {
             shift -= ahead.min(room.max(0.0));
         }

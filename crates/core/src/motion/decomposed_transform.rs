@@ -25,8 +25,8 @@ impl DecomposedTransform {
         let (cosine, sine) = (a / scale_x, b / scale_x);
         let scale_y = -sine * c + cosine * d;
         Some(Self {
-            translate_x: f64::from(transform.tx),
-            translate_y: f64::from(transform.ty),
+            translate_x: transform.tx,
+            translate_y: transform.ty,
             angle: sine.atan2(cosine).to_degrees(),
             skew: (cosine * c + sine * d) / scale_y,
             scale_x,
@@ -62,8 +62,8 @@ impl DecomposedTransform {
             b: (sine * self.scale_x) as f32,
             c: (cosine * skewed_x - sine * self.scale_y) as f32,
             d: (sine * skewed_x + cosine * self.scale_y) as f32,
-            tx: self.translate_x as f32,
-            ty: self.translate_y as f32,
+            tx: self.translate_x,
+            ty: self.translate_y,
         }
     }
 }
@@ -74,16 +74,16 @@ mod tests {
     use crate::geometry::transform::Transform;
 
     fn assert_near(actual: Transform, expected: Transform) {
-        let pairs = [
+        let linear = [
             (actual.a, expected.a),
             (actual.b, expected.b),
             (actual.c, expected.c),
             (actual.d, expected.d),
-            (actual.tx, expected.tx),
-            (actual.ty, expected.ty),
         ];
+        let translation = [(actual.tx, expected.tx), (actual.ty, expected.ty)];
         assert!(
-            pairs.iter().all(|(left, right)| (left - right).abs() < 1e-4),
+            linear.iter().all(|(left, right)| (left - right).abs() < 1e-4)
+                && translation.iter().all(|(left, right)| (left - right).abs() < 1e-4),
             "{actual:?} is not {expected:?}"
         );
     }

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use morok_components::view::{Mount, SurfaceId, Surfaces};
-use morok_core::{CanvasId, ElementId, ElementTree, Point, Rect, Role, Size, TextSelection, TextShaper};
+use morok_core::{CanvasId, ElementId, ElementTree, Offset, Rect, Role, Size, TextSelection, TextShaper};
 use morok_reactive::Runtime;
 use morok_style::{States, StyleSheet, Theme};
 
@@ -27,7 +27,7 @@ pub struct Scene {
     /// The images of the scene with the elements that show them.
     images: Vec<(ElementId, ImageSource)>,
     /// The `Scroll` elements the case scrolls, with the offsets it asks for.
-    scroll_offsets: Vec<(ElementId, Point)>,
+    scroll_offsets: Vec<(ElementId, Offset)>,
     /// The canvases of the scene with the shapes they are filled with.
     canvases: Vec<(CanvasId, Vec<CanvasShape>)>,
 }
@@ -146,18 +146,18 @@ impl Scene {
 
     /// Scrolls a `Scroll` element to the offset; both sides keep it within the limits of the
     /// content.
-    pub fn scroll_to(&mut self, element: ElementId, offset: Point) {
+    pub fn scroll_to(&mut self, element: ElementId, offset: Offset) {
         self.scroll_offsets.retain(|(scrolled, _)| *scrolled != element);
         self.scroll_offsets.push((element, offset));
         self.tree_mut().scroll_to(element, offset);
     }
 
     /// The offset the case asked a `Scroll` element to be scrolled to; none asked is the start.
-    pub(crate) fn scroll_offset_asked(&self, element: ElementId) -> Point {
+    pub(crate) fn scroll_offset_asked(&self, element: ElementId) -> Offset {
         self.scroll_offsets
             .iter()
             .find(|(scrolled, _)| *scrolled == element)
-            .map_or(Point::default(), |(_, offset)| *offset)
+            .map_or(Offset::default(), |(_, offset)| *offset)
     }
 
     /// Puts the element in the given states.

@@ -43,6 +43,7 @@ pub use element_id::ElementId;
 pub use element_tree::ElementTree;
 pub use frame_scheduler::FrameScheduler;
 pub use geometry::corners::Corners;
+pub use geometry::offset::Offset;
 pub use geometry::point::Point;
 pub use geometry::rect::Rect;
 pub use geometry::sides::Sides;

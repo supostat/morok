@@ -3,7 +3,7 @@ mod support;
 use std::borrow::Cow;
 
 use morok_components::{List, RowSelection};
-use morok_core::{ElementId, Point, ScrollInput, ScrollPhase};
+use morok_core::{DisplayItem, ElementId, Offset, Point, ScrollInput, ScrollPhase};
 use morok_style::{Declaration, LengthPercentage, LengthPercentageAuto, Pixels};
 use support::Stage;
 
@@ -84,15 +84,61 @@ impl MillionRows {
 
     /// Scrolls the content to `offset` and runs the frames that show it: one that finds the
     /// limits and one whose rows follow the offset.
-    fn scroll_to(&mut self, offset: f32) {
+    fn scroll_to(&mut self, offset: f64) {
         let viewport = self.viewport;
         self.stage
             .surfaces
             .surface_mut(self.stage.surface)
             .tree_mut()
-            .scroll_to(viewport, Point { x: 0.0, y: offset });
+            .scroll_to(viewport, Offset { x: 0.0, y: offset });
         self.stage.frame();
         self.stage.frame();
+    }
+
+    /// Turns the wheel over the list by `delta` pixels down and runs the frame that shows it.
+    fn wheel(&mut self, delta: f32) {
+        self.stage
+            .surfaces
+            .surface_mut(self.stage.surface)
+            .scroll_input(&ScrollInput {
+                position: Point { x: 100.0, y: 100.0 },
+                delta: Point { x: 0.0, y: delta },
+                phase: ScrollPhase::Discrete,
+            });
+        self.stage.frame();
+    }
+
+    /// How far down the display list moves each slot, in the order it paints them: what the
+    /// renderer is given. Every slot is laid out in the same box.
+    fn painted_slot_shifts(&self) -> Vec<f64> {
+        let tree = self.stage.tree();
+        let laid_out = tree.border_box(self.slots()[0]);
+        tree.display_list()
+            .items()
+            .iter()
+            .filter_map(|item| match item {
+                DisplayItem::PushGroup { effects } if effects.frame.border_box == laid_out => {
+                    Some(effects.transform.ty)
+                }
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// The text of every row the viewport shows, with where the top of its slot lies on the
+    /// surface.
+    fn row_tops_in_view(&self) -> Vec<(String, f32)> {
+        let tree = self.stage.tree();
+        let viewport = tree.surface_box(self.viewport);
+        self.slots()
+            .into_iter()
+            .filter_map(|slot| {
+                let place = tree.surface_box(slot);
+                let row = tree.children(slot)[0];
+                (place.bottom() > viewport.y && place.y < viewport.bottom())
+                    .then(|| (tree.text(tree.children(row)[0]).to_owned(), place.y))
+            })
+            .collect()
     }
 
     /// Whether a row stands in a slot the surface shows where its row lies along the content.
@@ -141,7 +187,10 @@ fn a_scroll_of_one_row_binds_one_slot_to_the_row_that_came_into_view() {
         });
     assert_eq!(
         list.stage.tree().scroll_offset(list.viewport),
-        Point { x: 0.0, y: ROW_HEIGHT },
+        Offset {
+            x: 0.0,
+            y: f64::from(ROW_HEIGHT)
+        },
         "the wheel over the list scrolls it"
     );
     list.stage.frame();
@@ -160,15 +209,60 @@ fn deep_in_the_rows_and_at_their_end_the_same_slots_show_the_rows_in_view() {
     let slots = list.slots();
     let elements = list.element_count();
 
-    list.scroll_to(500_000.0 * ROW_HEIGHT);
+    list.scroll_to(500_000.0 * f64::from(ROW_HEIGHT));
     assert_eq!(list.slots(), slots);
     assert_eq!(list.element_count(), elements);
     assert!((500_000..500_010).all(|index| list.shows_row_in_place(index)));
 
-    list.scroll_to(ROWS as f32 * ROW_HEIGHT);
+    list.scroll_to(ROWS as f64 * f64::from(ROW_HEIGHT));
     assert_eq!(list.slots(), slots);
     assert!(list.shows_row_in_place(ROWS - 1), "the last row is in view");
     assert_eq!(list.element_count(), elements);
+}
+
+#[test]
+fn far_down_a_one_pixel_scroll_moves_the_rows_in_view_by_one_pixel() {
+    let mut list = MillionRows::new(280.0);
+    let odd_far_down = 16_777_217.0;
+    list.scroll_to(odd_far_down);
+    assert_eq!(
+        list.stage.tree().scroll_offset(list.viewport),
+        Offset {
+            x: 0.0,
+            y: odd_far_down
+        },
+        "2^24 + 1, which single precision rounds to 2^24"
+    );
+
+    for _ in 0..3 {
+        let before = list.row_tops_in_view();
+        let painted_before = list.painted_slot_shifts();
+        list.wheel(1.0);
+        let after = list.row_tops_in_view();
+        let painted_after = list.painted_slot_shifts();
+
+        assert_eq!(painted_after.len(), list.slots().len());
+        assert!(
+            painted_before
+                .iter()
+                .zip(&painted_after)
+                .all(|(before, after)| (before - after).to_bits() == 1.0_f64.to_bits()),
+            "the renderer is given every slot one pixel higher: {painted_before:?} then {painted_after:?}"
+        );
+
+        let moved: Vec<(&String, f32)> = after
+            .iter()
+            .filter_map(|(row, top)| {
+                let (_, top_before) = before.iter().find(|(shown, _)| shown == row)?;
+                Some((row, top_before - top))
+            })
+            .collect();
+        assert!(moved.len() >= 10, "the rows in view stay in view: {moved:?}");
+        assert!(
+            moved.iter().all(|(_, by)| by.to_bits() == 1.0_f32.to_bits()),
+            "every row moves up by one pixel: {moved:?}"
+        );
+    }
 }
 
 #[test]

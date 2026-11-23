@@ -1,5 +1,5 @@
 use morok_components::ScrollView;
-use morok_core::{ElementId, Point, Size};
+use morok_core::{ElementId, Offset, Size};
 use morok_css::SourceFile;
 use morok_style::States;
 
@@ -82,7 +82,7 @@ fn list_offsets(scene: &mut Scene) {
         let (viewport, content) = view(scene, stage);
         let list = scene.add(content, &["list"]);
         rows(scene, list, 1, 10, &["list-row"]);
-        scene.scroll_to(viewport, Point { x: 0.0, y: offset });
+        scene.scroll_to(viewport, Offset { x: 0.0, y: offset });
     }
 }
 
@@ -96,16 +96,16 @@ fn sticky_sections(scene: &mut Scene) {
             scene.add_text(header, &[], &format!("Section {section}"));
             rows(scene, list, section * 10 + 1, 3, &["list-row"]);
         }
-        scene.scroll_to(viewport, Point { x: 0.0, y: offset });
+        scene.scroll_to(viewport, Offset { x: 0.0, y: offset });
     }
 }
 
 fn wide_rows(scene: &mut Scene) {
     let stage = stage(scene);
     for offset in [
-        Point { x: 0.0, y: 0.0 },
-        Point { x: 120.0, y: 30.0 },
-        Point { x: 400.0, y: 400.0 },
+        Offset { x: 0.0, y: 0.0 },
+        Offset { x: 120.0, y: 30.0 },
+        Offset { x: 400.0, y: 400.0 },
     ] {
         let (viewport, content) = view(scene, stage);
         let list = scene.add(content, &["list"]);

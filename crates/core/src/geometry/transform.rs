@@ -2,15 +2,17 @@ use crate::geometry::point::Point;
 use crate::geometry::rect::Rect;
 
 /// A 2D affine transform in CSS pixels, as CSS `matrix(a, b, c, d, tx, ty)` writes it:
-/// a point `(x, y)` maps to `(a·x + c·y + tx, b·x + d·y + ty)`.
+/// a point `(x, y)` maps to `(a·x + c·y + tx, b·x + d·y + ty)`. The translation is in double
+/// precision, so that the scroll of a long content and the displacement of what lies far down
+/// it cancel out to the pixel.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Transform {
     pub a: f32,
     pub b: f32,
     pub c: f32,
     pub d: f32,
-    pub tx: f32,
-    pub ty: f32,
+    pub tx: f64,
+    pub ty: f64,
 }
 
 impl Transform {
@@ -23,7 +25,7 @@ impl Transform {
         ty: 0.0,
     };
 
-    pub const fn translation(x: f32, y: f32) -> Self {
+    pub const fn translation(x: f64, y: f64) -> Self {
         Self {
             tx: x,
             ty: y,
@@ -63,15 +65,15 @@ impl Transform {
             b: next.b * self.a + next.d * self.b,
             c: next.a * self.c + next.c * self.d,
             d: next.b * self.c + next.d * self.d,
-            tx: next.a * self.tx + next.c * self.ty + next.tx,
-            ty: next.b * self.tx + next.d * self.ty + next.ty,
+            tx: f64::from(next.a) * self.tx + f64::from(next.c) * self.ty + next.tx,
+            ty: f64::from(next.b) * self.tx + f64::from(next.d) * self.ty + next.ty,
         }
     }
 
     pub fn apply(&self, point: Point) -> Point {
         Point {
-            x: self.a * point.x + self.c * point.y + self.tx,
-            y: self.b * point.x + self.d * point.y + self.ty,
+            x: surface_coordinate(f64::from(self.a * point.x + self.c * point.y) + self.tx),
+            y: surface_coordinate(f64::from(self.b * point.x + self.d * point.y) + self.ty),
         }
     }
 
@@ -118,10 +120,19 @@ impl Transform {
             b,
             c,
             d,
-            tx: -(a * self.tx + c * self.ty),
-            ty: -(b * self.tx + d * self.ty),
+            tx: -(f64::from(a) * self.tx + f64::from(c) * self.ty),
+            ty: -(f64::from(b) * self.tx + f64::from(d) * self.ty),
         })
     }
+}
+
+/// A coordinate in single precision, as boxes and points are.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "boxes and points are single precision; only the translation is double"
+)]
+fn surface_coordinate(coordinate: f64) -> f32 {
+    coordinate as f32
 }
 
 #[cfg(test)]
@@ -176,6 +187,14 @@ mod tests {
             .apply(transform.apply(point));
 
         assert_near(back, point);
+    }
+
+    #[test]
+    fn translations_far_from_the_origin_cancel_out_to_the_pixel() {
+        let far_down = 16_777_217.0;
+        let back_up = Transform::translation(0.0, far_down).then(&Transform::translation(0.0, 9.0 - far_down));
+
+        assert_eq!(back_up.apply(Point { x: 0.0, y: 1.0 }), Point { x: 0.0, y: 10.0 });
     }
 
     #[test]

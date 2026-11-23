@@ -6,7 +6,7 @@ use morok_components::ScrollView;
 use morok_components::styles::CLASSES;
 use morok_components::view::Mount;
 use morok_core::accesskit::Role as AccessibleRole;
-use morok_core::{ElementId, Point, ScrollInput, ScrollPhase};
+use morok_core::{ElementId, Offset, Point, ScrollInput, ScrollPhase};
 use morok_style::{Declaration, Display, FlexDirection, LengthPercentage, LengthPercentageAuto, Pixels};
 use support::Stage;
 
@@ -62,7 +62,7 @@ fn a_scroll_view_is_a_viewport_with_a_bar_of_each_axis_whose_thumbs_the_tree_mov
     let bars = tree.scroll_bars(viewport).expect("the view gives its viewport bars");
     assert_eq!(bars.vertical, Some(tree.children(vertical)[0]));
     assert_eq!(bars.horizontal, Some(tree.children(horizontal)[0]));
-    assert_eq!(tree.scroll_limit(viewport), Point { x: 0.0, y: 300.0 });
+    assert_eq!(tree.scroll_limit(viewport), Offset { x: 0.0, y: 300.0 });
     let node = stage.accessible_node(viewport);
     assert_eq!((node.role(), node.label()), (AccessibleRole::ScrollView, Some("Files")));
 }
@@ -84,7 +84,7 @@ fn the_wheel_over_the_view_scrolls_its_content_and_shows_the_thumb_while_it_move
     });
     stage.frame();
 
-    assert_eq!(stage.tree().scroll_offset(viewport), Point { x: 0.0, y: 150.0 });
+    assert_eq!(stage.tree().scroll_offset(viewport), Offset { x: 0.0, y: 150.0 });
     assert!(stage.tree().classes(thumb).contains(&CLASSES.showing));
     stage.frame();
     stage.frame();

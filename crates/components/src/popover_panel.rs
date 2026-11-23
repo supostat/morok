@@ -1,5 +1,5 @@
 use morok_core::accesskit::Role as AccessibleRole;
-use morok_core::{ElementId, ElementTree, OverlaySide, Point};
+use morok_core::{ElementId, ElementTree, Offset, OverlaySide};
 
 use crate::panel_content::PanelContent;
 use crate::styles::CLASSES;
@@ -78,6 +78,12 @@ fn point_back_at_anchor(tree: &mut ElementTree, arrow: ElementId, edge_shift: f3
         (arrow_box.x - edge_shift).min(last).max(first) - arrow_box.x
     };
     if moved_by != 0.0 || tree.displacement(arrow).is_some() {
-        tree.set_displacement(arrow, Point { x: moved_by, y: 0.0 });
+        tree.set_displacement(
+            arrow,
+            Offset {
+                x: f64::from(moved_by),
+                y: 0.0,
+            },
+        );
     }
 }

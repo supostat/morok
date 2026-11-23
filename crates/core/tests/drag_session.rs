@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use morok_core::{
     CustomData, DisplayItem, DisplayList, DragEventKind, DragOutcome, DragReach, DragStart, ElementId, Focusability,
-    Key, KeyChord, Modifiers, Payload, PayloadType, Point, PointerEventKind, PointerInputKind, Rect, Role,
+    Key, KeyChord, Modifiers, Offset, Payload, PayloadType, Point, PointerEventKind, PointerInputKind, Rect, Role,
     ShortcutScope, SystemDrag, TextSelection,
 };
 use morok_style::States;
@@ -769,7 +769,7 @@ fn the_picture_of_a_subtree_holds_the_part_the_clip_of_an_ancestor_hides() {
     let entries: Vec<ElementId> = (0..5).map(|_| scene.add(list, Role::Element, &["entry"])).collect();
     let badge = scene.add(entries[0], Role::Element, &["badge"]);
     scene.frame();
-    scene.tree.scroll_to(list, Point { x: 0.0, y: 20.0 });
+    scene.tree.scroll_to(list, Offset { x: 0.0, y: 20.0 });
     scene.frame();
     let (list_box, entry_box) = (scene.border_box(list), scene.border_box(entries[0]));
     let mut picture = DisplayList::default();

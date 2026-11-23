@@ -202,12 +202,12 @@ impl Semantics {
             node.add_action(Action::Focus);
         }
         if let Some(scroll) = facts.scroll.position {
-            node.set_scroll_x(f64::from(scroll.offset.x));
+            node.set_scroll_x(scroll.offset.x);
             node.set_scroll_x_min(0.0);
-            node.set_scroll_x_max(f64::from(scroll.limit.x));
-            node.set_scroll_y(f64::from(scroll.offset.y));
+            node.set_scroll_x_max(scroll.limit.x);
+            node.set_scroll_y(scroll.offset.y);
             node.set_scroll_y_min(0.0);
-            node.set_scroll_y_max(f64::from(scroll.limit.y));
+            node.set_scroll_y_max(scroll.limit.y);
             if scroll.limit.x > 0.0 {
                 node.add_action(Action::ScrollLeft);
                 node.add_action(Action::ScrollRight);

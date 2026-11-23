@@ -49,12 +49,13 @@ impl ColumnEdges {
 
     /// The columns a table has cell slots for while a viewport `viewport_width` wide is
     /// scrolled `offset` across: those in view and the overscan around them.
-    pub(crate) fn window(&self, offset: f32, viewport_width: f32) -> SlotWindow {
+    pub(crate) fn window(&self, offset: f64, viewport_width: f32) -> SlotWindow {
         let count = self.column_count();
         let rights = &self.edges[1..];
         let lefts = &self.edges[..count];
-        let first_in_view = rights.partition_point(|right| *right <= offset);
-        let after_last_in_view = lefts.partition_point(|left| *left < offset + viewport_width);
+        let view_end = offset + f64::from(viewport_width);
+        let first_in_view = rights.partition_point(|right| f64::from(*right) <= offset);
+        let after_last_in_view = lefts.partition_point(|left| f64::from(*left) < view_end);
         let in_view = after_last_in_view.saturating_sub(first_in_view);
         let pool = (in_view + 2 * OVERSCAN).max(FIRST_POOL).min(count);
         SlotWindow {

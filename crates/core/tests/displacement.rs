@@ -1,6 +1,6 @@
 mod support;
 
-use morok_core::{Point, Rect, Role};
+use morok_core::{Offset, Point, Rect, Role};
 use support::Scene;
 
 const STAGE: &str = ".port { overflow: hidden; width: 100px; height: 100px; }\n\
@@ -19,7 +19,7 @@ fn a_displaced_element_moves_as_a_picture_with_no_style_resolved_and_no_box_laid
     scene.frame();
     assert_eq!(scene.tree.displacement(card), None);
 
-    scene.tree.set_displacement(card, Point { x: 30.0, y: 50.0 });
+    scene.tree.set_displacement(card, Offset { x: 30.0, y: 50.0 });
     let frame = scene.frame();
 
     assert_eq!((frame.resolved, frame.laid_out), (0, 0));
@@ -43,10 +43,10 @@ fn a_displaced_element_moves_as_a_picture_with_no_style_resolved_and_no_box_laid
 fn a_displacement_set_again_to_what_it_is_asks_for_no_frame_work() {
     let mut scene = Scene::new(STAGE);
     let card = scene.add(scene.root(), Role::Element, &["card"]);
-    scene.tree.set_displacement(card, Point { x: 30.0, y: 50.0 });
+    scene.tree.set_displacement(card, Offset { x: 30.0, y: 50.0 });
     scene.frame();
 
-    scene.tree.set_displacement(card, Point { x: 30.0, y: 50.0 });
+    scene.tree.set_displacement(card, Offset { x: 30.0, y: 50.0 });
     let frame = scene.frame();
 
     assert_eq!((frame.resolved, frame.laid_out, frame.rebuilt), (0, 0, 0));
@@ -58,7 +58,7 @@ fn what_is_positioned_inside_a_displaced_element_is_clipped_where_the_surface_sh
     let port = scene.add(scene.root(), Role::Element, &["port"]);
     let card = scene.add(port, Role::Element, &["card", "far"]);
     let pin = scene.add(card, Role::Element, &["pin"]);
-    scene.tree.set_displacement(card, Point { x: -60.0, y: 0.0 });
+    scene.tree.set_displacement(card, Offset { x: -60.0, y: 0.0 });
     scene.frame();
 
     assert_eq!(scene.tree.surface_box(pin), Rect::new(20.0, 0.0, 30.0, 20.0));
@@ -68,7 +68,7 @@ fn what_is_positioned_inside_a_displaced_element_is_clipped_where_the_surface_sh
         "the port clips where it stands, not where the displacement would take it"
     );
 
-    scene.tree.set_displacement(card, Point { x: 10.0, y: 0.0 });
+    scene.tree.set_displacement(card, Offset { x: 10.0, y: 0.0 });
     scene.frame();
     assert_eq!(
         scene.tree.element_at(Point { x: 105.0, y: 10.0 }),

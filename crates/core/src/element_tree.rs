@@ -24,6 +24,7 @@ use crate::element_arena::ElementArena;
 use crate::element_id::ElementId;
 use crate::frame_requests::FrameRequests;
 use crate::frame_scheduler::FrameScheduler;
+use crate::geometry::offset::Offset;
 use crate::geometry::point::Point;
 use crate::geometry::rect::Rect;
 use crate::geometry::size::Size;
@@ -436,14 +437,14 @@ impl ElementTree {
 
     /// How far a component moved the element from where layout placed it; none for an element
     /// no component ever moved.
-    pub fn displacement(&self, element: ElementId) -> Option<Point> {
+    pub fn displacement(&self, element: ElementId) -> Option<Offset> {
         self.elements[element].displacement
     }
 
     /// Moves the element, with everything inside it, by `displacement` from where layout placed
     /// it, as a picture: no style is resolved and no box is laid out. An element moved once
     /// paints as a group from then on, a displacement of nothing included.
-    pub fn set_displacement(&mut self, element: ElementId, displacement: Point) {
+    pub fn set_displacement(&mut self, element: ElementId, displacement: Offset) {
         let held = &mut self.elements[element];
         let before = held.displacement.replace(displacement);
         if before == Some(displacement) {

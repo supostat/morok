@@ -1,6 +1,6 @@
 use morok_core::accesskit::Role as AccessibleRole;
 use morok_core::{
-    AccessibilityAction, AccessibleActions, AccessibleItem, ElementId, Point, PointerButton, PointerEvent,
+    AccessibilityAction, AccessibleActions, AccessibleItem, ElementId, Offset, PointerButton, PointerEvent,
     PointerEventKind, Propagation,
 };
 use morok_reactive::{Runtime, Signal};
@@ -116,7 +116,13 @@ impl<ColumnKey: Clone + PartialEq + 'static> TableHeader<ColumnKey> {
             .id();
         mount.effect(move |runtime, tree| {
             let left = runtime.get(slot.left);
-            tree.set_displacement(element, Point { x: left, y: 0.0 });
+            tree.set_displacement(
+                element,
+                Offset {
+                    x: f64::from(left),
+                    y: 0.0,
+                },
+            );
         });
         element
     }

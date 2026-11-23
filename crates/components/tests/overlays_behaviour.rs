@@ -11,7 +11,7 @@ use morok_components::{
 };
 use morok_core::accesskit::Role as AccessibleRole;
 use morok_core::{
-    ElementId, Key, KeyChord, Modifiers, NativeMenuItem, OverlayAlignment, OverlayInput, OverlaySide, Point,
+    ElementId, Key, KeyChord, Modifiers, NativeMenuItem, Offset, OverlayAlignment, OverlayInput, OverlaySide, Point,
     PointerButton, PointerInputKind, Rect, Role, Size,
 };
 use morok_reactive::Signal;
@@ -329,7 +329,7 @@ mod popover {
         stage.frame_all();
         assert_eq!(
             stage.tree().scroll_offset(viewport),
-            Point::default(),
+            Offset::default(),
             "the wheel over the panel is the popover's own"
         );
 
@@ -337,7 +337,7 @@ mod popover {
         stage.frame_all();
         assert_eq!(
             stage.tree().scroll_offset(viewport),
-            Point { x: 0.0, y: 60.0 },
+            Offset { x: 0.0, y: 60.0 },
             "the wheel over the room under the panel scrolls the view that lies there"
         );
     }
@@ -365,28 +365,28 @@ mod popover {
         // of 260 px 60 px to the left.
         assert_eq!(
             displacement_with_window_at(&mut stage, 600.0),
-            Some(Point { x: 60.0, y: 0.0 }),
+            Some(Offset { x: 60.0, y: 0.0 }),
             "the arrow moves as far to the right, back over the anchor"
         );
         assert_eq!(
             displacement_with_window_at(&mut stage, 780.0),
-            Some(Point {
-                x: panel_box.width - POPOVER_CORNER - arrow_box.width - from_start,
+            Some(Offset {
+                x: f64::from(panel_box.width - POPOVER_CORNER - arrow_box.width - from_start),
                 y: 0.0
             }),
             "a push of 240 px takes the arrow no further than the corner on the right"
         );
         assert_eq!(
             displacement_with_window_at(&mut stage, -100.0),
-            Some(Point {
-                x: POPOVER_CORNER - from_start,
+            Some(Offset {
+                x: f64::from(POPOVER_CORNER - from_start),
                 y: 0.0
             }),
             "a push to the right takes the arrow no further than the corner on the left"
         );
         assert_eq!(
             displacement_with_window_at(&mut stage, 0.0),
-            Some(Point::default()),
+            Some(Offset::default()),
             "a popover no edge moves has its arrow where its stylesheet puts it"
         );
     }

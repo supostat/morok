@@ -6,7 +6,7 @@ use std::fmt::Write;
 use morok_components::view::Mount;
 use morok_components::{CellAlignment, RowSelection, SortOrder, Table, TableColumn, TableSort};
 use morok_core::accesskit::{Role as AccessibleRole, SortDirection};
-use morok_core::{ElementId, Key, Modifiers, Point};
+use morok_core::{ElementId, Key, Modifiers, Offset, Point};
 use morok_reactive::Signal;
 use morok_style::{Declaration, LengthPercentage, LengthPercentageAuto, Pixels};
 use support::Stage;
@@ -16,6 +16,10 @@ const HEADER_HEIGHT: f32 = 28.0;
 /// The rows a table keeps from the start, and the columns.
 const FIRST_ROW_POOL: usize = 32;
 const FIRST_COLUMN_POOL: usize = 8;
+/// The rows and the columns of the largest table, and how wide each column is.
+const ROWS: usize = 1_000_000;
+const COLUMNS: usize = 100;
+const COLUMN_WIDTH: f32 = 80.0;
 
 fn pixels(length: f32) -> LengthPercentageAuto {
     LengthPercentageAuto::LengthPercentage(LengthPercentage {
@@ -187,9 +191,28 @@ impl TableParts {
         count
     }
 
+    /// The cell of a row in view that shows the text.
+    fn cell_showing(self, stage: &Stage, text: &str) -> ElementId {
+        let tree = stage.tree();
+        self.row_elements(stage)
+            .into_iter()
+            .flat_map(|row| stage.children(row))
+            .find(|cell| tree.text(*cell) == text)
+            .unwrap_or_else(|| panic!("no cell shows {text}"))
+    }
+
+    /// The header cell of the title.
+    fn header_cell_titled(self, stage: &Stage, title: &str) -> ElementId {
+        let tree = stage.tree();
+        self.header_cells(stage)
+            .into_iter()
+            .find(|cell| tree.text(stage.children(*cell)[0]) == title)
+            .unwrap_or_else(|| panic!("no header cell is titled {title}"))
+    }
+
     /// Scrolls the content to `offset` and runs the frames that show it: one that finds the
     /// limits and one whose slots follow the offset.
-    fn scroll_to(self, stage: &mut Stage, offset: Point) {
+    fn scroll_to(self, stage: &mut Stage, offset: Offset) {
         stage
             .surfaces
             .surface_mut(stage.surface)
@@ -214,11 +237,8 @@ fn corner_of(stage: &Stage, element: ElementId) -> Point {
     }
 }
 
-#[test]
-fn a_million_rows_in_a_hundred_columns_have_cells_for_what_is_in_view_alone() {
-    const ROWS: usize = 1_000_000;
-    const COLUMNS: usize = 100;
-    const COLUMN_WIDTH: f32 = 80.0;
+/// A table of a million rows in a hundred columns, each cell showing its row and its column.
+fn million_rows_in_a_hundred_columns() -> (Stage, TableParts) {
     let mut stage = Stage::new();
     let view = stage.mount(|mount| {
         let columns = (0..COLUMNS)
@@ -245,6 +265,12 @@ fn a_million_rows_in_a_hundred_columns_have_cells_for_what_is_in_view_alone() {
     stage.frame();
     stage.frame();
     let table = TableParts::of(&stage, view);
+    (stage, table)
+}
+
+#[test]
+fn a_million_rows_in_a_hundred_columns_have_cells_for_what_is_in_view_alone() {
+    let (mut stage, table) = million_rows_in_a_hundred_columns();
     let rows = table.row_elements(&stage);
     let elements = table.element_count(&stage);
 
@@ -263,9 +289,9 @@ fn a_million_rows_in_a_hundred_columns_have_cells_for_what_is_in_view_alone() {
 
     table.scroll_to(
         &mut stage,
-        Point {
-            x: 50.0 * COLUMN_WIDTH,
-            y: 500_000.0 * ROW_HEIGHT,
+        Offset {
+            x: f64::from(50.0 * COLUMN_WIDTH),
+            y: f64::from(500_000.0 * ROW_HEIGHT),
         },
     );
 
@@ -299,6 +325,42 @@ fn a_million_rows_in_a_hundred_columns_have_cells_for_what_is_in_view_alone() {
         .map(|cell| tree.text(stage.children(cell)[0]).to_owned())
         .collect();
     assert!(titles.contains(&String::from("Column 50")), "{titles:?}");
+}
+
+#[test]
+fn far_down_a_million_rows_keep_their_cells_and_their_header_exactly_in_place() {
+    let (mut stage, table) = million_rows_in_a_hundred_columns();
+    let odd_far_down = 16_777_217.0;
+    let scrolled = Offset {
+        x: f64::from(50.0 * COLUMN_WIDTH),
+        y: odd_far_down,
+    };
+    table.scroll_to(&mut stage, scrolled);
+    assert_eq!(
+        stage.tree().scroll_offset(table.viewport),
+        scrolled,
+        "2^24 + 1 down, which single precision rounds to 2^24"
+    );
+
+    // Row 645 278 begins 26 × 645 278 = 16 777 228 pixels down the rows: 11 below the offset.
+    let first_whole_row: usize = 645_278;
+    let viewport_corner = corner_of(&stage, table.viewport);
+    for (place, row) in (first_whole_row..first_whole_row + 5).enumerate() {
+        let cell = table.cell_showing(&stage, &format!("{row}:50"));
+        assert_eq!(
+            corner_of(&stage, cell),
+            Point {
+                x: viewport_corner.x,
+                y: viewport_corner.y + HEADER_HEIGHT + 11.0 + place as f32 * ROW_HEIGHT,
+            },
+            "the cell of row {row} in the column scrolled to"
+        );
+    }
+    assert_eq!(
+        corner_of(&stage, table.header_cell_titled(&stage, "Column 50")),
+        viewport_corner,
+        "the header stays at the top of the viewport"
+    );
 }
 
 #[test]
@@ -487,9 +549,9 @@ fn a_click_and_the_keys_select_rows_and_the_row_the_keyboard_is_on_stays_in_view
     files.stage.frame();
     assert_eq!(
         files.stage.tree().scroll_offset(table.viewport),
-        Point {
+        Offset {
             x: 0.0,
-            y: 7.0 * ROW_HEIGHT - (198.0 - HEADER_HEIGHT)
+            y: f64::from(7.0 * ROW_HEIGHT - (198.0 - HEADER_HEIGHT))
         },
         "the table scrolls as little as shows row 6 whole under the header"
     );
@@ -510,7 +572,7 @@ fn a_click_and_the_keys_select_rows_and_the_row_the_keyboard_is_on_stays_in_view
     assert_eq!(files.stage.runtime.get(files.selected), [0]);
     files.stage.frame();
     files.stage.frame();
-    assert_eq!(files.stage.tree().scroll_offset(table.viewport), Point::default());
+    assert_eq!(files.stage.tree().scroll_offset(table.viewport), Offset::default());
 }
 
 #[test]

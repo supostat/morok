@@ -7,7 +7,7 @@ use crate::drag::drag_role::DragRole;
 use crate::editing::editable_text::EditableText;
 use crate::editing::line_mode::LineMode;
 use crate::element_id::ElementId;
-use crate::geometry::point::Point;
+use crate::geometry::offset::Offset;
 use crate::geometry::rect::Rect;
 use crate::input::focusability::Focusability;
 use crate::media::media_content::MediaContent;
@@ -70,12 +70,12 @@ pub(crate) struct Element {
     pub(crate) scroll: Option<Box<ScrollState>>,
     /// How far the frame moves the element from where layout placed it: the shift of a sticky
     /// element, or the travel of a scroll thumb along its bar.
-    pub(crate) shift: Point,
+    pub(crate) shift: Offset,
     /// Whether the element is the thumb of a scroll bar, which the tree moves along its bar.
     pub(crate) is_scroll_thumb: bool,
     /// How far a component moves the element from where layout placed it; none for an element
     /// no component ever moved.
-    pub(crate) displacement: Option<Point>,
+    pub(crate) displacement: Option<Offset>,
     /// What the element is to a drag; none for an element that was never a drag source nor a
     /// drop target.
     pub(crate) drag_role: Option<Box<DragRole>>,
@@ -109,7 +109,7 @@ impl Element {
             text_layout: TextLayout::default(),
             editable: LineMode::of(role).map(|line_mode| Box::new(EditableText::new(line_mode))),
             scroll: (role == Role::Scroll).then(Box::default),
-            shift: Point::default(),
+            shift: Offset::default(),
             is_scroll_thumb: false,
             displacement: None,
             drag_role: None,
@@ -123,9 +123,9 @@ impl Element {
     }
 
     /// How far the element stands from where layout placed it.
-    pub(crate) fn moved_by(&self) -> Point {
+    pub(crate) fn moved_by(&self) -> Offset {
         let displacement = self.displacement.unwrap_or_default();
-        Point {
+        Offset {
             x: self.shift.x + displacement.x,
             y: self.shift.y + displacement.y,
         }

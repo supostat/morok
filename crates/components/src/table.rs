@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use morok_core::accesskit::Role as AccessibleRole;
 use morok_core::{
-    AccessibilityAction, AccessibleActions, AccessibleItem, ElementId, Focusability, Modifiers, Point,
+    AccessibilityAction, AccessibleActions, AccessibleItem, ElementId, Focusability, Modifiers, Offset,
     PointerEventKind, Propagation,
 };
 use morok_reactive::{Memo, Runtime, Signal};
@@ -245,7 +245,13 @@ fn body_cell<ColumnKey: Clone + PartialEq + 'static>(
     });
     mount.effect(move |runtime, tree| {
         let left = runtime.get(slot.left);
-        tree.set_displacement(element, Point { x: left, y: 0.0 });
+        tree.set_displacement(
+            element,
+            Offset {
+                x: f64::from(left),
+                y: 0.0,
+            },
+        );
     });
     element
 }

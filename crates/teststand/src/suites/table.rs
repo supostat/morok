@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use morok_components::view::Mount;
 use morok_components::{CellAlignment, RowSelection, SortOrder, Table, TableColumn, TableSort};
-use morok_core::{ElementId, Point, Size};
+use morok_core::{ElementId, Offset, Size};
 use morok_css::SourceFile;
 use morok_style::States;
 
@@ -190,5 +190,5 @@ fn table_scrolled(scene: &mut Scene) {
     for bar in parts.bars {
         scene.set_state(bar, States::HOVER);
     }
-    scene.scroll_to(parts.viewport, Point { x: 75.0, y: 70.0 });
+    scene.scroll_to(parts.viewport, Offset { x: 75.0, y: 70.0 });
 }

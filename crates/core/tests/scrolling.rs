@@ -3,7 +3,10 @@ mod support;
 use std::time::Duration;
 
 use morok_core::accesskit::{Action, ActionData, ActionRequest, Node, NodeId, Role as AccessibleRole, TreeId};
-use morok_core::{ElementId, Focusability, Key, Modifiers, Point, Role, ScrollBars, ScrollInput, ScrollPhase};
+use morok_core::{
+    DisplayItem, ElementId, ElementTree, Focusability, Key, Modifiers, Offset, Point, Role, ScrollBars, ScrollInput,
+    ScrollPhase, Transform,
+};
 use support::{InputLog, Scene};
 
 const STAGE: &str = ".viewport { overflow: auto; position: relative; width: 200px; height: 100px; }\n\
@@ -17,13 +20,28 @@ const STAGE: &str = ".viewport { overflow: auto; position: relative; width: 200p
     .showing { opacity: 1; }";
 
 /// How far apart two offsets may be and still count as one.
-const TOLERANCE: f32 = 0.01;
+const TOLERANCE: f64 = 0.01;
 
-fn assert_near(actual: f32, expected: f32, what: &str) {
+fn assert_near(actual: impl Into<f64>, expected: impl Into<f64>, what: &str) {
+    let (actual, expected) = (actual.into(), expected.into());
     assert!(
         (actual - expected).abs() < TOLERANCE,
         "{what}: {actual} is not {expected}"
     );
+}
+
+/// The transform the display list places the group of the element by: what the renderer
+/// moves the element on the surface by.
+fn painted_transform(tree: &ElementTree, element: ElementId) -> Transform {
+    let laid_out = tree.border_box(element);
+    tree.display_list()
+        .items()
+        .iter()
+        .find_map(|item| match item {
+            DisplayItem::PushGroup { effects } if effects.frame.border_box == laid_out => Some(effects.transform),
+            _ => None,
+        })
+        .expect("the element paints as a group")
 }
 
 /// A viewport of 200 by 100 pixels at the corner of the surface that scrolls ten rows of 40.
@@ -42,7 +60,7 @@ impl ListScene {
         Self { scene, viewport, rows }
     }
 
-    fn offset(&self) -> Point {
+    fn offset(&self) -> Offset {
         self.scene.tree.scroll_offset(self.viewport)
     }
 
@@ -80,14 +98,14 @@ impl ListScene {
 #[test]
 fn the_limits_are_how_far_the_content_reaches_past_the_viewport_on_the_axes_that_scroll() {
     let mut list = ListScene::new();
-    assert_eq!(list.scene.tree.scroll_limit(list.viewport), Point { x: 0.0, y: 300.0 });
+    assert_eq!(list.scene.tree.scroll_limit(list.viewport), Offset { x: 0.0, y: 300.0 });
 
     list.scene.add(list.viewport, Role::Element, &["wide"]);
     list.scene.frame();
 
     assert_eq!(
         list.scene.tree.scroll_limit(list.viewport),
-        Point { x: 300.0, y: 310.0 }
+        Offset { x: 300.0, y: 310.0 }
     );
 }
 
@@ -95,12 +113,12 @@ fn the_limits_are_how_far_the_content_reaches_past_the_viewport_on_the_axes_that
 fn an_offset_is_kept_within_the_limits_and_moves_the_content_with_no_layout_pass() {
     let mut list = ListScene::new();
 
-    list.scene.tree.scroll_to(list.viewport, Point { x: 0.0, y: 120.0 });
+    list.scene.tree.scroll_to(list.viewport, Offset { x: 0.0, y: 120.0 });
     let frame = list.scene.frame();
 
     assert_eq!(frame.laid_out, 0, "a scroll lays nothing out");
     assert!(frame.rebuilt > 0, "the content is painted where it shows now");
-    assert_eq!(list.offset(), Point { x: 0.0, y: 120.0 });
+    assert_eq!(list.offset(), Offset { x: 0.0, y: 120.0 });
     assert_near(
         list.scene.tree.surface_box(list.rows[3]).y,
         0.0,
@@ -116,11 +134,11 @@ fn an_offset_is_kept_within_the_limits_and_moves_the_content_with_no_layout_pass
         Some(list.rows[3])
     );
 
-    list.scene.tree.scroll_to(list.viewport, Point { x: 50.0, y: 1000.0 });
+    list.scene.tree.scroll_to(list.viewport, Offset { x: 50.0, y: 1000.0 });
     list.scene.frame();
     assert_eq!(
         list.offset(),
-        Point { x: 0.0, y: 300.0 },
+        Offset { x: 0.0, y: 300.0 },
         "past the limits the offset stops at them"
     );
 }
@@ -212,7 +230,7 @@ fn a_sticky_header_stays_at_the_top_of_the_scrollport_until_its_section_ends() {
     }
     scene.frame();
 
-    scene.tree.scroll_to(viewport, Point { x: 0.0, y: 50.0 });
+    scene.tree.scroll_to(viewport, Offset { x: 0.0, y: 50.0 });
     let frame = scene.frame();
     assert_eq!(frame.laid_out, 0);
     assert_near(
@@ -223,7 +241,7 @@ fn a_sticky_header_stays_at_the_top_of_the_scrollport_until_its_section_ends() {
     assert_near(scene.tree.surface_box(headers[1]).y, 70.0, "the place on the surface");
     assert_eq!(scene.tree.element_at(Point { x: 10.0, y: 5.0 }), Some(headers[0]));
 
-    scene.tree.scroll_to(viewport, Point { x: 0.0, y: 110.0 });
+    scene.tree.scroll_to(viewport, Offset { x: 0.0, y: 110.0 });
     scene.frame();
     assert_near(
         scene.tree.surface_box(headers[0]).y,
@@ -232,7 +250,7 @@ fn a_sticky_header_stays_at_the_top_of_the_scrollport_until_its_section_ends() {
     );
     assert_near(scene.tree.surface_box(headers[1]).y, 10.0, "the place on the surface");
 
-    scene.tree.scroll_to(viewport, Point::default());
+    scene.tree.scroll_to(viewport, Offset::default());
     scene.frame();
     assert_near(
         scene.tree.surface_box(headers[0]).y,
@@ -328,14 +346,14 @@ fn a_thumb_is_as_long_as_the_share_the_viewport_shows_and_travels_with_the_offse
         25.0,
         "a quarter of the content shows",
     );
-    assert_eq!(list.scene.tree.scroll_thumb_travel(thumb), Some(Point::default()));
+    assert_eq!(list.scene.tree.scroll_thumb_travel(thumb), Some(Offset::default()));
 
     list.scroll(150.0, ScrollPhase::Discrete);
     let frame = list.scene.frame();
     assert_eq!(frame.laid_out, 0, "a thumb that keeps its length is not laid out");
     assert_eq!(
         list.scene.tree.scroll_thumb_travel(thumb),
-        Some(Point { x: 0.0, y: 37.5 })
+        Some(Offset { x: 0.0, y: 37.5 })
     );
     assert_near(list.scene.tree.surface_box(thumb).y, 37.5, "the place on the surface");
     assert!(
@@ -358,7 +376,7 @@ fn small_scrolls_far_down_a_long_content_add_up() {
     scene.add(viewport, Role::Element, &["endless"]);
     scene.frame();
     let far_down = 20_000_000.0;
-    scene.tree.scroll_to(viewport, Point { x: 0.0, y: far_down });
+    scene.tree.scroll_to(viewport, Offset { x: 0.0, y: far_down });
     scene.frame();
     assert_near(
         scene.tree.scroll_offset(viewport).y,
@@ -392,13 +410,75 @@ fn small_scrolls_far_down_a_long_content_add_up() {
 }
 
 #[test]
+fn an_offset_single_precision_cannot_hold_is_kept_and_one_pixel_scrolls_move_the_content_by_a_pixel() {
+    let mut scene = Scene::new(STAGE);
+    let viewport = scene.add(scene.root(), Role::Scroll, &["viewport"]);
+    let row = scene.add(viewport, Role::Element, &["row"]);
+    let section = scene.add(viewport, Role::Element, &["endless"]);
+    let header = scene.add(section, Role::Element, &["header"]);
+    let odd_far_down = 16_777_217.0;
+    scene.tree.set_displacement(
+        row,
+        Offset {
+            x: 0.0,
+            y: odd_far_down + 30.0,
+        },
+    );
+    scene.tree.scroll_to(
+        viewport,
+        Offset {
+            x: 0.0,
+            y: odd_far_down,
+        },
+    );
+    scene.frame();
+
+    assert_eq!(
+        scene.tree.scroll_offset(viewport),
+        Offset {
+            x: 0.0,
+            y: odd_far_down
+        },
+        "2^24 + 1, which single precision rounds to 2^24"
+    );
+    for scrolled in 0..4_u8 {
+        assert_eq!(
+            scene.tree.surface_box(row).y.to_bits(),
+            (30.0 - f32::from(scrolled)).to_bits(),
+            "the row after {scrolled} one-pixel scrolls"
+        );
+        assert_eq!(
+            painted_transform(&scene.tree, row),
+            Transform::translation(0.0, 30.0 - f64::from(scrolled)),
+            "the row as the renderer is given it after {scrolled} one-pixel scrolls"
+        );
+        assert_eq!(
+            scene.tree.surface_box(header).y.to_bits(),
+            0.0_f32.to_bits(),
+            "the sticky header of the section, laid out 40 down, after {scrolled} one-pixel scrolls"
+        );
+        assert_eq!(
+            painted_transform(&scene.tree, header),
+            Transform::translation(0.0, -40.0),
+            "the header as the renderer is given it after {scrolled} one-pixel scrolls"
+        );
+        scene.tree.scroll_input(&ScrollInput {
+            position: Point { x: 100.0, y: 50.0 },
+            delta: Point { x: 0.0, y: 1.0 },
+            phase: ScrollPhase::Discrete,
+        });
+        scene.frame();
+    }
+}
+
+#[test]
 fn an_element_a_component_moved_is_brought_into_view_where_it_stands() {
     let mut list = ListScene::new();
     let moved = list.rows[1];
     list.scene
         .tree
         .set_accessible_role(moved, Some(AccessibleRole::ListItem));
-    list.scene.tree.set_displacement(moved, Point { x: 0.0, y: 200.0 });
+    list.scene.tree.set_displacement(moved, Offset { x: 0.0, y: 200.0 });
     list.scene.frame();
 
     let request = ActionRequest {
