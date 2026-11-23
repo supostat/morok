@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use morok_core::accesskit::Role as AccessibleRole;
+use morok_core::accesskit::{Live, Role as AccessibleRole};
 use morok_core::{
     AccessibleActions, AccessibleItem, AccessibleValue, DragStart, ElementId, ElementTree, Focusability, KeyChord,
     MenuCommand, NumericValue, PayloadType, Propagation, ShortcutScope,
@@ -153,6 +153,17 @@ impl ElementBuilder<'_, '_> {
     /// When the element has no accessible role.
     pub fn accessible_toggle(&mut self) -> &mut Self {
         self.mount.surface.tree.set_accessible_toggle(self.element, true);
+        self
+    }
+
+    /// Makes an assistive technology speak every new name of the node of the element without
+    /// being asked: once it is done speaking with `Polite`, at once with `Assertive`.
+    ///
+    /// # Panics
+    ///
+    /// When the element has no accessible role.
+    pub fn accessible_live(&mut self, live: Live) -> &mut Self {
+        self.mount.surface.tree.set_accessible_live(self.element, live);
         self
     }
 

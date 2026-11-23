@@ -1184,6 +1184,17 @@ impl ElementTree {
         self.accessibility_changed(element, changes);
     }
 
+    /// Says how an assistive technology speaks a change of the name of the node of the element
+    /// without being asked: not at all, once it is done speaking, or at once.
+    ///
+    /// # Panics
+    ///
+    /// When the element has no accessible role.
+    pub fn set_accessible_live(&mut self, element: ElementId, live: accesskit::Live) {
+        let changes = self.semantics_mut(element).set_live(live);
+        self.accessibility_changed(element, changes);
+    }
+
     /// Says where the node of the element stands among the items of a list, a tree or a strip
     /// of tabs.
     ///

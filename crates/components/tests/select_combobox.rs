@@ -5,7 +5,7 @@ use std::time::Duration;
 use morok_components::styles::CLASSES;
 use morok_components::view::SurfaceId;
 use morok_components::{Button, Combobox, Select};
-use morok_core::accesskit::Role as AccessibleRole;
+use morok_core::accesskit::{Live, Role as AccessibleRole};
 use morok_core::{
     ElementId, Key, Modifiers, OverlayAlignment, OverlayInput, OverlaySide, Point, PointerButton, PointerInputKind,
     Size,
@@ -525,6 +525,8 @@ mod combobox {
         field: ElementId,
         input: ElementId,
         chevron: ElementId,
+        /// What speaks the highlighted option to an assistive technology.
+        voice: ElementId,
         folder: Signal<String>,
         submitted: Signal<Vec<String>>,
     }
@@ -551,15 +553,16 @@ mod combobox {
                 .mount(mount)
         });
         stage.frame_all();
-        let [input, chevron] = stage.tree().children(field) else {
-            panic!("a combo box holds its line and a chevron");
+        let [input, chevron, voice] = stage.tree().children(field) else {
+            panic!("a combo box holds its line, a chevron and the voice of its list");
         };
-        let (input, chevron) = (*input, *chevron);
+        let (input, chevron, voice) = (*input, *chevron, *voice);
         ComboboxStage {
             stage,
             field,
             input,
             chevron,
+            voice,
             folder,
             submitted,
         }
@@ -823,7 +826,7 @@ mod combobox {
     }
 
     #[test]
-    fn the_chevron_opens_and_closes_the_list_and_gives_the_field_the_keyboard() {
+    fn the_chevron_opens_the_list_with_every_option_closes_it_and_gives_the_field_the_keyboard() {
         let ComboboxStage {
             mut stage,
             input,
@@ -838,13 +841,17 @@ mod combobox {
         click(&mut stage, chevron);
 
         let overlay = overlay_over_window(&stage);
-        assert_eq!(names_of(&stage, overlay), ["Movies"]);
+        assert_eq!(
+            names_of(&stage, overlay),
+            FOLDERS,
+            "the chevron shows every option, whatever the text"
+        );
         assert_eq!(
             highlighted_in(&stage, overlay),
             ["Movies"],
             "the option the text names is highlighted"
         );
-        let row = rows_of(&stage, overlay)[0];
+        let row = rows_of(&stage, overlay)[4];
         assert!(stage.tree_of(overlay).states(row).contains(States::CHECKED));
         assert_eq!(
             stage.tree().focused(),
@@ -854,6 +861,78 @@ mod combobox {
 
         click(&mut stage, chevron);
         assert!(stage.overlays_of(stage.surface).is_empty());
+
+        stage.runtime.set(folder, String::from("Pictures"));
+        stage.frame_all();
+        click(&mut stage, chevron);
+        let overlay = overlay_over_window(&stage);
+        assert_eq!(
+            names_of(&stage, overlay),
+            FOLDERS,
+            "a text that names no option still has every option on the chevron"
+        );
+        assert!(highlighted_in(&stage, overlay).is_empty());
+    }
+
+    #[test]
+    fn the_next_edit_after_the_chevron_filters_the_list_again() {
+        let ComboboxStage {
+            mut stage,
+            input,
+            chevron,
+            folder,
+            ..
+        } = combobox();
+        click(&mut stage, input);
+        type_text(&mut stage, "d");
+        click(&mut stage, chevron);
+        assert!(
+            stage.overlays_of(stage.surface).is_empty(),
+            "the chevron closes the list on screen"
+        );
+
+        click(&mut stage, chevron);
+        let overlay = overlay_over_window(&stage);
+        assert_eq!(names_of(&stage, overlay), FOLDERS);
+
+        type_text(&mut stage, "o");
+
+        let overlay = overlay_over_window(&stage);
+        assert_eq!(stage.runtime.get(folder), "do");
+        assert_eq!(names_of(&stage, overlay), ["Documents", "Downloads"]);
+    }
+
+    #[test]
+    fn the_field_speaks_the_highlighted_option_with_its_place_and_falls_silent_when_the_list_closes() {
+        let ComboboxStage {
+            mut stage,
+            input,
+            voice,
+            ..
+        } = combobox();
+        let node = stage.accessible_node(voice);
+        assert_eq!(
+            (node.role(), node.live(), node.label()),
+            (AccessibleRole::Status, Some(Live::Polite), None),
+            "the voice of the list says nothing while the list is closed"
+        );
+        assert!(stage.focus(input));
+
+        assert!(press(&mut stage, Key::ArrowDown));
+        assert_eq!(stage.accessible_node(voice).label(), Some("Applications, 1 of 5"));
+        assert!(press(&mut stage, Key::ArrowDown));
+        assert!(press(&mut stage, Key::ArrowDown));
+        assert_eq!(stage.accessible_node(voice).label(), Some("Documents, 3 of 5"));
+        assert!(press(&mut stage, Key::ArrowUp));
+        assert_eq!(stage.accessible_node(voice).label(), Some("Desktop, 2 of 5"));
+
+        assert!(press(&mut stage, Key::Escape));
+
+        assert_eq!(
+            stage.accessible_node(voice).label(),
+            None,
+            "closing the list clears what the field says"
+        );
     }
 
     #[test]
@@ -862,8 +941,8 @@ mod combobox {
         let folder = stage.runtime.signal(String::new());
         let field = stage.mount(move |mount| folder_combobox(folder).disabled(true).mount(mount));
         stage.frame_all();
-        let [input, chevron] = stage.tree().children(field) else {
-            panic!("a combo box holds its line and a chevron");
+        let [input, chevron, _] = stage.tree().children(field) else {
+            panic!("a combo box holds its line, a chevron and the voice of its list");
         };
         let (input, chevron) = (*input, *chevron);
 

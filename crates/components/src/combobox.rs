@@ -1,10 +1,10 @@
 use std::fmt::{Debug, Formatter, Result};
 use std::rc::Rc;
 
-use morok_core::accesskit::Role as AccessibleRole;
+use morok_core::accesskit::{Live, Role as AccessibleRole};
 use morok_core::{AccessibleItem, ElementId, Key, KeyEvent, KeyPhase, PointerEventKind, Propagation};
-use morok_reactive::{Runtime, Signal};
-use morok_style::States;
+use morok_reactive::{Memo, Runtime, Signal};
+use morok_style::{Declaration, Position, States};
 
 use crate::dropdown::Dropdown;
 use crate::dropdown_step::DropdownStep;
@@ -16,10 +16,12 @@ use crate::view::{ElementEvent, Mount, Property, Surfaces};
 
 /// A text field with a list of options that drops down under it. What the user types is
 /// written to the signal the field edits, as in a text field, and the list shows the options
-/// whose names hold what was typed, whatever the case. The vertical arrows open the list and
-/// move its highlight; Return on the highlighted row and a click on a row write the name of
-/// the option to the signal; Escape, a press outside and the chevron close the list. The text
-/// is the user's: it need not name an option.
+/// whose names hold what was typed, whatever the case. The chevron opens the list with every
+/// option in it until the text is edited again. The vertical arrows open the list and move
+/// its highlight; Return on the highlighted row and a click on a row write the name of the
+/// option to the signal; Escape, a press outside and the chevron close the list. The text is
+/// the user's: it need not name an option. An assistive technology is told the name of the
+/// highlighted option and its place in the list as the highlight moves.
 pub struct Combobox {
     parts: FieldParts,
     options: Vec<String>,
@@ -81,11 +83,17 @@ impl Combobox {
     pub fn mount(self, mount: &mut Mount<'_>) -> ElementId {
         let Self { mut parts, options } = self;
         let (label, is_disabled) = (parts.label.clone(), parts.is_disabled.clone());
-        let dropdown = dropdown_of(mount.runtime(), parts.value, options);
+        let shows_every_option = mount.runtime().signal(false);
+        let dropdown = dropdown_of(mount.runtime(), parts.value, options, shows_every_option);
         let keys = dropdown.clone();
         parts.on_key = Some(Box::new(move |runtime, key| list_key(&keys, runtime, key)));
         let edited = dropdown.clone();
-        parts.on_edit = Some(Box::new(move |runtime| edited.open(runtime, None)));
+        parts.on_edit = Some(Box::new(move |runtime| {
+            if runtime.get(shows_every_option) {
+                runtime.set(shows_every_option, false);
+            }
+            edited.open(runtime, None);
+        }));
         let FieldElements { field, input } = parts.mount(FieldKind::Line, mount);
 
         let (is_open, is_shown) = (dropdown.is_open, dropdown.is_shown);
@@ -112,14 +120,24 @@ impl Combobox {
             .on_event(move |runtime, event| match event {
                 ElementEvent::Pointer(pointer) if matches!(pointer.kind, PointerEventKind::Clicked { .. }) => {
                     if !chevron_is_disabled.get(runtime) {
-                        toggle(&toggled, runtime);
+                        toggle(&toggled, shows_every_option, runtime);
                     }
                     Propagation::Stop
                 }
                 _ => Propagation::Continue,
             })
             .id();
-        mount.build(field).child(chevron);
+        // The list is an overlay with an accessibility tree of its own: the field's tree
+        // speaks its highlight.
+        let spoken = spoken_highlight(mount.runtime(), &dropdown);
+        let voice = mount
+            .element()
+            .inline(Declaration::Position(Position::Absolute))
+            .accessible_role(AccessibleRole::Status)
+            .accessible_live(Live::Polite)
+            .accessible_name(spoken)
+            .id();
+        mount.build(field).child(chevron).child(voice);
         dropdown.attach(mount, field, label);
         field
     }
@@ -128,17 +146,26 @@ impl Combobox {
     /// the panel in a place of its own: the rows of the options the text of the signal leaves.
     /// Choosing a row writes the signal as it does in an overlay.
     pub fn mount_panel(self, mount: &mut Mount<'_>) -> ElementId {
-        let dropdown = dropdown_of(mount.runtime(), self.parts.value, self.options);
+        let shows_every_option = mount.runtime().signal(false);
+        let dropdown = dropdown_of(mount.runtime(), self.parts.value, self.options, shows_every_option);
         dropdown.mount_panel(mount, self.parts.label)
     }
 }
 
-/// The list of the options whose names hold the text of the signal, whatever the case; the
-/// option the text names in full is marked.
-fn dropdown_of(runtime: &mut Runtime<Surfaces>, value: Signal<String>, options: Vec<String>) -> Dropdown {
+/// The list of the options whose names hold the text of the signal, whatever the case, or of
+/// every option while `shows_every_option` holds; the option the text names in full is marked.
+fn dropdown_of(
+    runtime: &mut Runtime<Surfaces>,
+    value: Signal<String>,
+    options: Vec<String>,
+    shows_every_option: Signal<bool>,
+) -> Dropdown {
     let names: Rc<[String]> = options.into();
     let names_in_lower_case: Vec<String> = names.iter().map(|name| name.to_lowercase()).collect();
     let shown = runtime.memo(move |runtime| {
+        if runtime.get(shows_every_option) {
+            return (0..names_in_lower_case.len()).collect::<Vec<usize>>();
+        }
         let sought = runtime.with(value, |value| value.to_lowercase());
         (0..names_in_lower_case.len())
             .filter(|option| names_in_lower_case[*option].contains(&sought))
@@ -157,14 +184,35 @@ fn dropdown_of(runtime: &mut Runtime<Surfaces>, value: Signal<String>, options: 
 }
 
 /// What the chevron does: it closes a list that is on screen and opens one that is not, with
-/// the highlight on the option the text names.
-fn toggle(dropdown: &Dropdown, runtime: &mut Runtime<Surfaces>) {
+/// every option in it and the highlight on the option the text names.
+fn toggle(dropdown: &Dropdown, shows_every_option: Signal<bool>, runtime: &mut Runtime<Surfaces>) {
     if runtime.get(dropdown.is_shown) {
         dropdown.close(runtime);
     } else {
+        runtime.set(shows_every_option, true);
         let chosen = dropdown.row_of_chosen(runtime);
         dropdown.open(runtime, chosen);
     }
+}
+
+/// What the field says of the highlighted row while the list is on screen: the name of its
+/// option and its place among the rows, as "Movies, 3 of 12"; nothing while no row is.
+fn spoken_highlight(runtime: &mut Runtime<Surfaces>, dropdown: &Dropdown) -> Memo<String> {
+    let (is_shown, highlighted, shown) = (dropdown.is_shown, dropdown.highlighted, dropdown.shown);
+    let labels = Rc::clone(&dropdown.labels);
+    runtime.memo(move |runtime| {
+        if !runtime.get(is_shown) {
+            return String::new();
+        }
+        let Some(row) = runtime.get(highlighted) else {
+            return String::new();
+        };
+        runtime.with(shown, |shown| {
+            shown.get(row).map_or_else(String::new, |option| {
+                format!("{}, {} of {}", labels[*option], row + 1, shown.len())
+            })
+        })
+    })
 }
 
 /// What a key does to the list while the keyboard is in the field: the vertical arrows open

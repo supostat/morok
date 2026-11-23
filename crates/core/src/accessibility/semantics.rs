@@ -1,4 +1,4 @@
-use accesskit::{Action, Affine, Node, NodeId, Rect, Role, Toggled};
+use accesskit::{Action, Affine, Live, Node, NodeId, Rect, Role, Toggled};
 
 use crate::accessibility::accessible_actions::AccessibleActions;
 use crate::accessibility::accessible_item::AccessibleItem;
@@ -17,6 +17,8 @@ pub(crate) struct Semantics {
     actions: AccessibleActions,
     /// Whether the node tells if the element is checked although its role does not say so.
     is_toggle: bool,
+    /// How an assistive technology speaks a change of the name of the node unasked.
+    live: Live,
     item: AccessibleItem,
     /// How many times any of the above, or the text of the element, was changed.
     revision: u64,
@@ -33,6 +35,7 @@ impl Semantics {
             value: StoredValue::None,
             actions: AccessibleActions::NONE,
             is_toggle: false,
+            live: Live::Off,
             item: AccessibleItem::default(),
             revision: 0,
             published: PublishedNode::default(),
@@ -91,6 +94,12 @@ impl Semantics {
     pub(crate) fn set_toggle(&mut self, is_toggle: bool) -> bool {
         let changes = self.is_toggle != is_toggle;
         self.is_toggle = is_toggle;
+        self.note(changes)
+    }
+
+    pub(crate) fn set_live(&mut self, live: Live) -> bool {
+        let changes = self.live != live;
+        self.live = live;
         self.note(changes)
     }
 
@@ -158,6 +167,9 @@ impl Semantics {
         }
         if self.is_selectable() {
             node.set_selected(facts.is_checked);
+        }
+        if self.live != Live::Off {
+            node.set_live(self.live);
         }
         if let Some(level) = self.item.level {
             node.set_level(level);
