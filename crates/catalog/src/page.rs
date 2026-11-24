@@ -2,6 +2,7 @@ use morok::components::view::Mount;
 use morok::components::{KitIcon, ScrollView};
 use morok::core::ElementId;
 
+use crate::chart_view::ChartView;
 use crate::disk_map::DiskMap;
 use crate::file_manager::FileManager;
 use crate::gallery::Gallery;
@@ -9,6 +10,7 @@ use crate::pages::{
     buttons_page, collections_page, controls_page, icons_page, images_page, overlays_page, pickers_page,
     scaffolding_page, table_page, text_fields_page,
 };
+use crate::volume::Volume;
 
 /// A page of the catalog: a family of the components of the kit, or a screen built of them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -119,7 +121,7 @@ impl Page {
             Self::Pickers => scrolled(pickers_page::mount, mount),
             Self::Scaffolding => scrolled(scaffolding_page::mount, mount),
             Self::FileManager => FileManager::mount(mount),
-            Self::DiskMap => DiskMap::mount(mount),
+            Self::DiskMap => DiskMap::showing(Volume::Macintosh, ChartView::Sunburst).mount(mount),
         }
     }
 }

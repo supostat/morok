@@ -8,7 +8,7 @@ use morok::core::{ElementId, ElementTree, Point, Rect, Role};
 use morok::style::{Color, Theme};
 use morok_catalog::styles::CLASSES;
 use morok_catalog::tokens::TOKENS;
-use morok_catalog::{Catalog, DiskMap, Page, TABLE_ROWS, WINDOW_SIZE, WINDOW_TITLE, ember, tokens};
+use morok_catalog::{Catalog, Page, TABLE_ROWS, Volume, WINDOW_SIZE, WINDOW_TITLE, ember, tokens};
 use objc2::MainThreadMarker;
 use objc2::rc::Retained;
 use objc2_app_kit::{NSApplication, NSMenu, NSWindow};
@@ -427,7 +427,7 @@ fn a_second_window_opens_from_the_menu_bar(stage: &mut Stage) {
         "the two windows keep focus of their own",
         &format!("{focus_of_first:?}, {focus_of_second:?}"),
     );
-    let first_folder = DiskMap::sunburst().sectors()[0];
+    let first_folder = Volume::Macintosh.sunburst().sectors()[0];
     let ring = first_folder.sector;
     let at = stage.tree_of(1, |tree| {
         elements(tree)

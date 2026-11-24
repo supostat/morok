@@ -1,9 +1,11 @@
 use std::f32::consts::{PI, TAU};
 use std::fmt::Write;
 
+use morok_core::Rect;
 use morok_css::{CompiledTokens, TokenId};
 use morok_platform::RingSector;
 
+use crate::canvas_outline::CanvasOutline;
 use crate::canvas_shape::CanvasShape;
 
 /// The SVG paths a canvas holds on the page: one per shape, filled with its token, so that the
@@ -21,7 +23,10 @@ pub(crate) fn paths(shapes: &[CanvasShape], tokens: &CompiledTokens) -> String {
             .iter()
             .find(|entry| entry.id == TokenId::Color(shape.color))
             .unwrap_or_else(|| panic!("the tokens of the suite have the color {:?}", shape.color));
-        let (outline, fill_rule) = outline(&shape.sector);
+        let (outline, fill_rule) = match &shape.outline {
+            CanvasOutline::Ring(sector) => ring_outline(sector),
+            CanvasOutline::Rectangle(rect) => (rectangle_outline(rect), "nonzero"),
+        };
         let _ = write!(
             paths,
             "<path d=\"{outline}\" fill-rule=\"{fill_rule}\" style=\"fill: var(--{}); fill-opacity: {}\"></path>",
@@ -31,10 +36,22 @@ pub(crate) fn paths(shapes: &[CanvasShape], tokens: &CompiledTokens) -> String {
     paths
 }
 
+/// The outline of the rectangle, clockwise from its top left corner.
+fn rectangle_outline(rect: &Rect) -> String {
+    format!(
+        "M{:.3} {:.3} H{:.3} V{:.3} H{:.3} Z",
+        rect.x,
+        rect.y,
+        rect.right(),
+        rect.bottom(),
+        rect.x
+    )
+}
+
 /// The outline of the sector and the rule that fills it. A sector of a whole turn or more is
 /// the ring between two circles; any other runs along the outer arc, back along the inner one,
 /// and closes along its two radii.
-fn outline(sector: &RingSector) -> (String, &'static str) {
+fn ring_outline(sector: &RingSector) -> (String, &'static str) {
     let RingSector {
         center,
         inner_radius,

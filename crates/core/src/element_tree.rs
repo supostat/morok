@@ -548,6 +548,24 @@ impl ElementTree {
         }
     }
 
+    /// Draws the canvas of a [`Role::Canvas`] element again in the next frame, as the host asks
+    /// its painter for what changed: the box the canvas drew is damaged, although nothing of
+    /// the tree changed. A canvas the surface does not show is drawn by the frame that shows
+    /// it, and asks for nothing.
+    ///
+    /// # Panics
+    ///
+    /// When the element is not a canvas.
+    pub fn repaint_canvas(&mut self, element: ElementId) {
+        let held = &self.elements[element];
+        assert!(held.role == Role::Canvas, "{:?} shows no canvas", held.role);
+        if !held.painted.is_painted {
+            return;
+        }
+        self.pending_damage.add(held.painted.visual_bounds);
+        self.request_frame();
+    }
+
     fn set_media(&mut self, element: ElementId, role: Role, media: MediaContent) {
         let held = &mut self.elements[element];
         assert!(held.role == role, "{:?} shows no {role:?}", held.role);

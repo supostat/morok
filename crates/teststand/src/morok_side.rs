@@ -5,7 +5,6 @@ use morok_core::{ImageId, ImageStatus};
 use morok_platform::{CoreTextShaper, OffscreenTarget, Renderer};
 use morok_style::ColorScheme;
 
-use crate::canvas_shapes_painter::CanvasShapesPainter;
 use crate::case::Case;
 use crate::case_rendering::CaseRendering;
 use crate::compiled_suite::CompiledSuite;
@@ -60,7 +59,7 @@ impl MorokSide {
             scene.frame(case.viewport, &mut self.text_shaper, after);
         }
         let mut target = OffscreenTarget::new(&self.renderer, case.viewport, DEVICE_SCALE);
-        target.set_canvas_painter(Box::new(CanvasShapesPainter::new(scene.canvases().to_vec())));
+        target.set_canvas_painter(Box::new(scene.take_canvas_painters()));
         let tree = scene.tree();
         Rendering {
             image: target.render(tree.display_list(), tree.theme()),

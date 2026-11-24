@@ -1,58 +1,15 @@
-use std::fmt::Write;
-
 use morok::components::view::Mount;
-use morok::components::{Button, Dialog, KitIcon, ProgressBar, Sidebar, SidebarItem, StatusBar, Toolbar};
+use morok::components::{
+    Button, Dialog, KitIcon, ProgressBar, SegmentedControl, Sidebar, SidebarItem, StatusBar, Toolbar,
+};
 use morok::core::accesskit::Role;
 use morok::core::{CanvasId, ElementId};
+use morok::reactive::{Memo, Signal};
 
-use crate::folder_usage::FolderUsage;
+use crate::chart_view::ChartView;
+use crate::disk_map_painter::DiskMapPainter;
 use crate::styles::CLASSES;
-use crate::sunburst::Sunburst;
-use crate::sunburst_painter::SunburstPainter;
-use crate::tokens::TOKENS;
-
-/// The canvas the disk map draws its sunburst into.
-pub const DISK_MAP_CANVAS: CanvasId = CanvasId(1);
-
-/// The folders of the volume the disk map shows: 612 GB of a terabyte.
-const FOLDERS: [FolderUsage; 6] = [
-    FolderUsage {
-        name: "Developer",
-        gigabytes: 60.0,
-        children: &[38.0, 22.0],
-        color: TOKENS.color_chart_1,
-    },
-    FolderUsage {
-        name: "Caches",
-        gigabytes: 42.0,
-        children: &[30.0, 8.0, 4.0],
-        color: TOKENS.color_chart_2,
-    },
-    FolderUsage {
-        name: "Photos",
-        gigabytes: 180.0,
-        children: &[90.0, 50.0, 40.0],
-        color: TOKENS.color_chart_3,
-    },
-    FolderUsage {
-        name: "Projects",
-        gigabytes: 120.0,
-        children: &[70.0, 30.0, 20.0],
-        color: TOKENS.color_chart_4,
-    },
-    FolderUsage {
-        name: "Music",
-        gigabytes: 95.0,
-        children: &[60.0, 35.0],
-        color: TOKENS.color_chart_5,
-    },
-    FolderUsage {
-        name: "System",
-        gigabytes: 115.0,
-        children: &[40.0, 40.0, 35.0],
-        color: TOKENS.color_chart_6,
-    },
-];
+use crate::volume::Volume;
 
 /// The place the sidebar of the disk map selects.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -63,31 +20,72 @@ enum Place {
     Duplicates,
 }
 
+impl Place {
+    fn of(volume: Volume) -> Self {
+        match volume {
+            Volume::Macintosh => Self::Macintosh,
+            Volume::Archive => Self::Archive,
+        }
+    }
+
+    /// The volume the disk map shows while the place is selected: the recommendations are
+    /// folders of Macintosh HD.
+    fn volume(self) -> Volume {
+        match self {
+            Self::Macintosh | Self::BuildCaches | Self::Duplicates => Volume::Macintosh,
+            Self::Archive => Volume::Archive,
+        }
+    }
+}
+
 /// A screen of a disk analyzer: the volumes and the recommendations in a sidebar, the folders of
-/// the volume as a sunburst on a canvas with the used space written in its hole, and the folder
-/// the analysis picked out beside it. Cleaning up asks first.
+/// the volume selected as a sunburst or a treemap on a canvas, the toolbar switching between the
+/// two, and the folder the analysis picked out beside it. Cleaning up asks first.
 #[derive(Clone, Copy, Debug)]
-pub struct DiskMap;
+pub struct DiskMap {
+    volume: Volume,
+    view: ChartView,
+}
 
 impl DiskMap {
-    /// The sunburst of the folders of the volume.
-    pub fn sunburst() -> Sunburst {
-        Sunburst::new(&FOLDERS)
+    /// The disk map opened on `volume` in `view`; the sidebar and the toolbar change both.
+    pub fn showing(volume: Volume, view: ChartView) -> Self {
+        Self { volume, view }
     }
 
-    /// What draws the sunburst into [`DISK_MAP_CANVAS`].
-    pub fn painter() -> SunburstPainter {
-        SunburstPainter::new(DISK_MAP_CANVAS, Self::sunburst().sectors())
+    /// The canvas the chart of `volume` in `view` is drawn into: a canvas of its own for every
+    /// chart, so that every window draws the chart it shows.
+    pub fn canvas(volume: Volume, view: ChartView) -> CanvasId {
+        match (volume, view) {
+            (Volume::Macintosh, ChartView::Sunburst) => CanvasId(1),
+            (Volume::Macintosh, ChartView::Treemap) => CanvasId(2),
+            (Volume::Archive, ChartView::Sunburst) => CanvasId(3),
+            (Volume::Archive, ChartView::Treemap) => CanvasId(4),
+        }
     }
 
-    pub fn mount(mount: &mut Mount<'_>) -> ElementId {
+    /// What draws every chart into its canvas.
+    pub fn painter() -> DiskMapPainter {
+        DiskMapPainter::new()
+    }
+
+    pub fn mount(self, mount: &mut Mount<'_>) -> ElementId {
         let is_asking_to_clean = mount.runtime().signal(false);
         let status = mount.runtime().signal(String::from("Scan finished in 4.1 s"));
-        let place = mount.runtime().signal(Place::Macintosh);
+        let place = mount.runtime().signal(Place::of(self.volume));
+        let view = mount.runtime().signal(self.view);
+        let volume = mount.runtime().memo(move |runtime| runtime.get(place).volume());
 
         let toolbar = Toolbar::new()
             .title("DOMOVOI")
             .spacer()
+            .item(move |mount| {
+                let mut views = SegmentedControl::new(view);
+                for shown in ChartView::ALL {
+                    views = views.segment(shown, shown.title());
+                }
+                views.label("Chart").mount(mount)
+            })
             .item(move |mount| {
                 Button::new("Clean up 66.2 GB")
                     .primary()
@@ -99,14 +97,14 @@ impl DiskMap {
         let sidebar = Sidebar::new(place)
             .heading("VOLUMES")
             .item(
-                SidebarItem::new(Place::Macintosh, "Macintosh HD")
+                SidebarItem::new(Place::Macintosh, Volume::Macintosh.name())
                     .icon(KitIcon::Disk)
-                    .detail("1 TB"),
+                    .detail(Volume::Macintosh.capacity()),
             )
             .item(
-                SidebarItem::new(Place::Archive, "Archive")
+                SidebarItem::new(Place::Archive, Volume::Archive.name())
                     .icon(KitIcon::Disk)
-                    .detail("4 TB"),
+                    .detail(Volume::Archive.capacity()),
             )
             .heading("RECOMMENDATIONS")
             .item(
@@ -121,8 +119,8 @@ impl DiskMap {
             )
             .label("Volumes")
             .mount(mount);
-        let chart = chart(mount);
-        let details = details(mount);
+        let chart = chart(mount, volume, view);
+        let details = details(mount, volume);
         let body = mount
             .element()
             .class(CLASSES.disk_map_body)
@@ -154,56 +152,60 @@ impl DiskMap {
     }
 }
 
-/// The sunburst on its canvas, with the used space written in its hole.
-fn chart(mount: &mut Mount<'_>) -> ElementId {
+/// The chart of the volume in the view on its canvas; the sunburst has the used space written
+/// in its hole.
+fn chart(mount: &mut Mount<'_>, volume: Memo<Volume>, view: Signal<ChartView>) -> ElementId {
+    let shown = mount
+        .runtime()
+        .memo(move |runtime| DiskMap::canvas(runtime.get(volume), runtime.get(view)));
+    let description = mount.runtime().memo(move |runtime| runtime.get(volume).description());
+    let is_sunburst = mount
+        .runtime()
+        .memo(move |runtime| runtime.get(view) == ChartView::Sunburst);
     let canvas = mount
-        .canvas(DISK_MAP_CANVAS)
+        .canvas(shown)
         .class(CLASSES.disk_map_canvas)
         .accessible_role(Role::Image)
-        .accessible_name(chart_description())
-        .id();
-    let used = mount.text("612 GB").class(CLASSES.disk_map_used).id();
-    let capacity = mount.text("used of 1 TB").class(CLASSES.disk_map_capacity).id();
-    let total = mount
-        .element()
-        .class(CLASSES.disk_map_total)
-        .child(used)
-        .child(capacity)
+        .accessible_name(description)
         .id();
     mount
         .element()
         .class(CLASSES.disk_map_chart)
         .child(canvas)
-        .child(total)
+        .show(is_sunburst, move |mount| total(mount, volume))
         .id()
 }
 
-/// What the sunburst shows, told in words: the used space, then every folder with its size.
-fn chart_description() -> String {
-    let mut description = String::from("Macintosh HD, 612 GB used of 1 TB:");
-    for (position, folder) in FOLDERS.iter().enumerate() {
-        let separator = if position == 0 { " " } else { ", " };
-        write!(description, "{separator}{} {} GB", folder.name, folder.gigabytes)
-            .expect("a string takes what is written to it");
-    }
-    description
+/// The used space of the volume and its capacity, written in the hole of the sunburst.
+fn total(mount: &mut Mount<'_>, volume: Memo<Volume>) -> ElementId {
+    let used = mount.runtime().memo(move |runtime| runtime.get(volume).used());
+    let capacity = mount
+        .runtime()
+        .memo(move |runtime| format!("used of {}", runtime.get(volume).capacity()));
+    let used = mount.text(used).class(CLASSES.disk_map_used).id();
+    let capacity = mount.text(capacity).class(CLASSES.disk_map_capacity).id();
+    mount
+        .element()
+        .class(CLASSES.disk_map_total)
+        .child(used)
+        .child(capacity)
+        .id()
 }
 
-/// The folder the analysis picked out.
-fn details(mount: &mut Mount<'_>) -> ElementId {
+/// The folder the analysis of the volume picked out.
+fn details(mount: &mut Mount<'_>, volume: Memo<Volume>) -> ElementId {
+    let runtime = mount.runtime();
+    let path = runtime.memo(move |runtime| runtime.get(volume).picked_folder().path.to_owned());
+    let size = runtime.memo(move |runtime| runtime.get(volume).picked_folder().size.to_owned());
+    let share = runtime.memo(move |runtime| runtime.get(volume).picked_folder().share);
+    let note = runtime.memo(move |runtime| runtime.get(volume).picked_folder().note.to_owned());
     let label = mount.text("SELECTED").class(CLASSES.disk_map_label).id();
-    let path = mount.text("~/Library/Developer").class(CLASSES.disk_map_path).id();
-    let size = mount
-        .text("60.1 GB · 214,038 files")
-        .class(CLASSES.disk_map_detail)
-        .id();
-    let share = ProgressBar::determinate(0.38)
+    let path = mount.text(path).class(CLASSES.disk_map_path).id();
+    let size = mount.text(size).class(CLASSES.disk_map_detail).id();
+    let share = ProgressBar::determinate(share)
         .label("Share of the used space")
         .mount(mount);
-    let note = mount
-        .text("Local model: Xcode build caches and simulators, rebuilt automatically.")
-        .class(CLASSES.disk_map_note)
-        .id();
+    let note = mount.text(note).class(CLASSES.disk_map_note).id();
     mount
         .element()
         .class(CLASSES.disk_map_details)

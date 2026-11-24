@@ -1,10 +1,13 @@
+use std::mem;
 use std::time::Duration;
 
 use morok_components::view::{Mount, SurfaceId, Surfaces};
 use morok_core::{CanvasId, ElementId, ElementTree, ImageId, Offset, Rect, Role, Size, TextSelection, TextShaper};
+use morok_platform::CanvasPainter;
 use morok_reactive::Runtime;
 use morok_style::{States, StyleSheet, Theme};
 
+use crate::canvas_painters::CanvasPainters;
 use crate::canvas_shape::CanvasShape;
 use crate::element_box::ElementBox;
 use crate::media_source::{IconSource, ImageSource};
@@ -30,8 +33,10 @@ pub struct Scene {
     pictures: Vec<ImageSource>,
     /// The `Scroll` elements the case scrolls, with the offsets it asks for.
     scroll_offsets: Vec<(ElementId, Offset)>,
-    /// The canvases of the scene with the shapes they are filled with.
+    /// The canvases of the scene with the shapes Chrome fills them with.
     canvases: Vec<(CanvasId, Vec<CanvasShape>)>,
+    /// What the kit draws the canvases of the scene with.
+    canvas_painters: CanvasPainters,
 }
 
 impl Scene {
@@ -49,6 +54,7 @@ impl Scene {
             pictures: Vec::new(),
             scroll_offsets: Vec::new(),
             canvases: Vec::new(),
+            canvas_painters: CanvasPainters::default(),
         }
     }
 
@@ -137,16 +143,18 @@ impl Scene {
         id
     }
 
-    /// Fills the canvas with the shapes, in their order: both sides draw them into every
-    /// element that hands the application this canvas.
-    pub fn draw_canvas(&mut self, canvas: CanvasId, shapes: Vec<CanvasShape>) {
+    /// Fills the canvas in every element that hands the application this canvas: Chrome fills
+    /// it with the shapes, in their order, and the kit draws it with `painter`, which the stand
+    /// holds against that independent drawing of the same shapes.
+    pub fn draw_canvas(&mut self, canvas: CanvasId, shapes: Vec<CanvasShape>, painter: impl CanvasPainter + 'static) {
         self.canvases.retain(|(drawn, _)| *drawn != canvas);
         self.canvases.push((canvas, shapes));
+        self.canvas_painters.set(canvas, Box::new(painter));
     }
 
-    /// The canvases of the scene with the shapes they are filled with.
-    pub(crate) fn canvases(&self) -> &[(CanvasId, Vec<CanvasShape>)] {
-        &self.canvases
+    /// Hands over what the kit draws the canvases of the scene with.
+    pub(crate) fn take_canvas_painters(&mut self) -> CanvasPainters {
+        mem::take(&mut self.canvas_painters)
     }
 
     /// The shapes the canvas of the element is filled with; none for a canvas the case leaves

@@ -1,6 +1,13 @@
 mod support;
 
-use morok_core::{BoxFrame, Corners, DisplayItem, ElementId, GradientShape, GradientStop, Point, Rect, Role, Sides};
+use std::cell::Cell;
+use std::rc::Rc;
+use std::time::Duration;
+
+use morok_core::{
+    BoxFrame, CanvasId, Corners, DisplayItem, ElementId, FrameScheduler, GradientShape, GradientStop, Point, Rect,
+    Role, Sides,
+};
 use morok_css::SourceFile;
 use morok_style::{Color, Pixels, ShadowLayer, States};
 use support::Scene;
@@ -756,4 +763,86 @@ fn a_root_without_a_box_paints_nothing_and_damages_what_the_tree_drew() {
 
     assert_eq!(shown.rebuilt, 4);
     assert_eq!(item_kinds(&scene).len(), 7);
+}
+
+const CHART: &str = ".page { display: flex; padding: 20px; background-color: var(--color-bg); }\n\
+    .chart { width: 120px; height: 80px; }";
+
+/// Counts the frames a tree asked its host for.
+#[derive(Debug, Default)]
+struct CountingScheduler {
+    requested_frames: Rc<Cell<usize>>,
+}
+
+impl FrameScheduler for CountingScheduler {
+    fn request_frame(&self) {
+        self.requested_frames.set(self.requested_frames.get() + 1);
+    }
+
+    fn request_frame_after(&self, _delay: Duration) {}
+}
+
+/// A page that shows one canvas, after its first frame and a frame that changed nothing; the
+/// tree has a host, whose count of frames asked for is returned with them.
+fn chart_page() -> (Scene, ElementId, Rc<Cell<usize>>) {
+    let mut scene = Scene::new(CHART);
+    scene.add_classes(scene.root(), &["page"]);
+    let chart = scene.add(scene.root(), Role::Canvas, &["chart"]);
+    scene.tree.set_canvas(chart, CanvasId(3));
+    let requested_frames = Rc::new(Cell::new(0));
+    scene.tree.set_frame_scheduler(Box::new(CountingScheduler {
+        requested_frames: Rc::clone(&requested_frames),
+    }));
+    scene.frame();
+    scene.frame();
+    (scene, chart, requested_frames)
+}
+
+#[test]
+fn a_canvas_repainted_on_request_damages_its_box_and_asks_for_a_frame() {
+    let (mut scene, chart, requested_frames) = chart_page();
+    assert!(damage(&scene).is_empty(), "the frame before changed nothing");
+    let asked_before = requested_frames.get();
+
+    scene.tree.repaint_canvas(chart);
+    let repainted = scene.frame();
+
+    assert_eq!(
+        requested_frames.get(),
+        asked_before + 1,
+        "the tree asks the host for the frame that draws the canvas again"
+    );
+    assert_eq!(repainted.rebuilt, 0, "the display list stays as it is");
+    assert_eq!(damage(&scene), [scene.border_box(chart)]);
+    scene.frame();
+    assert!(damage(&scene).is_empty(), "one request draws the canvas once");
+}
+
+#[test]
+fn a_canvas_the_surface_does_not_show_is_repainted_by_nothing() {
+    let (mut scene, chart, requested_frames) = chart_page();
+    scene.tree.detach(chart);
+    scene.frame();
+    let asked_before = requested_frames.get();
+
+    scene.tree.repaint_canvas(chart);
+    scene.frame();
+
+    assert_eq!(requested_frames.get(), asked_before);
+    assert!(damage(&scene).is_empty());
+}
+
+#[test]
+fn a_canvas_given_another_canvas_draws_it_in_its_box() {
+    let (mut scene, chart, _) = chart_page();
+
+    scene.tree.set_canvas(chart, CanvasId(4));
+    scene.frame();
+
+    assert_eq!(damage(&scene), [scene.border_box(chart)]);
+    let shown = scene.tree.display_list().items().iter().find_map(|item| match item {
+        DisplayItem::Canvas { canvas, .. } => Some(*canvas),
+        _ => None,
+    });
+    assert_eq!(shown, Some(CanvasId(4)));
 }

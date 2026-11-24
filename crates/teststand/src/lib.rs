@@ -2,8 +2,9 @@
 
 mod anti_aliasing;
 mod canvas_markup;
+mod canvas_outline;
+mod canvas_painters;
 mod canvas_shape;
-mod canvas_shapes_painter;
 mod case;
 mod case_rendering;
 mod case_verdict;

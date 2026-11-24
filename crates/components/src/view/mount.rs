@@ -112,10 +112,12 @@ impl<'a> Mount<'a> {
 
     /// Creates a canvas the application draws `canvas` into and builds on it: the kit lays it
     /// out, clips it and hands its content box to the painter of the host in paint order.
-    pub fn canvas(&mut self, canvas: CanvasId) -> ElementBuilder<'_, 'a> {
+    /// Another canvas written to `canvas` is drawn in its place.
+    pub fn canvas(&mut self, canvas: impl Into<Property<CanvasId>>) -> ElementBuilder<'_, 'a> {
         let element = self.surface.tree.create(Role::Canvas);
-        self.surface.tree.set_canvas(element, canvas);
-        self.build(element)
+        let mut builder = self.build(element);
+        builder.bind(canvas.into(), |tree, element, canvas| tree.set_canvas(element, *canvas));
+        builder
     }
 
     /// Builds on the root of the surface: what a component gives the root holds for the whole
