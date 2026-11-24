@@ -1,4 +1,4 @@
-use accesskit::{Action, Affine, Live, Node, NodeId, Rect, Role, Toggled};
+use accesskit::{Action, Affine, Live, Node, NodeId, Orientation, Rect, Role, Toggled};
 
 use crate::accessibility::accessible_actions::AccessibleActions;
 use crate::accessibility::accessible_item::AccessibleItem;
@@ -19,6 +19,8 @@ pub(crate) struct Semantics {
     is_toggle: bool,
     /// How an assistive technology speaks a change of the name of the node unasked.
     live: Live,
+    /// Which way the element lies, for a node whose role leaves it open; none until told.
+    orientation: Option<Orientation>,
     item: AccessibleItem,
     /// How many times any of the above, or the text of the element, was changed.
     revision: u64,
@@ -36,6 +38,7 @@ impl Semantics {
             actions: AccessibleActions::NONE,
             is_toggle: false,
             live: Live::Off,
+            orientation: None,
             item: AccessibleItem::default(),
             revision: 0,
             published: PublishedNode::default(),
@@ -100,6 +103,12 @@ impl Semantics {
     pub(crate) fn set_live(&mut self, live: Live) -> bool {
         let changes = self.live != live;
         self.live = live;
+        self.note(changes)
+    }
+
+    pub(crate) fn set_orientation(&mut self, orientation: Orientation) -> bool {
+        let changes = self.orientation != Some(orientation);
+        self.orientation = Some(orientation);
         self.note(changes)
     }
 
@@ -171,33 +180,10 @@ impl Semantics {
         if self.live != Live::Off {
             node.set_live(self.live);
         }
-        if let Some(level) = self.item.level {
-            node.set_level(level);
+        if let Some(orientation) = self.orientation {
+            node.set_orientation(orientation);
         }
-        if let Some(expanded) = self.item.expanded {
-            node.set_expanded(expanded);
-        }
-        if let Some(position) = self.item.position_in_set {
-            node.set_position_in_set(position);
-        }
-        if let Some(size) = self.item.size_of_set {
-            node.set_size_of_set(size);
-        }
-        if let Some(count) = self.item.row_count {
-            node.set_row_count(count);
-        }
-        if let Some(count) = self.item.column_count {
-            node.set_column_count(count);
-        }
-        if let Some(index) = self.item.row_index {
-            node.set_row_index(index);
-        }
-        if let Some(index) = self.item.column_index {
-            node.set_column_index(index);
-        }
-        if let Some(direction) = self.item.sort_direction {
-            node.set_sort_direction(direction);
-        }
+        self.item.describe(&mut node);
         if facts.takes_focus {
             node.add_action(Action::Focus);
         }

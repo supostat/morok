@@ -13,7 +13,7 @@ width = 560.0
 height = 180.0
 
 [[light]]
-node = "#2 .split"
+node = "#2 .split.horizontal"
 x = 0.0
 y = 0.0
 width = 560.0
@@ -41,21 +41,21 @@ width = 126.0
 height = 15.0
 
 [[light]]
-node = "#6 .split-divider"
+node = "#6 .split-divider.horizontal"
 x = 150.0
 y = 0.0
 width = 1.0
 height = 180.0
 
 [[light]]
-node = "#7 .split-grip"
+node = "#7 .split-grip.horizontal"
 x = 147.0
 y = 0.0
 width = 7.0
 height = 180.0
 
 [[light]]
-node = "#8 .split-handle"
+node = "#8 .split-handle.horizontal"
 x = 148.0
 y = 76.0
 width = 5.0
@@ -83,21 +83,21 @@ width = 214.0
 height = 15.0
 
 [[light]]
-node = "#12 .split-divider"
+node = "#12 .split-divider.horizontal"
 x = 389.0
 y = 0.0
 width = 1.0
 height = 180.0
 
 [[light]]
-node = "#13 .split-grip"
+node = "#13 .split-grip.horizontal"
 x = 386.0
 y = 0.0
 width = 7.0
 height = 180.0
 
 [[light]]
-node = "#14 .split-handle"
+node = "#14 .split-handle.horizontal"
 x = 387.0
 y = 76.0
 width = 5.0
@@ -139,7 +139,7 @@ width = 560.0
 height = 180.0
 
 [[dark]]
-node = "#2 .split"
+node = "#2 .split.horizontal"
 x = 0.0
 y = 0.0
 width = 560.0
@@ -167,21 +167,21 @@ width = 126.0
 height = 15.0
 
 [[dark]]
-node = "#6 .split-divider"
+node = "#6 .split-divider.horizontal"
 x = 150.0
 y = 0.0
 width = 1.0
 height = 180.0
 
 [[dark]]
-node = "#7 .split-grip"
+node = "#7 .split-grip.horizontal"
 x = 147.0
 y = 0.0
 width = 7.0
 height = 180.0
 
 [[dark]]
-node = "#8 .split-handle"
+node = "#8 .split-handle.horizontal"
 x = 148.0
 y = 76.0
 width = 5.0
@@ -209,21 +209,21 @@ width = 214.0
 height = 15.0
 
 [[dark]]
-node = "#12 .split-divider"
+node = "#12 .split-divider.horizontal"
 x = 389.0
 y = 0.0
 width = 1.0
 height = 180.0
 
 [[dark]]
-node = "#13 .split-grip"
+node = "#13 .split-grip.horizontal"
 x = 386.0
 y = 0.0
 width = 7.0
 height = 180.0
 
 [[dark]]
-node = "#14 .split-handle"
+node = "#14 .split-handle.horizontal"
 x = 387.0
 y = 76.0
 width = 5.0

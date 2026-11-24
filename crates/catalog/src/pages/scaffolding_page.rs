@@ -1,6 +1,6 @@
 use morok::components::view::{Mount, Surfaces};
 use morok::components::{
-    Button, IconButton, KitIcon, SearchField, Sidebar, SidebarItem, SplitPane, SplitView, StatusBar, Toolbar,
+    Button, IconButton, KitIcon, SearchField, Sidebar, SidebarItem, SplitAxis, SplitPane, SplitView, StatusBar, Toolbar,
 };
 use morok::core::{ElementId, Key, KeyChord, Modifiers};
 use morok::reactive::Runtime;
@@ -17,14 +17,11 @@ enum Place {
 }
 
 /// The scaffolding of a window, each part on its own: a toolbar and a status bar whose commands
-/// are read back under them, a sidebar, and a split view of three panes whose last one folds
-/// away.
+/// are read back under them, a sidebar, a split view of three panes side by side whose last one
+/// folds away, and a split view of two panes one above the other whose lower one folds away.
 pub(crate) fn mount(mount: &mut Mount<'_>) -> ElementId {
     let query = mount.runtime().signal(String::new());
     let place = mount.runtime().signal(Place::Macintosh);
-    let places_width = mount.runtime().signal(150.0_f32);
-    let details_width = mount.runtime().signal(170.0_f32);
-    let are_details_folded = mount.runtime().signal(false);
     let last_command = mount.runtime().signal(String::from("no command yet"));
     let said = mount
         .runtime()
@@ -87,23 +84,52 @@ pub(crate) fn mount(mount: &mut Mount<'_>) -> ElementId {
         .label("Places")
         .mount(mount);
     let sidebar_box = mount.element().class(CLASSES.page_sidebar).child(sidebar).id();
+    let split_box = side_by_side_split(mount);
+    let vertical_split_box = vertical_split(mount);
+    let bars_section = section(mount, "TOOLBAR AND STATUS BAR", bars);
+    let said_section = section(mount, "COMMANDS", said);
+    let sidebar_row = row(mount, &[sidebar_box]);
+    let sidebar_section = section(mount, "SIDEBAR", sidebar_row);
+    let split_section = section(mount, "SPLIT VIEW", split_box);
+    let vertical_split_section = section(mount, "VERTICAL SPLIT VIEW", vertical_split_box);
+    page(
+        mount,
+        "Window scaffolding",
+        &[
+            bars_section,
+            said_section,
+            sidebar_section,
+            split_section,
+            vertical_split_section,
+        ],
+    )
+}
+
+/// Three panes side by side in a box of the page; the last one folds away.
+fn side_by_side_split(mount: &mut Mount<'_>) -> ElementId {
+    let places_width = mount.runtime().signal(150.0_f32);
+    let details_width = mount.runtime().signal(170.0_f32);
+    let are_details_folded = mount.runtime().signal(false);
     let split_view = SplitView::new()
         .pane(SplitPane::sized(places_width, 100.0..=240.0, pane("Places")))
         .pane(SplitPane::flexible(pane("Files")))
         .pane(SplitPane::sized(details_width, 120.0..=260.0, pane("Details")).collapsible(are_details_folded))
         .label("Panes")
         .mount(mount);
-    let split_box = mount.element().class(CLASSES.page_split).child(split_view).id();
-    let bars_section = section(mount, "TOOLBAR AND STATUS BAR", bars);
-    let said_section = section(mount, "COMMANDS", said);
-    let sidebar_row = row(mount, &[sidebar_box]);
-    let sidebar_section = section(mount, "SIDEBAR", sidebar_row);
-    let split_section = section(mount, "SPLIT VIEW", split_box);
-    page(
-        mount,
-        "Window scaffolding",
-        &[bars_section, said_section, sidebar_section, split_section],
-    )
+    mount.element().class(CLASSES.page_split).child(split_view).id()
+}
+
+/// Two panes one above the other in a box of the page; the lower one folds away.
+fn vertical_split(mount: &mut Mount<'_>) -> ElementId {
+    let preview_height = mount.runtime().signal(64.0_f32);
+    let is_preview_folded = mount.runtime().signal(false);
+    let split_view = SplitView::new()
+        .axis(SplitAxis::Vertical)
+        .pane(SplitPane::flexible(pane("Files")))
+        .pane(SplitPane::sized(preview_height, 40.0..=110.0, pane("Preview")).collapsible(is_preview_folded))
+        .label("Preview")
+        .mount(mount);
+    mount.element().class(CLASSES.page_split).child(split_view).id()
 }
 
 fn function_key(number: u8) -> KeyChord {

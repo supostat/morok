@@ -1,4 +1,4 @@
-use accesskit::SortDirection;
+use accesskit::{Node, SortDirection};
 
 /// Where the node of an element stands among the items of a list, a tree, a strip of tabs or a
 /// table, as an assistive technology reads it.
@@ -23,4 +23,37 @@ pub struct AccessibleItem {
     /// The order of the rows by the column of a column header; none for a header the rows are
     /// not sorted by.
     pub sort_direction: Option<SortDirection>,
+}
+
+impl AccessibleItem {
+    /// Writes into `node` every place of the item that is known.
+    pub(crate) fn describe(&self, node: &mut Node) {
+        if let Some(level) = self.level {
+            node.set_level(level);
+        }
+        if let Some(expanded) = self.expanded {
+            node.set_expanded(expanded);
+        }
+        if let Some(position) = self.position_in_set {
+            node.set_position_in_set(position);
+        }
+        if let Some(size) = self.size_of_set {
+            node.set_size_of_set(size);
+        }
+        if let Some(count) = self.row_count {
+            node.set_row_count(count);
+        }
+        if let Some(count) = self.column_count {
+            node.set_column_count(count);
+        }
+        if let Some(index) = self.row_index {
+            node.set_row_index(index);
+        }
+        if let Some(index) = self.column_index {
+            node.set_column_index(index);
+        }
+        if let Some(direction) = self.sort_direction {
+            node.set_sort_direction(direction);
+        }
+    }
 }

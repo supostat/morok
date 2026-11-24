@@ -3,8 +3,8 @@ mod support;
 use std::collections::HashMap;
 
 use morok_core::accesskit::{
-    Action, ActionData, ActionRequest, Affine, Live, Node, NodeId, Rect, Role as NodeRole, SortDirection, Toggled,
-    TreeId, TreeUpdate,
+    Action, ActionData, ActionRequest, Affine, Live, Node, NodeId, Orientation, Rect, Role as NodeRole, SortDirection,
+    Toggled, TreeId, TreeUpdate,
 };
 use morok_core::{AccessibleActions, AccessibleItem, AccessibleValue, ElementId, Focusability, NumericValue, Role};
 use morok_style::States;
@@ -362,6 +362,33 @@ fn the_live_setting_of_an_element_reaches_its_node() {
     dialog.scene.tree.set_accessible_live(dialog.save, Live::Off);
     dialog.update();
     assert_eq!(dialog.mirror.node(dialog.save).live(), None);
+}
+
+#[test]
+fn the_orientation_of_an_element_reaches_its_node() {
+    let mut dialog = DialogScene::new();
+    assert_eq!(
+        dialog.mirror.node(dialog.remember).orientation(),
+        None,
+        "a node lies no way unless told"
+    );
+
+    dialog
+        .scene
+        .tree
+        .set_accessible_orientation(dialog.remember, Orientation::Horizontal);
+    let changed = dialog.update();
+    assert_eq!(
+        dialog.mirror.node(dialog.remember).orientation(),
+        Some(Orientation::Horizontal)
+    );
+    assert_eq!(changed, ids(&[dialog.remember]));
+
+    dialog
+        .scene
+        .tree
+        .set_accessible_orientation(dialog.remember, Orientation::Horizontal);
+    assert!(dialog.update().is_empty(), "the same orientation changes nothing");
 }
 
 #[test]

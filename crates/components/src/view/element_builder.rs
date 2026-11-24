@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use morok_core::accesskit::{Live, Role as AccessibleRole};
+use morok_core::accesskit::{Live, Orientation, Role as AccessibleRole};
 use morok_core::{
     AccessibleActions, AccessibleItem, AccessibleValue, DragStart, ElementId, ElementTree, Focusability, KeyChord,
     MenuCommand, NumericValue, PayloadType, Propagation, ShortcutScope,
@@ -164,6 +164,20 @@ impl ElementBuilder<'_, '_> {
     /// When the element has no accessible role.
     pub fn accessible_live(&mut self, live: Live) -> &mut Self {
         self.mount.surface.tree.set_accessible_live(self.element, live);
+        self
+    }
+
+    /// Says which way the element lies, for a node whose role leaves it open: the line of a
+    /// splitter.
+    ///
+    /// # Panics
+    ///
+    /// When the element has no accessible role.
+    pub fn accessible_orientation(&mut self, orientation: Orientation) -> &mut Self {
+        self.mount
+            .surface
+            .tree
+            .set_accessible_orientation(self.element, orientation);
         self
     }
 

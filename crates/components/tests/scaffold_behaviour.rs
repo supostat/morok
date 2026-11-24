@@ -2,9 +2,9 @@ mod support;
 
 use morok_components::styles::CLASSES;
 use morok_components::{
-    Button, IconButton, KitIcon, SearchField, Sidebar, SidebarItem, SplitPane, SplitView, StatusBar, Toolbar,
+    Button, IconButton, KitIcon, SearchField, Sidebar, SidebarItem, SplitAxis, SplitPane, SplitView, StatusBar, Toolbar,
 };
-use morok_core::accesskit::{Action, ActionData, Role as AccessibleRole};
+use morok_core::accesskit::{Action, ActionData, Orientation, Role as AccessibleRole};
 use morok_core::{ElementId, Key, KeyChord, Modifiers, Point, PointerButton, PointerInputKind, Role};
 use morok_reactive::Signal;
 use morok_style::States;
@@ -25,28 +25,32 @@ mod split_view {
 
     struct SplitStage {
         stage: Stage,
-        /// The panes and the dividers between them, in their order across the view.
+        axis: SplitAxis,
+        view: ElementId,
+        /// The panes and the dividers between them, in their order along the view.
         parts: [ElementId; 5],
-        sidebar_width: Signal<f32>,
-        sidebar_is_collapsed: Signal<bool>,
-        inspector_width: Signal<f32>,
+        first_length: Signal<f32>,
+        first_is_collapsed: Signal<bool>,
+        last_length: Signal<f32>,
     }
 
-    /// A view 400 px wide: a sidebar 120 px wide that folds, between 80 and 200 px; the pane
-    /// that takes the rest; an inspector 100 px wide, between 60 and 160 px.
-    fn split_view() -> SplitStage {
+    /// A view along `axis` that fills the stage, 400 px wide and 300 px tall: a first pane
+    /// 120 px long that folds, between 80 and 200 px; the pane that takes the rest; a last
+    /// pane 100 px long, between 60 and 160 px.
+    fn split_view(axis: SplitAxis) -> SplitStage {
         let mut stage = Stage::new();
-        let sidebar_width = stage.runtime.signal(120.0_f32);
-        let sidebar_is_collapsed = stage.runtime.signal(false);
-        let inspector_width = stage.runtime.signal(100.0_f32);
+        let first_length = stage.runtime.signal(120.0_f32);
+        let first_is_collapsed = stage.runtime.signal(false);
+        let last_length = stage.runtime.signal(100.0_f32);
         let view = stage.mount(move |mount| {
             SplitView::new()
+                .axis(axis)
                 .pane(
-                    SplitPane::sized(sidebar_width, 80.0..=200.0, |mount| mount.text("Sidebar").id())
-                        .collapsible(sidebar_is_collapsed),
+                    SplitPane::sized(first_length, 80.0..=200.0, |mount| mount.text("Sidebar").id())
+                        .collapsible(first_is_collapsed),
                 )
                 .pane(SplitPane::flexible(|mount| mount.text("Files").id()))
-                .pane(SplitPane::sized(inspector_width, 60.0..=160.0, |mount| {
+                .pane(SplitPane::sized(last_length, 60.0..=160.0, |mount| {
                     mount.text("Inspector").id()
                 }))
                 .label("Panes")
@@ -57,70 +61,86 @@ mod split_view {
             .children(view)
             .try_into()
             .expect("three panes lie around two dividers");
-        assert_eq!(stage.tree().classes(view), [CLASSES.split]);
         SplitStage {
             stage,
+            axis,
+            view,
             parts,
-            sidebar_width,
-            sidebar_is_collapsed,
-            inspector_width,
+            first_length,
+            first_is_collapsed,
+            last_length,
         }
     }
 
     impl SplitStage {
-        /// Where each part starts and how wide it is, after the last frame.
+        /// Where each part starts along the axis and how long it is, after the last frame.
         fn spans(&self) -> [(f32, f32); 5] {
             self.parts.map(|part| {
                 let part_box = self.stage.tree().border_box(part);
-                (part_box.x, part_box.width)
+                match self.axis {
+                    SplitAxis::Horizontal => (part_box.x, part_box.width),
+                    SplitAxis::Vertical => (part_box.y, part_box.height),
+                }
             })
         }
 
-        fn pointer(&mut self, kind: PointerInputKind, x: f32) {
-            self.stage.pointer_on(self.stage.surface, kind, Point { x, y: 150.0 });
+        /// The pointer at `along` on the axis, halfway across the view.
+        fn pointer(&mut self, kind: PointerInputKind, along: f32) {
+            let position = match self.axis {
+                SplitAxis::Horizontal => Point { x: along, y: 150.0 },
+                SplitAxis::Vertical => Point { x: 200.0, y: along },
+            };
+            self.stage.pointer_on(self.stage.surface, kind, position);
             self.stage.frame();
         }
 
-        fn press_at(&mut self, x: f32) {
+        fn press_at(&mut self, along: f32) {
             let pressed = PointerInputKind::Pressed {
                 button: PointerButton::Primary,
                 click_count: 1,
             };
-            self.pointer(pressed, x);
+            self.pointer(pressed, along);
         }
 
-        fn release_at(&mut self, x: f32) {
+        fn release_at(&mut self, along: f32) {
             let released = PointerInputKind::Released {
                 button: PointerButton::Primary,
                 click_count: 1,
             };
-            self.pointer(released, x);
+            self.pointer(released, along);
         }
 
-        /// How wide the signals of the sidebar and of the inspector say the two are.
-        fn widths(&mut self) -> (f32, f32) {
+        /// How long the signals of the first pane and of the last one say the two are.
+        fn lengths(&mut self) -> (f32, f32) {
             (
-                self.stage.runtime.get(self.sidebar_width),
-                self.stage.runtime.get(self.inspector_width),
+                self.stage.runtime.get(self.first_length),
+                self.stage.runtime.get(self.last_length),
             )
         }
 
-        fn sidebar_is_collapsed(&mut self) -> bool {
-            self.stage.runtime.get(self.sidebar_is_collapsed)
+        fn first_is_collapsed(&mut self) -> bool {
+            self.stage.runtime.get(self.first_is_collapsed)
         }
     }
 
     #[test]
     fn the_panes_lie_side_by_side_with_a_divider_between_every_two() {
-        let mut split = split_view();
+        let mut split = split_view(SplitAxis::Horizontal);
         let tree = split.stage.tree();
         let [sidebar, sidebar_divider, files, inspector_divider, inspector] = split.parts;
 
+        assert_eq!(tree.classes(split.view), [CLASSES.split, CLASSES.horizontal]);
         assert_eq!(tree.classes(sidebar), [CLASSES.split_pane]);
         assert_eq!(tree.classes(files), [CLASSES.split_pane, CLASSES.flexible]);
         assert_eq!(tree.classes(inspector), [CLASSES.split_pane]);
-        assert_eq!(tree.classes(sidebar_divider), [CLASSES.split_divider]);
-        assert_eq!(tree.classes(inspector_divider), [CLASSES.split_divider]);
+        assert_eq!(
+            tree.classes(sidebar_divider),
+            [CLASSES.split_divider, CLASSES.horizontal]
+        );
+        assert_eq!(
+            tree.classes(inspector_divider),
+            [CLASSES.split_divider, CLASSES.horizontal]
+        );
         assert_eq!(
             split.spans(),
             [(0.0, 120.0), (120.0, 1.0), (121.0, 178.0), (299.0, 1.0), (300.0, 100.0)],
@@ -128,6 +148,11 @@ mod split_view {
         );
         let node = split.stage.accessible_node(sidebar_divider);
         assert_eq!((node.role(), node.label()), (AccessibleRole::Splitter, Some("Panes")));
+        assert_eq!(
+            node.orientation(),
+            Some(Orientation::Vertical),
+            "the line between panes side by side stands upright"
+        );
         assert_eq!(
             (node.numeric_value(), node.min_numeric_value(), node.max_numeric_value()),
             (Some(120.0), Some(0.0), Some(200.0)),
@@ -142,26 +167,26 @@ mod split_view {
 
     #[test]
     fn a_dragged_divider_changes_the_width_of_its_pane_within_the_limits() {
-        let mut split = split_view();
+        let mut split = split_view(SplitAxis::Horizontal);
 
         split.press_at(120.5);
         split.pointer(PointerInputKind::Moved, 170.5);
         assert_eq!(
-            (split.widths().0, split.spans()[0], split.spans()[2]),
+            (split.lengths().0, split.spans()[0], split.spans()[2]),
             (170.0, (0.0, 170.0), (171.0, 128.0)),
             "the pane before a divider grows as the divider goes right"
         );
 
         split.pointer(PointerInputKind::Moved, 320.0);
         assert_eq!(
-            split.widths(),
+            split.lengths(),
             (200.0, 100.0),
             "the divider stops at the widest its pane goes"
         );
         split.release_at(320.0);
         split.pointer(PointerInputKind::Moved, 150.0);
         assert_eq!(
-            split.widths(),
+            split.lengths(),
             (200.0, 100.0),
             "a pointer that let the divider go moves it no longer"
         );
@@ -170,13 +195,13 @@ mod split_view {
         split.press_at(299.5);
         split.pointer(PointerInputKind::Moved, 269.5);
         assert_eq!(
-            (split.widths().1, split.spans()[4]),
+            (split.lengths().1, split.spans()[4]),
             (130.0, (270.0, 130.0)),
             "the pane after a divider grows as the divider goes left"
         );
         split.pointer(PointerInputKind::Moved, 390.0);
         assert_eq!(
-            split.widths(),
+            split.lengths(),
             (200.0, 60.0),
             "a pane that does not fold stops at its narrowest"
         );
@@ -185,19 +210,19 @@ mod split_view {
 
     #[test]
     fn a_drag_far_past_the_narrowest_width_folds_a_pane_that_can_fold() {
-        let mut split = split_view();
+        let mut split = split_view(SplitAxis::Horizontal);
         let sidebar = split.parts[0];
 
         split.press_at(120.5);
         split.pointer(PointerInputKind::Moved, 60.5);
         assert_eq!(
-            (split.widths().0, split.sidebar_is_collapsed()),
+            (split.lengths().0, split.first_is_collapsed()),
             (80.0, false),
             "between its narrowest width and half of it the pane keeps the narrowest"
         );
 
         split.pointer(PointerInputKind::Moved, 30.5);
-        assert!(split.sidebar_is_collapsed());
+        assert!(split.first_is_collapsed());
         assert_eq!(
             split.stage.tree().classes(sidebar),
             [CLASSES.split_pane, CLASSES.collapsed]
@@ -211,7 +236,7 @@ mod split_view {
 
         split.pointer(PointerInputKind::Moved, 100.5);
         assert_eq!(
-            (split.sidebar_is_collapsed(), split.widths().0),
+            (split.first_is_collapsed(), split.lengths().0),
             (false, 100.0),
             "the same drag unfolds it on the way back"
         );
@@ -221,74 +246,78 @@ mod split_view {
 
     #[test]
     fn the_arrow_keys_move_a_focused_divider_by_steps_and_return_folds_its_pane() {
-        let mut split = split_view();
+        let mut split = split_view(SplitAxis::Horizontal);
         let [_, sidebar_divider, _, inspector_divider, _] = split.parts;
         assert!(split.stage.focus(sidebar_divider));
 
         assert!(press(&mut split.stage, Key::ArrowRight));
-        assert_eq!(split.widths(), (120.0 + STEP, 100.0));
+        assert_eq!(split.lengths(), (120.0 + STEP, 100.0));
         for _ in 0..4 {
             assert!(press(&mut split.stage, Key::ArrowLeft));
         }
         assert_eq!(
-            (split.widths().0, split.sidebar_is_collapsed()),
+            (split.lengths().0, split.first_is_collapsed()),
             (80.0, false),
             "the arrows stop at the narrowest width first"
         );
         assert!(press(&mut split.stage, Key::ArrowLeft));
         assert!(
-            split.sidebar_is_collapsed(),
+            split.first_is_collapsed(),
             "and narrow a pane that folds away from there"
         );
         assert!(press(&mut split.stage, Key::ArrowRight));
         assert_eq!(
-            (split.sidebar_is_collapsed(), split.widths().0),
+            (split.first_is_collapsed(), split.lengths().0),
             (false, 80.0),
             "the arrow back unfolds it at its narrowest"
         );
 
         assert!(press(&mut split.stage, Key::Enter));
-        assert!(split.sidebar_is_collapsed(), "Return folds the pane");
+        assert!(split.first_is_collapsed(), "Return folds the pane");
         assert!(press(&mut split.stage, Key::Space));
-        assert!(!split.sidebar_is_collapsed(), "and Space unfolds it");
+        assert!(!split.first_is_collapsed(), "and Space unfolds it");
 
         assert!(split.stage.focus(inspector_divider));
         assert!(press(&mut split.stage, Key::ArrowLeft));
         assert_eq!(
-            split.widths(),
+            split.lengths(),
             (80.0, 100.0 + STEP),
             "the arrow that moves the divider away from a pane after it widens that pane"
         );
         for _ in 0..5 {
             assert!(press(&mut split.stage, Key::ArrowRight));
         }
-        assert_eq!(split.widths(), (80.0, 60.0));
+        assert_eq!(split.lengths(), (80.0, 60.0));
         assert!(
             !press(&mut split.stage, Key::Enter),
             "Return is nothing to the divider of a pane that does not fold"
+        );
+        assert!(
+            !press(&mut split.stage, Key::ArrowDown),
+            "an arrow across the axis is nothing to a divider"
         );
     }
 
     #[test]
     fn an_assistive_technology_moves_a_divider_and_sets_the_width_of_its_pane() {
-        let mut split = split_view();
+        let mut split = split_view(SplitAxis::Horizontal);
         let sidebar_divider = split.parts[1];
 
         split
             .stage
             .accessibility_action(sidebar_divider, Action::Increment, None);
-        assert_eq!(split.widths(), (120.0 + STEP, 100.0));
+        assert_eq!(split.lengths(), (120.0 + STEP, 100.0));
         split
             .stage
             .accessibility_action(sidebar_divider, Action::Decrement, None);
-        assert_eq!(split.widths(), (120.0, 100.0));
+        assert_eq!(split.lengths(), (120.0, 100.0));
 
         let asked = Some(ActionData::NumericValue(150.0));
         split
             .stage
             .accessibility_action(sidebar_divider, Action::SetValue, asked);
         split.stage.frame();
-        assert_eq!(split.widths(), (150.0, 100.0));
+        assert_eq!(split.lengths(), (150.0, 100.0));
         assert_eq!(
             split.stage.accessible_node(sidebar_divider).numeric_value(),
             Some(150.0)
@@ -298,15 +327,15 @@ mod split_view {
         split
             .stage
             .accessibility_action(sidebar_divider, Action::SetValue, too_wide);
-        assert_eq!(split.widths(), (200.0, 100.0));
+        assert_eq!(split.lengths(), (200.0, 100.0));
     }
 
     #[test]
     fn the_application_folds_a_pane_by_its_signal() {
-        let mut split = split_view();
+        let mut split = split_view(SplitAxis::Horizontal);
         let sidebar = split.parts[0];
 
-        split.stage.runtime.set(split.sidebar_is_collapsed, true);
+        split.stage.runtime.set(split.first_is_collapsed, true);
         split.stage.frame();
 
         assert_eq!(
@@ -314,7 +343,161 @@ mod split_view {
             [CLASSES.split_pane, CLASSES.collapsed]
         );
         assert_eq!(split.spans()[2], (1.0, 298.0));
-        assert_eq!(split.widths(), (120.0, 100.0), "a folded pane remembers its width");
+        assert_eq!(split.lengths(), (120.0, 100.0), "a folded pane remembers its width");
+    }
+
+    #[test]
+    fn a_vertical_view_stacks_its_panes_with_a_level_divider_between_every_two() {
+        let mut split = split_view(SplitAxis::Vertical);
+        let tree = split.stage.tree();
+        let [_, top_divider, _, bottom_divider, _] = split.parts;
+
+        assert_eq!(tree.classes(split.view), [CLASSES.split, CLASSES.vertical]);
+        assert_eq!(tree.classes(top_divider), [CLASSES.split_divider, CLASSES.vertical]);
+        let grip = tree.children(top_divider)[0];
+        assert_eq!(tree.classes(grip), [CLASSES.split_grip, CLASSES.vertical]);
+        assert_eq!(
+            split.spans(),
+            [(0.0, 120.0), (120.0, 1.0), (121.0, 78.0), (199.0, 1.0), (200.0, 100.0)],
+            "the panes stand one above another and the flexible one takes the height left"
+        );
+        for part in split.parts {
+            let part_box = tree.border_box(part);
+            assert_eq!(
+                (part_box.x, part_box.width),
+                (0.0, 400.0),
+                "every part spans the view from side to side"
+            );
+        }
+        assert_eq!(
+            (tree.border_box(grip).y, tree.border_box(grip).height),
+            (117.0, 7.0),
+            "the pointer takes a level line by the room above and below it"
+        );
+        let node = split.stage.accessible_node(top_divider);
+        assert_eq!((node.role(), node.label()), (AccessibleRole::Splitter, Some("Panes")));
+        assert_eq!(
+            node.orientation(),
+            Some(Orientation::Horizontal),
+            "the line between panes one above another lies level"
+        );
+        assert_eq!(
+            (node.numeric_value(), node.min_numeric_value(), node.max_numeric_value()),
+            (Some(120.0), Some(0.0), Some(200.0))
+        );
+        let node = split.stage.accessible_node(bottom_divider);
+        assert_eq!(
+            (node.numeric_value(), node.orientation()),
+            (Some(100.0), Some(Orientation::Horizontal))
+        );
+    }
+
+    #[test]
+    fn a_dragged_divider_changes_the_height_of_its_pane_within_the_limits() {
+        let mut split = split_view(SplitAxis::Vertical);
+
+        split.press_at(120.5);
+        split.pointer(PointerInputKind::Moved, 170.5);
+        assert_eq!(
+            (split.lengths().0, split.spans()[0], split.spans()[2]),
+            (170.0, (0.0, 170.0), (171.0, 28.0)),
+            "the pane above a divider grows as the divider goes down"
+        );
+        split.pointer(PointerInputKind::Moved, 290.0);
+        assert_eq!(
+            split.lengths(),
+            (200.0, 100.0),
+            "the divider stops at the tallest its pane goes"
+        );
+        split.pointer(PointerInputKind::Moved, 150.5);
+        split.release_at(150.5);
+        assert_eq!(split.lengths(), (150.0, 100.0));
+
+        // The last pane is 100 px tall and its divider lies at 199 px.
+        split.press_at(199.5);
+        split.pointer(PointerInputKind::Moved, 169.5);
+        assert_eq!(
+            (split.lengths().1, split.spans()[4]),
+            (130.0, (170.0, 130.0)),
+            "the pane below a divider grows as the divider goes up"
+        );
+        split.pointer(PointerInputKind::Moved, 295.0);
+        assert_eq!(
+            split.lengths(),
+            (150.0, 60.0),
+            "a pane that does not fold stops at its shortest"
+        );
+        split.release_at(295.0);
+    }
+
+    #[test]
+    fn a_drag_far_past_the_shortest_height_folds_a_pane_that_can_fold() {
+        let mut split = split_view(SplitAxis::Vertical);
+        let top = split.parts[0];
+
+        split.press_at(120.5);
+        split.pointer(PointerInputKind::Moved, 60.5);
+        assert_eq!(
+            (split.lengths().0, split.first_is_collapsed()),
+            (80.0, false),
+            "between its shortest height and half of it the pane keeps the shortest"
+        );
+
+        split.pointer(PointerInputKind::Moved, 30.5);
+        assert!(split.first_is_collapsed());
+        assert_eq!(split.stage.tree().classes(top), [CLASSES.split_pane, CLASSES.collapsed]);
+        assert_eq!(
+            (split.spans()[1], split.spans()[2]),
+            ((0.0, 1.0), (1.0, 198.0)),
+            "a folded pane leaves its height to the flexible one"
+        );
+
+        split.pointer(PointerInputKind::Moved, 100.5);
+        assert_eq!(
+            (split.first_is_collapsed(), split.lengths().0),
+            (false, 100.0),
+            "the same drag unfolds it on the way back"
+        );
+        split.release_at(100.5);
+        assert_eq!(split.spans()[0], (0.0, 100.0));
+    }
+
+    #[test]
+    fn arrow_down_and_arrow_up_move_a_focused_divider_of_a_vertical_view() {
+        let mut split = split_view(SplitAxis::Vertical);
+        let [_, top_divider, _, bottom_divider, _] = split.parts;
+        assert!(split.stage.focus(top_divider));
+
+        assert!(press(&mut split.stage, Key::ArrowDown));
+        assert_eq!(split.lengths(), (120.0 + STEP, 100.0));
+        for _ in 0..4 {
+            assert!(press(&mut split.stage, Key::ArrowUp));
+        }
+        assert_eq!(
+            (split.lengths().0, split.first_is_collapsed()),
+            (80.0, false),
+            "the arrows stop at the shortest height first"
+        );
+        assert!(press(&mut split.stage, Key::ArrowUp));
+        assert!(split.first_is_collapsed(), "and fold a pane that folds from there");
+        assert!(press(&mut split.stage, Key::ArrowDown));
+        assert_eq!((split.first_is_collapsed(), split.lengths().0), (false, 80.0));
+        assert!(
+            !press(&mut split.stage, Key::ArrowRight) && !press(&mut split.stage, Key::ArrowLeft),
+            "the arrows across the axis are nothing to a level divider"
+        );
+
+        assert!(split.stage.focus(bottom_divider));
+        assert!(press(&mut split.stage, Key::ArrowUp));
+        assert_eq!(
+            split.lengths(),
+            (80.0, 100.0 + STEP),
+            "the arrow that moves the divider up lengthens the pane below it"
+        );
+        for _ in 0..5 {
+            assert!(press(&mut split.stage, Key::ArrowDown));
+        }
+        assert_eq!(split.lengths(), (80.0, 60.0));
     }
 }
 

@@ -1,6 +1,6 @@
 use morok_components::view::Mount;
 use morok_components::{
-    Button, IconButton, KitIcon, SearchField, Sidebar, SidebarItem, SplitPane, SplitView, StatusBar, Toolbar,
+    Button, IconButton, KitIcon, SearchField, Sidebar, SidebarItem, SplitAxis, SplitPane, SplitView, StatusBar, Toolbar,
 };
 use morok_core::{ElementId, Key, KeyChord, Modifiers, Size};
 use morok_css::SourceFile;
@@ -48,6 +48,7 @@ pub(crate) fn suite() -> Suite {
             case("status-bars", 640.0, 96.0, status_bars),
             case("sidebars", 428.0, 228.0, sidebars),
             case("split-view", 560.0, 180.0, split_view),
+            case("split-vertical", 360.0, 240.0, split_vertical),
             case("window", 640.0, 320.0, window),
         ],
     }
@@ -172,6 +173,27 @@ fn split_view(scene: &mut Scene) {
             .pane(SplitPane::sized(places_width, 100.0..=240.0, pane("Places")))
             .pane(SplitPane::flexible(pane("Files")))
             .pane(SplitPane::sized(details_width, 120.0..=260.0, pane("Details")))
+            .label("Panes")
+            .mount(mount)
+    });
+    let grips = scene.elements_with_class("split-grip");
+    scene.set_state(grips[0], States::HOVER);
+    let dividers = scene.elements_with_class("split-divider");
+    scene.set_state(dividers[1], KEYBOARD_FOCUS);
+}
+
+/// Three panes one above another: the divider of the first under the pointer, with its
+/// handle, and the divider of the last with the focus the keyboard gave.
+fn split_vertical(scene: &mut Scene) {
+    let stage = scene.add(scene.root(), &["scaffold-fill"]);
+    scene.mount(stage, |mount| {
+        let places_height = mount.runtime().signal(60.0_f32);
+        let details_height = mount.runtime().signal(70.0_f32);
+        SplitView::new()
+            .axis(SplitAxis::Vertical)
+            .pane(SplitPane::sized(places_height, 40.0..=120.0, pane("Places")))
+            .pane(SplitPane::flexible(pane("Files")))
+            .pane(SplitPane::sized(details_height, 50.0..=140.0, pane("Details")))
             .label("Panes")
             .mount(mount)
     });

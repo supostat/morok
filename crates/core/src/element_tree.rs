@@ -1196,6 +1196,17 @@ impl ElementTree {
         self.accessibility_changed(element, changes);
     }
 
+    /// Says which way the element lies, for a node whose role leaves it open: the line of a
+    /// splitter, a separator, a scroll bar.
+    ///
+    /// # Panics
+    ///
+    /// When the element has no accessible role.
+    pub fn set_accessible_orientation(&mut self, element: ElementId, orientation: accesskit::Orientation) {
+        let changes = self.semantics_mut(element).set_orientation(orientation);
+        self.accessibility_changed(element, changes);
+    }
+
     /// Says where the node of the element stands among the items of a list, a tree or a strip
     /// of tabs.
     ///

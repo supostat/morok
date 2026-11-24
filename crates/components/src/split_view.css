@@ -1,5 +1,5 @@
-/* A split view: panes side by side that fill the box they are put in, with a divider between
-   every two that the pointer drags and the arrow keys move. */
+/* A split view: panes side by side, or one above another, that fill the box they are put in,
+   with a divider between every two that the pointer drags and the arrow keys move. */
 
 .split {
   display: flex;
@@ -7,9 +7,14 @@
   height: 100%;
 }
 
+.split.vertical {
+  flex-direction: column;
+}
+
 .split-pane {
   flex-shrink: 0;
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -25,8 +30,15 @@
 .split-divider {
   position: relative;
   flex-shrink: 0;
-  width: 1px;
   background-color: var(--color-line);
+}
+
+.split-divider.horizontal {
+  width: 1px;
+}
+
+.split-divider.vertical {
+  height: 1px;
 }
 
 .split-divider:focus-visible {
@@ -36,22 +48,42 @@
 /* The room around the line the pointer takes the divider by. */
 .split-grip {
   position: absolute;
+}
+
+.split-grip.horizontal {
   top: 0;
   bottom: 0;
   left: -3px;
   width: 7px;
 }
 
+.split-grip.vertical {
+  top: -3px;
+  right: 0;
+  left: 0;
+  height: 7px;
+}
+
 .split-handle {
   position: absolute;
-  top: calc(50% - 14px);
-  left: 1px;
-  width: 5px;
-  height: 28px;
   border-radius: var(--radius-xs);
   background-color: var(--color-line-strong);
   opacity: 0;
   transition: opacity var(--motion-fast);
+}
+
+.split-handle.horizontal {
+  top: calc(50% - 14px);
+  left: 1px;
+  width: 5px;
+  height: 28px;
+}
+
+.split-handle.vertical {
+  top: 1px;
+  left: calc(50% - 14px);
+  width: 28px;
+  height: 5px;
 }
 
 .split-grip:hover > .split-handle,

@@ -1,0 +1,251 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 240.0
+
+[[light]]
+node = "#1 .scaffold-fill"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 240.0
+
+[[light]]
+node = "#2 .split.vertical"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 240.0
+
+[[light]]
+node = "#3 .split-pane"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 60.0
+
+[[light]]
+node = "#4 .scaffold-pane"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 39.0
+
+[[light]]
+node = "#5 text"
+x = 12.0
+y = 12.0
+width = 336.0
+height = 15.0
+
+[[light]]
+node = "#6 .split-divider.vertical"
+x = 0.0
+y = 60.0
+width = 360.0
+height = 1.0
+
+[[light]]
+node = "#7 .split-grip.vertical"
+x = 0.0
+y = 57.0
+width = 360.0
+height = 7.0
+
+[[light]]
+node = "#8 .split-handle.vertical"
+x = 166.0
+y = 58.0
+width = 28.0
+height = 5.0
+
+[[light]]
+node = "#9 .split-pane.flexible"
+x = 0.0
+y = 61.0
+width = 360.0
+height = 108.0
+
+[[light]]
+node = "#10 .scaffold-pane"
+x = 0.0
+y = 61.0
+width = 360.0
+height = 39.0
+
+[[light]]
+node = "#11 text"
+x = 12.0
+y = 73.0
+width = 336.0
+height = 15.0
+
+[[light]]
+node = "#12 .split-divider.vertical"
+x = 0.0
+y = 169.0
+width = 360.0
+height = 1.0
+
+[[light]]
+node = "#13 .split-grip.vertical"
+x = 0.0
+y = 166.0
+width = 360.0
+height = 7.0
+
+[[light]]
+node = "#14 .split-handle.vertical"
+x = 166.0
+y = 167.0
+width = 28.0
+height = 5.0
+
+[[light]]
+node = "#15 .split-pane"
+x = 0.0
+y = 170.0
+width = 360.0
+height = 70.0
+
+[[light]]
+node = "#16 .scaffold-pane"
+x = 0.0
+y = 170.0
+width = 360.0
+height = 39.0
+
+[[light]]
+node = "#17 text"
+x = 12.0
+y = 182.0
+width = 336.0
+height = 15.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 240.0
+
+[[dark]]
+node = "#1 .scaffold-fill"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 240.0
+
+[[dark]]
+node = "#2 .split.vertical"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 240.0
+
+[[dark]]
+node = "#3 .split-pane"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 60.0
+
+[[dark]]
+node = "#4 .scaffold-pane"
+x = 0.0
+y = 0.0
+width = 360.0
+height = 39.0
+
+[[dark]]
+node = "#5 text"
+x = 12.0
+y = 12.0
+width = 336.0
+height = 15.0
+
+[[dark]]
+node = "#6 .split-divider.vertical"
+x = 0.0
+y = 60.0
+width = 360.0
+height = 1.0
+
+[[dark]]
+node = "#7 .split-grip.vertical"
+x = 0.0
+y = 57.0
+width = 360.0
+height = 7.0
+
+[[dark]]
+node = "#8 .split-handle.vertical"
+x = 166.0
+y = 58.0
+width = 28.0
+height = 5.0
+
+[[dark]]
+node = "#9 .split-pane.flexible"
+x = 0.0
+y = 61.0
+width = 360.0
+height = 108.0
+
+[[dark]]
+node = "#10 .scaffold-pane"
+x = 0.0
+y = 61.0
+width = 360.0
+height = 39.0
+
+[[dark]]
+node = "#11 text"
+x = 12.0
+y = 73.0
+width = 336.0
+height = 15.0
+
+[[dark]]
+node = "#12 .split-divider.vertical"
+x = 0.0
+y = 169.0
+width = 360.0
+height = 1.0
+
+[[dark]]
+node = "#13 .split-grip.vertical"
+x = 0.0
+y = 166.0
+width = 360.0
+height = 7.0
+
+[[dark]]
+node = "#14 .split-handle.vertical"
+x = 166.0
+y = 167.0
+width = 28.0
+height = 5.0
+
+[[dark]]
+node = "#15 .split-pane"
+x = 0.0
+y = 170.0
+width = 360.0
+height = 70.0
+
+[[dark]]
+node = "#16 .scaffold-pane"
+x = 0.0
+y = 170.0
+width = 360.0
+height = 39.0
+
+[[dark]]
+node = "#17 text"
+x = 12.0
+y = 182.0
+width = 336.0
+height = 15.0
