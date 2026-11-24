@@ -1,13 +1,20 @@
 use std::process::ExitCode;
+use std::time::Duration;
 
 use morok::core::{Point, Size};
 use objc2::rc::Retained;
 use objc2::runtime::AnyObject;
 use objc2::{MainThreadMarker, msg_send};
-use objc2_app_kit::{NSApplication, NSEvent, NSEventModifierFlags, NSEventType, NSScreen, NSView, NSWindow};
+use objc2_app_kit::{
+    NSAccessibilityOrientation, NSApplication, NSEvent, NSEventMask, NSEventModifierFlags, NSEventType, NSScreen,
+    NSView, NSWindow,
+};
 use objc2_core_foundation::CGPoint;
 use objc2_core_graphics::{CGEvent, CGScrollEventUnit};
-use objc2_foundation::{NSArray, NSNumber, NSPoint, NSString};
+use objc2_foundation::{NSArray, NSDate, NSDefaultRunLoopMode, NSNumber, NSPoint, NSString};
+
+/// How long the system has at most to bring the application to the front.
+const COMING_TO_FRONT: Duration = Duration::from_secs(3);
 
 /// What a test that runs on the main thread expected and did not see. Such a test checks
 /// everything it can in one run of the application and reports at the end.
@@ -54,6 +61,7 @@ impl KeyStroke {
     pub(crate) const RETURN: Self = Self::plain(0x24, "\r");
     pub(crate) const ESCAPE: Self = Self::plain(0x35, "\u{1b}");
     pub(crate) const DOWN: Self = Self::plain(0x7D, "\u{f701}");
+    pub(crate) const HOME: Self = Self::plain(0x73, "\u{f729}");
     pub(crate) const END: Self = Self::plain(0x77, "\u{f72b}");
 
     /// The key of a lowercase letter on the ANSI layout.
@@ -118,6 +126,26 @@ impl EventSource {
         NSPoint::new(f64::from(at.x), f64::from(self.content_size.height - at.y))
     }
 
+    /// Where a point of the surface lies on the desktop.
+    pub(crate) fn on_screen(&self, at: Point) -> NSPoint {
+        self.window.convertPointToScreen(self.in_window(at))
+    }
+
+    /// The number the window server knows the window by.
+    pub(crate) fn window_number(&self) -> isize {
+        self.window.windowNumber()
+    }
+
+    /// The point of this surface that lies on the screen where `at` of the surface of `other`
+    /// lies; it may lie outside the window.
+    pub(crate) fn same_place_as(&self, other: &Self, at: Point) -> Point {
+        let in_window = self.window.convertPointFromScreen(other.on_screen(at));
+        Point {
+            x: in_window.x as f32,
+            y: self.content_size.height - in_window.y as f32,
+        }
+    }
+
     fn mouse_event(&self, kind: NSEventType, at: Point) -> Retained<NSEvent> {
         NSEvent::mouseEventWithType_location_modifierFlags_timestamp_windowNumber_context_eventNumber_clickCount_pressure(
             kind,
@@ -135,9 +163,25 @@ impl EventSource {
 
     /// The primary button goes down and up at a point of the surface.
     pub(crate) fn click(&self, at: Point) {
-        for kind in [NSEventType::LeftMouseDown, NSEventType::LeftMouseUp] {
-            self.window.sendEvent(&self.mouse_event(kind, at));
-        }
+        self.button_down(at);
+        self.button_up(at);
+    }
+
+    /// The primary button goes down at a point of the surface.
+    pub(crate) fn button_down(&self, at: Point) {
+        self.window.sendEvent(&self.mouse_event(NSEventType::LeftMouseDown, at));
+    }
+
+    /// The pointer moves with the primary button down to a point the surface measures, which
+    /// may lie outside the window: `AppKit` sends such moves to the window the press began in.
+    pub(crate) fn drag_to(&self, at: Point) {
+        self.window
+            .sendEvent(&self.mouse_event(NSEventType::LeftMouseDragged, at));
+    }
+
+    /// The primary button comes up at a point the surface measures.
+    pub(crate) fn button_up(&self, at: Point) {
+        self.window.sendEvent(&self.mouse_event(NSEventType::LeftMouseUp, at));
     }
 
     /// A key goes down and up.
@@ -192,6 +236,34 @@ impl EventSource {
     }
 }
 
+/// Brings the application to the front, as a launch by the user does, and returns whether it
+/// came there: its windows then take the keyboard and the menu bar shows the menus of the one
+/// that has it. The event loop of a test hands the application no events of the system, so
+/// the events that tell it of its activation are handed to it here; the events of the mouse
+/// and the keyboard stay in the queue.
+pub(crate) fn bring_to_front(main_thread: MainThreadMarker) -> bool {
+    let application = NSApplication::sharedApplication(main_thread);
+    #[expect(
+        deprecated,
+        reason = "a process started behind the active application comes to the front only when it insists"
+    )]
+    application.activateIgnoringOtherApps(true);
+    let deadline = NSDate::dateWithTimeIntervalSinceNow(COMING_TO_FRONT.as_secs_f64());
+    // SAFETY: the name is a constant of Foundation.
+    let mode = unsafe { NSDefaultRunLoopMode };
+    while !application.isActive()
+        && let Some(event) = application.nextEventMatchingMask_untilDate_inMode_dequeue(
+            NSEventMask::AppKitDefined,
+            Some(&deadline),
+            mode,
+            true,
+        )
+    {
+        application.sendEvent(&event);
+    }
+    application.isActive()
+}
+
 /// The windows of the application that are on screen.
 pub(crate) fn visible_windows(main_thread: MainThreadMarker) -> Vec<Retained<NSWindow>> {
     NSApplication::sharedApplication(main_thread)
@@ -240,6 +312,14 @@ impl AccessibleElement {
                 .ok()
                 .map(|number| number.stringValue().to_string()),
         }
+    }
+
+    /// Which way the element runs, for an element of a role that has a direction, such as a
+    /// splitter.
+    pub(crate) fn orientation(&self) -> NSAccessibilityOrientation {
+        // SAFETY: an accessibility element answers `accessibilityOrientation` with a value of
+        // the enumeration, `Unknown` for an element that runs no way.
+        unsafe { msg_send![&*self.0, accessibilityOrientation] }
     }
 
     pub(crate) fn children(&self) -> Vec<Self> {

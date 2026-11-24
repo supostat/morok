@@ -22,6 +22,7 @@ morok-components.workspace = true
 morok-css.workspace = true
 objc2.workspace = true
 objc2-app-kit = { workspace = true, features = [
+  "NSAccessibilityConstants",
   "NSApplication",
   "NSEvent",
   "NSGraphicsContext",
@@ -35,7 +36,8 @@ objc2-app-kit = { workspace = true, features = [
 ] }
 objc2-core-foundation = { workspace = true, features = ["CFCGTypes"] }
 objc2-core-graphics = { workspace = true, features = ["CGEvent", "CGEventTypes"] }
-objc2-foundation = { workspace = true, features = ["NSArray", "NSGeometry", "NSString", "NSValue"] }
+objc2-foundation = { workspace = true, features = ["NSArray", "NSDate", "NSGeometry", "NSRunLoop", "NSString", "NSValue"] }
+png.workspace = true
 
 [[test]]
 name = "wire_main_path"

@@ -3,6 +3,8 @@ use std::rc::Rc;
 
 use morok::core::ImageId;
 
+use crate::gallery_picture::GalleryPicture;
+
 const MEADOW_PNG: &[u8] = include_bytes!("../images/meadow.png");
 const DUNES_JPEG: &[u8] = include_bytes!("../images/dunes.jpg");
 /// Bytes no decoder reads: the Images page shows what an unreadable picture leaves.
@@ -12,11 +14,9 @@ const UNREADABLE: &[u8] = b"these bytes are no picture";
 /// page adds a picture the user drops on it. A clone is another handle to the same pictures.
 #[derive(Clone)]
 pub struct Gallery {
-    /// A landscape PNG of 160 by 100 pixels.
-    pub(crate) meadow: ImageId,
-    /// A portrait JPEG of 100 by 150 pixels.
-    pub(crate) dunes: ImageId,
-    pub(crate) unreadable: ImageId,
+    meadow: ImageId,
+    dunes: ImageId,
+    unreadable: ImageId,
     add_dropped: Rc<dyn Fn(Vec<u8>) -> Option<ImageId>>,
 }
 
@@ -32,6 +32,15 @@ impl Gallery {
             dunes: add_image(DUNES_JPEG.to_vec()),
             unreadable: add_image(UNREADABLE.to_vec()),
             add_dropped: Rc::new(add_dropped),
+        }
+    }
+
+    /// The image the application shows the picture by.
+    pub fn image(&self, picture: GalleryPicture) -> ImageId {
+        match picture {
+            GalleryPicture::Meadow => self.meadow,
+            GalleryPicture::Dunes => self.dunes,
+            GalleryPicture::Unreadable => self.unreadable,
         }
     }
 

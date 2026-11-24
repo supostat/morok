@@ -819,3 +819,60 @@ fn the_picture_of_a_subtree_holds_the_part_the_clip_of_an_ancestor_hides() {
         "the surface draws the entries inside the clip of the list"
     );
 }
+
+#[test]
+fn the_clip_an_edited_text_draws_itself_in_belongs_to_the_text_and_leaves_the_others_their_owners() {
+    let mut scene = Scene::new(BOARD);
+    scene.add_classes(scene.root(), &["board"]);
+    let title = scene.add(scene.root(), Role::TextInput, &["title"]);
+    scene.tree.set_text(title, "Buy milk");
+    let list = scene.add(scene.root(), Role::Scroll, &["list"]);
+    let entry = scene.add(list, Role::Element, &["entry"]);
+    let badge = scene.add(entry, Role::Element, &["badge"]);
+    scene.frame();
+    let mut picture = DisplayList::default();
+
+    assert!(scene.tree.subtree_display_list(title, &mut picture).is_some());
+    let clips: Vec<Rect> = picture
+        .items()
+        .iter()
+        .filter_map(|item| match item {
+            DisplayItem::PushClip { frame } => Some(frame.border_box),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        clips,
+        [scene.border_box(title)],
+        "the picture of the line draws its text inside the clip of the line itself"
+    );
+    assert!(
+        picture
+            .items()
+            .iter()
+            .any(|item| matches!(item, DisplayItem::GlyphRun { .. })),
+        "the picture of the line draws its text"
+    );
+
+    scene.tree.subtree_display_list(entry, &mut picture);
+    let [
+        DisplayItem::PushGroup { .. },
+        DisplayItem::Background { .. },
+        DisplayItem::PushClip { frame: clip_frame },
+        DisplayItem::Background { frame: badge_frame, .. },
+        DisplayItem::PopClip,
+        DisplayItem::PopGroup,
+    ] = picture.items()
+    else {
+        panic!(
+            "the clip of the line drawn before the list leaves the clips of the list to their elements: {:?}",
+            picture.items()
+        );
+    };
+    assert_eq!(
+        clip_frame.border_box,
+        scene.border_box(entry),
+        "the entry keeps its own clip around its badge"
+    );
+    assert_eq!(badge_frame.border_box, scene.border_box(badge));
+}

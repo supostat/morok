@@ -1,3 +1,5 @@
+use std::iter;
+
 use morok_style::{BackdropFilterFunction, BlendMode, Declaration, FilterFunction, StyleSheet, Theme};
 
 use crate::dirty::Dirty;
@@ -70,10 +72,12 @@ impl PaintPass<'_> {
             match step {
                 PaintStep::Box(id) if self.is_marked(id) => {
                     self.rebuild_box(id);
+                    self.own_clips_of_box(id);
                     rebuilt_elements += 1;
                 }
                 PaintStep::Box(id) => {
                     self.elements[id].painted.box_items = self.keep(self.elements[id].painted.box_items);
+                    self.own_clips_of_box(id);
                     self.cover(self.elements[id].painted.visual_bounds);
                 }
                 PaintStep::Outline(id) if self.is_marked(id) => {
@@ -329,6 +333,18 @@ impl PaintPass<'_> {
         painted.is_painted = true;
         painted.visual_bounds = bounds;
         painted.box_items = box_items;
+    }
+
+    /// Notes the element as the owner of the clips its own items open, such as the clip an
+    /// edited text is drawn inside: every clip of the list has its element, in the order of
+    /// the clips.
+    fn own_clips_of_box(&mut self, id: ElementId) {
+        let box_items = self.elements[id].painted.box_items;
+        let opened = self.display_list.items[box_items.as_range()]
+            .iter()
+            .filter(|item| matches!(item, DisplayItem::PushClip { .. }))
+            .count();
+        self.clip_owners.extend(iter::repeat_n(id, opened));
     }
 
     /// Takes items over from the previous list and returns where they are now.

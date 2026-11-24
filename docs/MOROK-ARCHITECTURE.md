@@ -88,6 +88,19 @@ the budget gates) and `crates/xtask` (formatting, clippy and comment rules).
   one painter draws the canvases of every window, through a `CanvasEncoder` that offers the fills
   of the kit (rectangles, ring sectors) and the Metal encoder, and carries the theme of the
   surface, so a canvas follows the theme and the token set as the boxes do.
+- **Images.** An application adds a picture as its encoded bytes,
+  `Application::add_image(Vec<u8>) -> ImageId`; the renderer decodes it off the main thread and
+  `Application::image_status` tells whether it is still decoding, decoded at its natural size or
+  unreadable. The `Image` component shows an `ImageId`, fitted by the `object-fit` of its class:
+  a box of its CSS size while the picture decodes, the natural size once it is decoded, the box
+  and its name when it is unreadable. Bytes are the one way in — the application reads files
+  itself, and the same picture shown in every window is decoded once.
+- **Closing.** The button of the frame closes a window: its surface view hears
+  `NSWindowWillCloseNotification`, the content learns that the window closed, its overlays go,
+  its frame loop stops and the menu bar forgets its menus. The handler of `Window::on_closed`
+  runs on the next turn of the run loop, so that it may drop the `Window`; a closed window
+  closes nothing twice when it is dropped. The menu bar shows the menus of the key window,
+  synced on the first frame after the keyboard moves.
 - **Handlers** run in the middle of an event; what opens or drops a window, or switches the
   appearance or the token set, is handed to `Application::defer` and runs once the event is over.
 
@@ -142,6 +155,12 @@ event ─► signals/effects ─► style(flags) ─► layout(dirty) ─► dis
   pass for the subtree, only when the effect is set.
 - `transform` — a matrix on the subtree's instances; layout does not depend on transforms (as in
   CSS).
+- Translations in `f64`: a scroll offset, the displacement of a virtualized row and the
+  translation of a `Transform` are double precision, while the linear part of a transform and
+  every laid-out box stay `f32`. Past 2^24 px an `f32` steps by 2 px; the offset of a million
+  rows lies there, and a row is placed by subtracting two such values, which `f64` does exactly.
+  The renderer narrows the composed translation to `f32` for Metal, where it is small for
+  anything on screen, so a one-pixel scroll moves the rows by one pixel at any depth.
 - `Canvas` — the app receives an encoder and a rectangle; the kit guarantees z-order and clipping.
 
 ## 9. Text
