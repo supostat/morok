@@ -55,336 +55,406 @@ width = 14.0
 height = 14.0
 
 [[light]]
-node = "#8 text"
+node = "#8 .tree-label"
 x = 43.0
-y = 23.5
-width = 49.53125
-height = 15.0
+y = 17.0
+width = 160.0
+height = 28.0
 
 [[light]]
-node = "#9 element"
+node = "#9 .tree-label-text"
+x = 43.0
+y = 17.0
+width = 160.0
+height = 28.0
+
+[[light]]
+node = "#10 element"
 x = 17.0
 y = 45.0
 width = 198.0
 height = 28.0
 
 [[light]]
-node = "#10 .tree-row"
+node = "#11 .tree-row"
 x = 17.0
 y = 45.0
 width = 198.0
 height = 28.0
 
 [[light]]
-node = "#11 .tree-chevron.expanded"
+node = "#12 .tree-chevron.expanded"
 x = 41.0
 y = 52.0
 width = 14.0
 height = 14.0
 
 [[light]]
-node = "#12 text"
+node = "#13 .tree-label"
 x = 59.0
-y = 51.5
-width = 38.117188
-height = 15.0
+y = 45.0
+width = 144.0
+height = 28.0
 
 [[light]]
-node = "#13 element"
+node = "#14 .tree-label-text"
+x = 59.0
+y = 45.0
+width = 144.0
+height = 28.0
+
+[[light]]
+node = "#15 element"
 x = 17.0
 y = 73.0
 width = 198.0
 height = 28.0
 
 [[light]]
-node = "#14 .tree-row"
+node = "#16 .tree-row"
 x = 17.0
 y = 73.0
 width = 198.0
 height = 28.0
 
 [[light]]
-node = "#15 .tree-chevron.leaf"
+node = "#17 .tree-chevron.leaf"
 x = 57.0
 y = 80.0
 width = 14.0
 height = 14.0
 
 [[light]]
-node = "#16 text"
+node = "#18 .tree-label"
 x = 75.0
-y = 79.5
-width = 37.804688
-height = 15.0
+y = 73.0
+width = 128.0
+height = 28.0
 
 [[light]]
-node = "#17 element"
+node = "#19 .tree-label-text"
+x = 75.0
+y = 73.0
+width = 128.0
+height = 28.0
+
+[[light]]
+node = "#20 element"
 x = 17.0
 y = 101.0
 width = 198.0
 height = 28.0
 
 [[light]]
-node = "#18 .tree-row"
+node = "#21 .tree-row"
 x = 17.0
 y = 101.0
 width = 198.0
 height = 28.0
 
 [[light]]
-node = "#19 .tree-chevron.leaf"
+node = "#22 .tree-chevron.leaf"
 x = 57.0
 y = 108.0
 width = 14.0
 height = 14.0
 
 [[light]]
-node = "#20 text"
+node = "#23 .tree-label"
 x = 75.0
-y = 107.5
-width = 40.484375
-height = 15.0
-
-[[light]]
-node = "#21 element"
-x = 17.0
-y = 129.0
-width = 198.0
+y = 101.0
+width = 128.0
 height = 28.0
 
 [[light]]
-node = "#22 .tree-row"
-x = 17.0
-y = 129.0
-width = 198.0
+node = "#24 .tree-label-text"
+x = 75.0
+y = 101.0
+width = 128.0
 height = 28.0
-
-[[light]]
-node = "#23 .tree-chevron.leaf"
-x = 41.0
-y = 136.0
-width = 14.0
-height = 14.0
-
-[[light]]
-node = "#24 text"
-x = 59.0
-y = 135.5
-width = 51.5625
-height = 15.0
 
 [[light]]
 node = "#25 element"
 x = 17.0
-y = 157.0
+y = 129.0
 width = 198.0
 height = 28.0
 
 [[light]]
 node = "#26 .tree-row"
 x = 17.0
-y = 157.0
+y = 129.0
 width = 198.0
 height = 28.0
 
 [[light]]
 node = "#27 .tree-chevron.leaf"
+x = 41.0
+y = 136.0
+width = 14.0
+height = 14.0
+
+[[light]]
+node = "#28 .tree-label"
+x = 59.0
+y = 129.0
+width = 144.0
+height = 28.0
+
+[[light]]
+node = "#29 .tree-label-text"
+x = 59.0
+y = 129.0
+width = 144.0
+height = 28.0
+
+[[light]]
+node = "#30 element"
+x = 17.0
+y = 157.0
+width = 198.0
+height = 28.0
+
+[[light]]
+node = "#31 .tree-row"
+x = 17.0
+y = 157.0
+width = 198.0
+height = 28.0
+
+[[light]]
+node = "#32 .tree-chevron.leaf"
 x = 25.0
 y = 164.0
 width = 14.0
 height = 14.0
 
 [[light]]
-node = "#28 text"
+node = "#33 .tree-label"
 x = 43.0
-y = 163.5
-width = 66.77344
-height = 15.0
+y = 157.0
+width = 160.0
+height = 28.0
 
 [[light]]
-node = "#29 element"
+node = "#34 .tree-label-text"
+x = 43.0
+y = 157.0
+width = 160.0
+height = 28.0
+
+[[light]]
+node = "#35 element"
 x = 17.0
 y = 185.0
 width = 198.0
 height = 28.0
 
 [[light]]
-node = "#30 .tree-row"
+node = "#36 .tree-row"
 x = 17.0
 y = 185.0
 width = 198.0
 height = 28.0
 
 [[light]]
-node = "#31 .tree-chevron.leaf"
+node = "#37 .tree-chevron.leaf"
 x = 25.0
 y = 192.0
 width = 14.0
 height = 14.0
 
 [[light]]
-node = "#32 text"
+node = "#38 .tree-label"
 x = 43.0
-y = 191.5
-width = 35.859375
-height = 15.0
+y = 185.0
+width = 160.0
+height = 28.0
 
 [[light]]
-node = "#33 .scroll-bar.vertical"
+node = "#39 .tree-label-text"
+x = 43.0
+y = 185.0
+width = 160.0
+height = 28.0
+
+[[light]]
+node = "#40 .scroll-bar.vertical"
 x = 204.0
 y = 17.0
 width = 11.0
 height = 138.0
 
 [[light]]
-node = "#34 .scroll-thumb"
+node = "#41 .scroll-thumb"
 x = 206.0
 y = 19.0
 width = 7.0
 height = 94.34375
 
 [[light]]
-node = "#35 .scroll-bar.horizontal"
+node = "#42 .scroll-bar.horizontal"
 x = 17.0
 y = 144.0
 width = 198.0
 height = 11.0
 
 [[light]]
-node = "#36 .scroll-thumb"
+node = "#43 .scroll-thumb"
 x = 19.0
 y = 146.0
 width = 0.0
 height = 7.0
 
 [[light]]
-node = "#37 .scroll-view"
+node = "#44 .scroll-view"
 x = 232.0
 y = 16.0
 width = 200.0
 height = 140.0
 
 [[light]]
-node = "#38 .scroll-viewport.tree"
+node = "#45 .scroll-viewport.tree"
 x = 233.0
 y = 17.0
 width = 198.0
 height = 138.0
 
 [[light]]
-node = "#39 element"
+node = "#46 element"
 x = 233.0
 y = 17.0
 width = 198.0
 height = 84.0
 
 [[light]]
-node = "#40 element"
+node = "#47 element"
 x = 233.0
 y = 17.0
 width = 198.0
 height = 28.0
 
 [[light]]
-node = "#41 .tree-row"
+node = "#48 .tree-row"
 x = 233.0
 y = 17.0
 width = 198.0
 height = 28.0
 
 [[light]]
-node = "#42 .tree-chevron"
+node = "#49 .tree-chevron"
 x = 241.0
 y = 24.0
 width = 14.0
 height = 14.0
 
 [[light]]
-node = "#43 text"
+node = "#50 .tree-label"
 x = 259.0
-y = 23.5
-width = 49.53125
-height = 15.0
+y = 17.0
+width = 160.0
+height = 28.0
 
 [[light]]
-node = "#44 element"
+node = "#51 .tree-label-text"
+x = 259.0
+y = 17.0
+width = 160.0
+height = 28.0
+
+[[light]]
+node = "#52 element"
 x = 233.0
 y = 45.0
 width = 198.0
 height = 28.0
 
 [[light]]
-node = "#45 .tree-row"
+node = "#53 .tree-row"
 x = 233.0
 y = 45.0
 width = 198.0
 height = 28.0
 
 [[light]]
-node = "#46 .tree-chevron.leaf"
+node = "#54 .tree-chevron.leaf"
 x = 241.0
 y = 52.0
 width = 14.0
 height = 14.0
 
 [[light]]
-node = "#47 text"
+node = "#55 .tree-label"
 x = 259.0
-y = 51.5
-width = 66.77344
-height = 15.0
+y = 45.0
+width = 160.0
+height = 28.0
 
 [[light]]
-node = "#48 element"
+node = "#56 .tree-label-text"
+x = 259.0
+y = 45.0
+width = 160.0
+height = 28.0
+
+[[light]]
+node = "#57 element"
 x = 233.0
 y = 73.0
 width = 198.0
 height = 28.0
 
 [[light]]
-node = "#49 .tree-row"
+node = "#58 .tree-row"
 x = 233.0
 y = 73.0
 width = 198.0
 height = 28.0
 
 [[light]]
-node = "#50 .tree-chevron.leaf"
+node = "#59 .tree-chevron.leaf"
 x = 241.0
 y = 80.0
 width = 14.0
 height = 14.0
 
 [[light]]
-node = "#51 text"
+node = "#60 .tree-label"
 x = 259.0
-y = 79.5
-width = 35.859375
-height = 15.0
+y = 73.0
+width = 160.0
+height = 28.0
 
 [[light]]
-node = "#52 .scroll-bar.vertical"
+node = "#61 .tree-label-text"
+x = 259.0
+y = 73.0
+width = 160.0
+height = 28.0
+
+[[light]]
+node = "#62 .scroll-bar.vertical"
 x = 420.0
 y = 17.0
 width = 11.0
 height = 138.0
 
 [[light]]
-node = "#53 .scroll-thumb"
+node = "#63 .scroll-thumb"
 x = 422.0
 y = 19.0
 width = 7.0
 height = 0.0
 
 [[light]]
-node = "#54 .scroll-bar.horizontal"
+node = "#64 .scroll-bar.horizontal"
 x = 233.0
 y = 144.0
 width = 198.0
 height = 11.0
 
 [[light]]
-node = "#55 .scroll-thumb"
+node = "#65 .scroll-thumb"
 x = 235.0
 y = 146.0
 width = 0.0
@@ -447,336 +517,406 @@ width = 14.0
 height = 14.0
 
 [[dark]]
-node = "#8 text"
+node = "#8 .tree-label"
 x = 43.0
-y = 23.5
-width = 49.53125
-height = 15.0
+y = 17.0
+width = 160.0
+height = 28.0
 
 [[dark]]
-node = "#9 element"
+node = "#9 .tree-label-text"
+x = 43.0
+y = 17.0
+width = 160.0
+height = 28.0
+
+[[dark]]
+node = "#10 element"
 x = 17.0
 y = 45.0
 width = 198.0
 height = 28.0
 
 [[dark]]
-node = "#10 .tree-row"
+node = "#11 .tree-row"
 x = 17.0
 y = 45.0
 width = 198.0
 height = 28.0
 
 [[dark]]
-node = "#11 .tree-chevron.expanded"
+node = "#12 .tree-chevron.expanded"
 x = 41.0
 y = 52.0
 width = 14.0
 height = 14.0
 
 [[dark]]
-node = "#12 text"
+node = "#13 .tree-label"
 x = 59.0
-y = 51.5
-width = 38.117188
-height = 15.0
+y = 45.0
+width = 144.0
+height = 28.0
 
 [[dark]]
-node = "#13 element"
+node = "#14 .tree-label-text"
+x = 59.0
+y = 45.0
+width = 144.0
+height = 28.0
+
+[[dark]]
+node = "#15 element"
 x = 17.0
 y = 73.0
 width = 198.0
 height = 28.0
 
 [[dark]]
-node = "#14 .tree-row"
+node = "#16 .tree-row"
 x = 17.0
 y = 73.0
 width = 198.0
 height = 28.0
 
 [[dark]]
-node = "#15 .tree-chevron.leaf"
+node = "#17 .tree-chevron.leaf"
 x = 57.0
 y = 80.0
 width = 14.0
 height = 14.0
 
 [[dark]]
-node = "#16 text"
+node = "#18 .tree-label"
 x = 75.0
-y = 79.5
-width = 37.804688
-height = 15.0
+y = 73.0
+width = 128.0
+height = 28.0
 
 [[dark]]
-node = "#17 element"
+node = "#19 .tree-label-text"
+x = 75.0
+y = 73.0
+width = 128.0
+height = 28.0
+
+[[dark]]
+node = "#20 element"
 x = 17.0
 y = 101.0
 width = 198.0
 height = 28.0
 
 [[dark]]
-node = "#18 .tree-row"
+node = "#21 .tree-row"
 x = 17.0
 y = 101.0
 width = 198.0
 height = 28.0
 
 [[dark]]
-node = "#19 .tree-chevron.leaf"
+node = "#22 .tree-chevron.leaf"
 x = 57.0
 y = 108.0
 width = 14.0
 height = 14.0
 
 [[dark]]
-node = "#20 text"
+node = "#23 .tree-label"
 x = 75.0
-y = 107.5
-width = 40.484375
-height = 15.0
-
-[[dark]]
-node = "#21 element"
-x = 17.0
-y = 129.0
-width = 198.0
+y = 101.0
+width = 128.0
 height = 28.0
 
 [[dark]]
-node = "#22 .tree-row"
-x = 17.0
-y = 129.0
-width = 198.0
+node = "#24 .tree-label-text"
+x = 75.0
+y = 101.0
+width = 128.0
 height = 28.0
-
-[[dark]]
-node = "#23 .tree-chevron.leaf"
-x = 41.0
-y = 136.0
-width = 14.0
-height = 14.0
-
-[[dark]]
-node = "#24 text"
-x = 59.0
-y = 135.5
-width = 51.5625
-height = 15.0
 
 [[dark]]
 node = "#25 element"
 x = 17.0
-y = 157.0
+y = 129.0
 width = 198.0
 height = 28.0
 
 [[dark]]
 node = "#26 .tree-row"
 x = 17.0
-y = 157.0
+y = 129.0
 width = 198.0
 height = 28.0
 
 [[dark]]
 node = "#27 .tree-chevron.leaf"
+x = 41.0
+y = 136.0
+width = 14.0
+height = 14.0
+
+[[dark]]
+node = "#28 .tree-label"
+x = 59.0
+y = 129.0
+width = 144.0
+height = 28.0
+
+[[dark]]
+node = "#29 .tree-label-text"
+x = 59.0
+y = 129.0
+width = 144.0
+height = 28.0
+
+[[dark]]
+node = "#30 element"
+x = 17.0
+y = 157.0
+width = 198.0
+height = 28.0
+
+[[dark]]
+node = "#31 .tree-row"
+x = 17.0
+y = 157.0
+width = 198.0
+height = 28.0
+
+[[dark]]
+node = "#32 .tree-chevron.leaf"
 x = 25.0
 y = 164.0
 width = 14.0
 height = 14.0
 
 [[dark]]
-node = "#28 text"
+node = "#33 .tree-label"
 x = 43.0
-y = 163.5
-width = 66.77344
-height = 15.0
+y = 157.0
+width = 160.0
+height = 28.0
 
 [[dark]]
-node = "#29 element"
+node = "#34 .tree-label-text"
+x = 43.0
+y = 157.0
+width = 160.0
+height = 28.0
+
+[[dark]]
+node = "#35 element"
 x = 17.0
 y = 185.0
 width = 198.0
 height = 28.0
 
 [[dark]]
-node = "#30 .tree-row"
+node = "#36 .tree-row"
 x = 17.0
 y = 185.0
 width = 198.0
 height = 28.0
 
 [[dark]]
-node = "#31 .tree-chevron.leaf"
+node = "#37 .tree-chevron.leaf"
 x = 25.0
 y = 192.0
 width = 14.0
 height = 14.0
 
 [[dark]]
-node = "#32 text"
+node = "#38 .tree-label"
 x = 43.0
-y = 191.5
-width = 35.859375
-height = 15.0
+y = 185.0
+width = 160.0
+height = 28.0
 
 [[dark]]
-node = "#33 .scroll-bar.vertical"
+node = "#39 .tree-label-text"
+x = 43.0
+y = 185.0
+width = 160.0
+height = 28.0
+
+[[dark]]
+node = "#40 .scroll-bar.vertical"
 x = 204.0
 y = 17.0
 width = 11.0
 height = 138.0
 
 [[dark]]
-node = "#34 .scroll-thumb"
+node = "#41 .scroll-thumb"
 x = 206.0
 y = 19.0
 width = 7.0
 height = 94.34375
 
 [[dark]]
-node = "#35 .scroll-bar.horizontal"
+node = "#42 .scroll-bar.horizontal"
 x = 17.0
 y = 144.0
 width = 198.0
 height = 11.0
 
 [[dark]]
-node = "#36 .scroll-thumb"
+node = "#43 .scroll-thumb"
 x = 19.0
 y = 146.0
 width = 0.0
 height = 7.0
 
 [[dark]]
-node = "#37 .scroll-view"
+node = "#44 .scroll-view"
 x = 232.0
 y = 16.0
 width = 200.0
 height = 140.0
 
 [[dark]]
-node = "#38 .scroll-viewport.tree"
+node = "#45 .scroll-viewport.tree"
 x = 233.0
 y = 17.0
 width = 198.0
 height = 138.0
 
 [[dark]]
-node = "#39 element"
+node = "#46 element"
 x = 233.0
 y = 17.0
 width = 198.0
 height = 84.0
 
 [[dark]]
-node = "#40 element"
+node = "#47 element"
 x = 233.0
 y = 17.0
 width = 198.0
 height = 28.0
 
 [[dark]]
-node = "#41 .tree-row"
+node = "#48 .tree-row"
 x = 233.0
 y = 17.0
 width = 198.0
 height = 28.0
 
 [[dark]]
-node = "#42 .tree-chevron"
+node = "#49 .tree-chevron"
 x = 241.0
 y = 24.0
 width = 14.0
 height = 14.0
 
 [[dark]]
-node = "#43 text"
+node = "#50 .tree-label"
 x = 259.0
-y = 23.5
-width = 49.53125
-height = 15.0
+y = 17.0
+width = 160.0
+height = 28.0
 
 [[dark]]
-node = "#44 element"
+node = "#51 .tree-label-text"
+x = 259.0
+y = 17.0
+width = 160.0
+height = 28.0
+
+[[dark]]
+node = "#52 element"
 x = 233.0
 y = 45.0
 width = 198.0
 height = 28.0
 
 [[dark]]
-node = "#45 .tree-row"
+node = "#53 .tree-row"
 x = 233.0
 y = 45.0
 width = 198.0
 height = 28.0
 
 [[dark]]
-node = "#46 .tree-chevron.leaf"
+node = "#54 .tree-chevron.leaf"
 x = 241.0
 y = 52.0
 width = 14.0
 height = 14.0
 
 [[dark]]
-node = "#47 text"
+node = "#55 .tree-label"
 x = 259.0
-y = 51.5
-width = 66.77344
-height = 15.0
+y = 45.0
+width = 160.0
+height = 28.0
 
 [[dark]]
-node = "#48 element"
+node = "#56 .tree-label-text"
+x = 259.0
+y = 45.0
+width = 160.0
+height = 28.0
+
+[[dark]]
+node = "#57 element"
 x = 233.0
 y = 73.0
 width = 198.0
 height = 28.0
 
 [[dark]]
-node = "#49 .tree-row"
+node = "#58 .tree-row"
 x = 233.0
 y = 73.0
 width = 198.0
 height = 28.0
 
 [[dark]]
-node = "#50 .tree-chevron.leaf"
+node = "#59 .tree-chevron.leaf"
 x = 241.0
 y = 80.0
 width = 14.0
 height = 14.0
 
 [[dark]]
-node = "#51 text"
+node = "#60 .tree-label"
 x = 259.0
-y = 79.5
-width = 35.859375
-height = 15.0
+y = 73.0
+width = 160.0
+height = 28.0
 
 [[dark]]
-node = "#52 .scroll-bar.vertical"
+node = "#61 .tree-label-text"
+x = 259.0
+y = 73.0
+width = 160.0
+height = 28.0
+
+[[dark]]
+node = "#62 .scroll-bar.vertical"
 x = 420.0
 y = 17.0
 width = 11.0
 height = 138.0
 
 [[dark]]
-node = "#53 .scroll-thumb"
+node = "#63 .scroll-thumb"
 x = 422.0
 y = 19.0
 width = 7.0
 height = 0.0
 
 [[dark]]
-node = "#54 .scroll-bar.horizontal"
+node = "#64 .scroll-bar.horizontal"
 x = 233.0
 y = 144.0
 width = 198.0
 height = 11.0
 
 [[dark]]
-node = "#55 .scroll-thumb"
+node = "#65 .scroll-thumb"
 x = 235.0
 y = 146.0
 width = 0.0

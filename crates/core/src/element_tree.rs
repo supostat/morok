@@ -109,6 +109,8 @@ pub struct ElementTree {
     theme: Theme,
     /// Device pixels to a CSS pixel on the surface the tree was last laid out for.
     scale: f32,
+    /// The viewport the tree was last laid out in; none before its first layout.
+    laid_out_viewport: Option<Size>,
     timeline: Timeline,
     style_scratch: StyleScratch,
     pending: Vec<ElementId>,
@@ -166,6 +168,7 @@ impl ElementTree {
             style_sheet,
             theme,
             scale: 1.0,
+            laid_out_viewport: None,
             timeline: Timeline::default(),
             style_scratch: StyleScratch::default(),
             pending: Vec::new(),
@@ -842,17 +845,21 @@ impl ElementTree {
     /// Lays out the elements whose boxes may have changed, places their boxes on the surface
     /// and lays out their lines. Returns the number of elements laid out.
     fn lay_out(&mut self, viewport: Size, scale: f32, text_shaper: &mut dyn TextShaper) -> usize {
-        let laid_out_elements = LayoutPass {
-            elements: &mut self.elements,
-            style_sheet: &self.style_sheet,
-            theme: &self.theme,
-            text_shaper: &mut *text_shaper,
-            scale,
-            processed_text: &mut self.processed_text,
-            laid_out_elements: 0,
+        let mut laid_out_elements = 0;
+        if self.may_have_moved_boxes(viewport) {
+            laid_out_elements = LayoutPass {
+                elements: &mut self.elements,
+                style_sheet: &self.style_sheet,
+                theme: &self.theme,
+                text_shaper: &mut *text_shaper,
+                scale,
+                processed_text: &mut self.processed_text,
+                laid_out_elements: 0,
+            }
+            .run(self.root, viewport);
+            self.elements.layout_is_computed();
+            self.laid_out_viewport = Some(viewport);
         }
-        .run(self.root, viewport);
-        self.elements.layout_is_computed();
         self.has_unpainted_changes |= GeometryPass {
             elements: &mut self.elements,
             repaints: false,
@@ -867,6 +874,14 @@ impl ElementTree {
         }
         .run();
         laid_out_elements
+    }
+
+    /// Whether a box may lie elsewhere than the last layout put it: an element dropped its
+    /// cached layout, or the tree is laid out in another viewport. Otherwise the layout pass
+    /// is skipped whole, the boxes placed against the viewport included, which the pass would
+    /// place again from their caches.
+    fn may_have_moved_boxes(&self, viewport: Size) -> bool {
+        self.elements.layout_is_stale() || self.laid_out_viewport != Some(viewport)
     }
 
     /// The display list stage: rebuilds the display items of the elements that changed and

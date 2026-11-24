@@ -7,8 +7,8 @@ use morok_components::view::SurfaceId;
 use morok_components::{Button, Combobox, Select};
 use morok_core::accesskit::{Live, Role as AccessibleRole};
 use morok_core::{
-    ElementId, Key, Modifiers, Offset, OverlayAlignment, OverlayInput, OverlaySide, PointerButton, PointerInputKind,
-    Size,
+    ElementId, Key, Modifiers, Offset, OverlayAlignment, OverlayInput, OverlaySide, Point, PointerButton,
+    PointerInputKind, Size,
 };
 use morok_reactive::Signal;
 use morok_style::States;
@@ -512,6 +512,88 @@ mod select {
         );
         assert!(press(&mut stage, Key::Enter));
         assert_eq!(stage.runtime.get(chosen), 999);
+    }
+
+    /// A select of forty options, "Option 00" to "Option 39", that holds the option `chosen`,
+    /// with its list open: more options than the list keeps row slots for.
+    fn open_select_of_forty(chosen: usize) -> (Stage, SurfaceId) {
+        let mut stage = Stage::new();
+        let chosen = stage.runtime.signal(chosen);
+        let select = stage.mount(move |mount| {
+            (0..40)
+                .fold(Select::new(chosen), |select, option| {
+                    select.option(option, format!("Option {option:02}"))
+                })
+                .mount(mount)
+        });
+        stage.frame_all();
+        click(&mut stage, select);
+        stage.frame_all();
+        stage.frame_all();
+        let overlay = overlay_over_window(&stage);
+        (stage, overlay)
+    }
+
+    /// The wheel scrolls an open dropdown list by `rows` rows, and the frames that follow run.
+    fn scroll_list_by(stage: &mut Stage, overlay: SurfaceId, rows: f32) {
+        let position = stage.middle_on(overlay, viewport_of(stage, overlay));
+        stage.wheel_on(
+            overlay,
+            position,
+            Point {
+                x: 0.0,
+                y: rows * ROW_HEIGHT,
+            },
+        );
+        stage.frame_all();
+    }
+
+    /// The names of the rows of an open dropdown list that carry the check mark.
+    fn checked_in(stage: &Stage, overlay: SurfaceId) -> Vec<String> {
+        rows_of(stage, overlay)
+            .into_iter()
+            .filter(|row| stage.tree_of(overlay).states(*row).contains(States::CHECKED))
+            .map(|row| name_of(stage, overlay, row))
+            .collect()
+    }
+
+    #[test]
+    fn a_scroll_of_one_row_binds_one_slot_of_an_open_list_to_the_text_and_the_name_of_the_option_that_came_into_view() {
+        let (mut stage, overlay) = open_select_of_forty(0);
+        let rows = rows_of(&stage, overlay);
+        let before: Vec<String> = rows.iter().map(|row| name_of(&stage, overlay, *row)).collect();
+
+        scroll_list_by(&mut stage, overlay, 1.0);
+
+        assert_eq!(rows_of(&stage, overlay), rows, "every slot keeps its row element");
+        let after: Vec<String> = rows.iter().map(|row| name_of(&stage, overlay, *row)).collect();
+        let rebound: Vec<usize> = (0..rows.len()).filter(|slot| before[*slot] != after[*slot]).collect();
+        assert_eq!(
+            rebound.len(),
+            1,
+            "one slot shows another option: {before:?} then {after:?}"
+        );
+        assert_eq!(after[rebound[0]], "Option 32");
+        assert_eq!(
+            stage.accessible_node_on(overlay, rows[rebound[0]]).label(),
+            Some("Option 32"),
+            "an assistive technology hears the option the slot shows now"
+        );
+    }
+
+    #[test]
+    fn the_check_mark_follows_the_chosen_option_and_leaves_the_slot_it_moves_out_of() {
+        let (mut stage, overlay) = open_select_of_forty(2);
+        assert_eq!(checked_in(&stage, overlay), ["Option 02"]);
+
+        scroll_list_by(&mut stage, overlay, 3.0);
+        assert!(
+            checked_in(&stage, overlay).is_empty(),
+            "the slot of the chosen option shows another option, unmarked"
+        );
+
+        scroll_list_by(&mut stage, overlay, -3.0);
+        assert_eq!(checked_in(&stage, overlay), ["Option 02"]);
     }
 }
 

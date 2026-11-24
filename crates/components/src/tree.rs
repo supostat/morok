@@ -78,78 +78,20 @@ impl<ItemKey: Clone + PartialEq + 'static> Tree<ItemKey> {
             shown
         });
         let count = runtime.memo(move |runtime| runtime.with(shown, Vec::len));
+        let selected_row = runtime.memo(move |runtime| {
+            let selected = runtime.get(selected)?;
+            runtime.with(shown, |shown| shown.iter().position(|item| item.key == selected))
+        });
         let keyboard_row = runtime.signal(0);
+        let tree_rows = TreeRows {
+            shown,
+            selected_row,
+            expanded,
+            selected,
+            keyboard_row,
+        };
         let rows = VirtualRows::mount(mount, count.into(), ROW_HEIGHT, move |mount, index| {
-            let runtime = mount.runtime();
-            let item = runtime.memo(move |runtime| {
-                let index = runtime.get(index);
-                runtime.with(shown, |shown| shown[index].clone())
-            });
-            let text = runtime.memo(move |runtime| runtime.with(item, |item| item.label.clone()));
-            let is_selected = runtime.memo(move |runtime| {
-                let key = runtime.with(item, |item| item.key.clone());
-                runtime.with(selected, |selected| selected.as_ref() == Some(&key))
-            });
-            let is_open = runtime.memo(move |runtime| runtime.with(item, |item| item.is_open));
-            let is_leaf = runtime.memo(move |runtime| runtime.with(item, |item| !item.has_children));
-            let indent = runtime.memo(move |runtime| {
-                let level = runtime.with(item, |item| item.level);
-                Declaration::Padding(Side::Left, inset_of_level(level))
-            });
-            let accessible = runtime.memo(move |runtime| {
-                runtime.with(item, |item| AccessibleItem {
-                    level: Some(item.level + 1),
-                    expanded: item.has_children.then_some(item.is_open),
-                    ..AccessibleItem::default()
-                })
-            });
-            let chevron = mount
-                .kit_icon(KitIcon::Right)
-                .class(CLASSES.tree_chevron)
-                .class_when(CLASSES.expanded, is_open)
-                .class_when(CLASSES.leaf, is_leaf)
-                .on_event(move |runtime, event| match event {
-                    ElementEvent::Pointer(pointer) if matches!(pointer.kind, PointerEventKind::Clicked { .. }) => {
-                        let item = runtime.get(item);
-                        if item.has_children {
-                            open(runtime, expanded, &item.key, !item.is_open);
-                        }
-                        Propagation::Stop
-                    }
-                    _ => Propagation::Continue,
-                })
-                .id();
-            let label_text = mount.text(text).id();
-            mount
-                .element()
-                .class(CLASSES.tree_row)
-                .inline(indent)
-                .state(States::CHECKED, is_selected)
-                .accessible_role(AccessibleRole::TreeItem)
-                .accessible_name(text)
-                .accessible_item(accessible)
-                .accessible_actions(AccessibleActions::CLICK)
-                .on_event(move |runtime, event| {
-                    let clicks = match event {
-                        ElementEvent::Pointer(pointer) => matches!(pointer.kind, PointerEventKind::Clicked { .. }),
-                        ElementEvent::Accessibility(action) => matches!(action, AccessibilityAction::Click),
-                        ElementEvent::Key(_)
-                        | ElementEvent::TextChanged(_)
-                        | ElementEvent::Drag(_)
-                        | ElementEvent::DragEnded(_) => false,
-                    };
-                    if !clicks {
-                        return Propagation::Continue;
-                    }
-                    let key = runtime.with(item, |item| item.key.clone());
-                    runtime.set(selected, Some(key));
-                    let index = runtime.get(index);
-                    runtime.set(keyboard_row, index);
-                    Propagation::Stop
-                })
-                .child(chevron)
-                .child(label_text)
-                .id()
+            tree_rows.mount_row(mount, index)
         });
         mount
             .build(rows.frame.viewport)
@@ -178,6 +120,109 @@ impl<ItemKey: Debug> Debug for Tree<ItemKey> {
     }
 }
 
+/// What the row slots of a mounted tree read and write.
+struct TreeRows<ItemKey> {
+    shown: Memo<Vec<ShownItem<ItemKey>>>,
+    /// The row of the selected item among the items shown; none while it is not shown.
+    selected_row: Memo<Option<usize>>,
+    expanded: Signal<Vec<ItemKey>>,
+    selected: Signal<Option<ItemKey>>,
+    keyboard_row: Signal<usize>,
+}
+
+impl<ItemKey> Clone for TreeRows<ItemKey> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<ItemKey> Copy for TreeRows<ItemKey> {}
+
+impl<ItemKey: Clone + PartialEq + 'static> TreeRows<ItemKey> {
+    /// Builds what a row slot holds: the chevron and the label of the item the row of `index`
+    /// shows, which a rebind writes into the row with nothing cloned.
+    fn mount_row(self, mount: &mut Mount<'_>, index: Memo<usize>) -> ElementId {
+        let Self {
+            shown,
+            selected_row,
+            expanded,
+            selected,
+            keyboard_row,
+        } = self;
+        let runtime = mount.runtime();
+        let is_selected = runtime.memo(move |runtime| runtime.get(selected_row) == Some(runtime.get(index)));
+        let is_open = runtime.memo(move |runtime| read_item(runtime, shown, index, |item| item.is_open));
+        let is_leaf = runtime.memo(move |runtime| read_item(runtime, shown, index, |item| !item.has_children));
+        let indent = runtime.memo(move |runtime| {
+            let level = read_item(runtime, shown, index, |item| item.level);
+            Declaration::Padding(Side::Left, inset_of_level(level))
+        });
+        let accessible = runtime.memo(move |runtime| {
+            read_item(runtime, shown, index, |item| AccessibleItem {
+                level: Some(item.level + 1),
+                expanded: item.has_children.then_some(item.is_open),
+                ..AccessibleItem::default()
+            })
+        });
+        let chevron = mount
+            .kit_icon(KitIcon::Right)
+            .class(CLASSES.tree_chevron)
+            .class_when(CLASSES.expanded, is_open)
+            .class_when(CLASSES.leaf, is_leaf)
+            .on_event(move |runtime, event| match event {
+                ElementEvent::Pointer(pointer) if matches!(pointer.kind, PointerEventKind::Clicked { .. }) => {
+                    let toggle = read_item(runtime, shown, index, |item| {
+                        item.has_children.then(|| (item.key.clone(), !item.is_open))
+                    });
+                    if let Some((key, opens)) = toggle {
+                        open(runtime, expanded, &key, opens);
+                    }
+                    Propagation::Stop
+                }
+                _ => Propagation::Continue,
+            })
+            .id();
+        let label_text = mount.text("").class(CLASSES.tree_label_text).id();
+        let label_room = mount.element().class(CLASSES.tree_label).child(label_text).id();
+        let row = mount
+            .element()
+            .class(CLASSES.tree_row)
+            .inline(indent)
+            .state(States::CHECKED, is_selected)
+            .accessible_role(AccessibleRole::TreeItem)
+            .accessible_item(accessible)
+            .accessible_actions(AccessibleActions::CLICK)
+            .on_event(move |runtime, event| {
+                let clicks = match event {
+                    ElementEvent::Pointer(pointer) => matches!(pointer.kind, PointerEventKind::Clicked { .. }),
+                    ElementEvent::Accessibility(action) => matches!(action, AccessibilityAction::Click),
+                    ElementEvent::Key(_)
+                    | ElementEvent::TextChanged(_)
+                    | ElementEvent::Drag(_)
+                    | ElementEvent::DragEnded(_) => false,
+                };
+                if !clicks {
+                    return Propagation::Continue;
+                }
+                let key = read_item(runtime, shown, index, |item| item.key.clone());
+                runtime.set(selected, Some(key));
+                let index = runtime.get(index);
+                runtime.set(keyboard_row, index);
+                Propagation::Stop
+            })
+            .child(chevron)
+            .child(label_room)
+            .id();
+        mount.effect(move |runtime, tree| {
+            read_item(runtime, shown, index, |item| {
+                tree.set_text(label_text, &item.label);
+                tree.set_accessible_name(row, &item.label);
+            });
+        });
+        row
+    }
+}
+
 /// An item of a tree as a row shows it.
 #[derive(Clone, Debug, PartialEq)]
 struct ShownItem<ItemKey> {
@@ -189,6 +234,17 @@ struct ShownItem<ItemKey> {
     is_open: bool,
     /// The row of the item the item lies under; none at the top level.
     parent_row: Option<usize>,
+}
+
+/// Reads the item the row of `index` shows now.
+fn read_item<ItemKey: 'static, Value>(
+    runtime: &mut Runtime<Surfaces>,
+    shown: Memo<Vec<ShownItem<ItemKey>>>,
+    index: Memo<usize>,
+    read: impl FnOnce(&ShownItem<ItemKey>) -> Value,
+) -> Value {
+    let index = runtime.get(index);
+    runtime.with(shown, |shown| read(&shown[index]))
 }
 
 /// Adds the items shown of `items` and of the open items under them, in the order of the rows.

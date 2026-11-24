@@ -6,10 +6,13 @@ use std::fmt::Write;
 use morok_components::view::Mount;
 use morok_components::{List, RowSelection, Tabs, Tree, TreeItem};
 use morok_core::accesskit::Role as AccessibleRole;
-use morok_core::{ElementId, Key, Modifiers};
+use morok_core::{ElementId, Key, Modifiers, Point};
 use morok_reactive::Signal;
-use morok_style::{Declaration, LengthPercentage, LengthPercentageAuto, Pixels};
+use morok_style::{Declaration, LengthPercentage, LengthPercentageAuto, Pixels, States};
 use support::Stage;
+
+/// How high a row of a tree is.
+const TREE_ROW_HEIGHT: f32 = 28.0;
 
 fn pixels(length: f32) -> LengthPercentageAuto {
     LengthPercentageAuto::LengthPercentage(LengthPercentage {
@@ -108,6 +111,125 @@ fn folders() -> Vec<TreeItem<&'static str>> {
         },
         leaf("Downloads"),
     ]
+}
+
+/// Forty folders at the top level of a tree, named "Folder 00" to "Folder 39": more items than
+/// the tree keeps row slots for.
+fn forty_folders() -> Vec<TreeItem<String>> {
+    (0..40)
+        .map(|index| TreeItem {
+            key: format!("folder-{index:02}"),
+            label: format!("Folder {index:02}"),
+            children: Vec::new(),
+        })
+        .collect()
+}
+
+/// A tree of `roots` with the item of the key `selected` selected, on a stage that ran its
+/// first frame.
+fn tree_of<ItemKey: Clone + PartialEq + 'static>(
+    roots: Vec<TreeItem<ItemKey>>,
+    selected: Option<ItemKey>,
+) -> (Stage, ElementId, Signal<Vec<ItemKey>>) {
+    let mut stage = Stage::new();
+    let expanded = stage.runtime.signal(Vec::new());
+    let selected = stage.runtime.signal(selected);
+    let view = stage.mount(move |mount| {
+        let view = Tree::new(roots, expanded, selected).label("Folders").mount(mount);
+        sized(mount, view)
+    });
+    stage.frame();
+    (stage, view, expanded)
+}
+
+/// The label a row of a tree shows: the text in the room past its chevron.
+fn tree_label(stage: &Stage, row: ElementId) -> String {
+    let [_chevron, room] = stage.tree().children(row) else {
+        panic!("a row of a tree holds its chevron and the room of its label");
+    };
+    let [text] = stage.tree().children(*room) else {
+        panic!("the room of a label holds its text");
+    };
+    stage.tree().text(*text).to_owned()
+}
+
+/// The labels of the rows of a tree its selection marks.
+fn marked_in_tree(stage: &Stage, view: ElementId) -> Vec<String> {
+    rows_of(stage, view)
+        .into_iter()
+        .filter(|row| stage.tree().states(*row).contains(States::CHECKED))
+        .map(|row| tree_label(stage, row))
+        .collect()
+}
+
+/// The wheel scrolls the viewport of a view of rows by `rows` rows of a tree, and a frame runs.
+fn scroll_tree_by(stage: &mut Stage, view: ElementId, rows: f32) {
+    let viewport = stage.children(view)[0];
+    let position = stage.middle_on(stage.surface, viewport);
+    stage.wheel_on(
+        stage.surface,
+        position,
+        Point {
+            x: 0.0,
+            y: rows * TREE_ROW_HEIGHT,
+        },
+    );
+    stage.frame();
+}
+
+#[test]
+fn a_scroll_of_one_row_binds_one_slot_of_a_tree_to_the_text_and_the_name_of_the_item_that_came_into_view() {
+    let (mut stage, view, _) = tree_of(forty_folders(), None);
+    let rows = rows_of(&stage, view);
+    let before: Vec<String> = rows.iter().map(|row| tree_label(&stage, *row)).collect();
+
+    scroll_tree_by(&mut stage, view, 1.0);
+
+    assert_eq!(rows_of(&stage, view), rows, "every slot keeps its row element");
+    let after: Vec<String> = rows.iter().map(|row| tree_label(&stage, *row)).collect();
+    let rebound: Vec<usize> = (0..rows.len()).filter(|slot| before[*slot] != after[*slot]).collect();
+    assert_eq!(
+        rebound.len(),
+        1,
+        "one slot shows another item: {before:?} then {after:?}"
+    );
+    assert_eq!(after[rebound[0]], "Folder 32");
+    assert_eq!(
+        stage.accessible_node(rows[rebound[0]]).label(),
+        Some("Folder 32"),
+        "an assistive technology hears the item the slot shows now"
+    );
+}
+
+#[test]
+fn the_mark_of_the_selected_item_follows_the_item_and_leaves_the_slot_it_moves_out_of() {
+    let (mut stage, view, _) = tree_of(forty_folders(), Some(String::from("folder-02")));
+    assert_eq!(marked_in_tree(&stage, view), ["Folder 02"]);
+
+    scroll_tree_by(&mut stage, view, 3.0);
+    assert!(
+        marked_in_tree(&stage, view).is_empty(),
+        "the slot of the selected item shows another item, unmarked: {:?}",
+        rows_of(&stage, view)
+            .iter()
+            .map(|row| tree_label(&stage, *row))
+            .collect::<Vec<_>>()
+    );
+    scroll_tree_by(&mut stage, view, -3.0);
+    assert_eq!(marked_in_tree(&stage, view), ["Folder 02"]);
+
+    let (mut stage, view, expanded) = tree_of(folders(), Some("Downloads"));
+    assert_eq!(marked_in_tree(&stage, view), ["Downloads"]);
+    let marked_row = rows_of(&stage, view)[1];
+    stage.runtime.set(expanded, vec!["Projects"]);
+    stage.frame();
+    assert_eq!(
+        marked_in_tree(&stage, view),
+        ["Downloads"],
+        "opening the folder above moves the selected item down a row and the mark with it"
+    );
+    assert!(!stage.tree().states(marked_row).contains(States::CHECKED));
+    assert_eq!(tree_label(&stage, marked_row), "morok");
 }
 
 #[test]

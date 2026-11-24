@@ -215,6 +215,31 @@ fn an_absolute_element_without_a_positioned_ancestor_is_placed_against_the_viewp
 }
 
 #[test]
+fn another_viewport_lays_the_tree_out_again_though_no_box_changed() {
+    let mut scene = Scene::new(
+        ".box { height: 100px; margin: 40px; }\n\
+         .toast { position: absolute; right: 0; bottom: 0; width: 120px; height: 30px; }",
+    );
+    let container = scene.add(scene.root(), Role::Element, &["box"]);
+    let toast = scene.add(container, Role::Element, &["toast"]);
+    scene.frame();
+    assert_eq!(
+        scene.frame().laid_out,
+        0,
+        "a frame with nothing changed lays nothing out"
+    );
+
+    scene.viewport = Size {
+        width: 600.0,
+        height: 400.0,
+    };
+    scene.frame();
+
+    assert_eq!(scene.border_box(toast), rect(480.0, 370.0, 120.0, 30.0));
+    assert_eq!(scene.border_box(container), rect(40.0, 40.0, 520.0, 100.0));
+}
+
+#[test]
 fn an_absolute_child_of_a_grid_is_placed_against_the_grid_area_it_names() {
     let mut scene = Scene::new(
         ".board { position: relative; display: grid; grid-template-columns: 100px 100px; \

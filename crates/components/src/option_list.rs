@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use morok_core::accesskit::Role as AccessibleRole;
 use morok_core::{AccessibilityAction, AccessibleActions, AccessibleItem, ElementId, PointerEventKind, Propagation};
 use morok_reactive::Memo;
@@ -52,17 +54,12 @@ impl OptionList {
 /// Builds what a row slot holds: the check mark and the name of the option the row shows.
 fn mount_row(mount: &mut Mount<'_>, dropdown: &Dropdown, row: Memo<usize>, count: Memo<usize>) -> ElementId {
     let (shown, chosen, highlighted) = (dropdown.shown, dropdown.chosen, dropdown.highlighted);
-    let labels = dropdown.labels.clone();
+    let labels = Rc::clone(&dropdown.labels);
     let runtime = mount.runtime();
     // A slot about to go with a list that shrank reads its row once more and finds no option.
     let option = runtime.memo(move |runtime| {
         let row = runtime.get(row);
         runtime.with(shown, |shown| shown.get(row).copied())
-    });
-    let name = runtime.memo(move |runtime| {
-        runtime
-            .get(option)
-            .map_or_else(String::new, |option| labels[option].clone())
     });
     let is_chosen = runtime.memo(move |runtime| {
         let option = runtime.get(option);
@@ -75,15 +72,14 @@ fn mount_row(mount: &mut Mount<'_>, dropdown: &Dropdown, row: Memo<usize>, count
         ..AccessibleItem::default()
     });
     let check_mark = mount.kit_icon(KitIcon::Check).class(CLASSES.option_mark).id();
-    let name_text = mount.text(name).class(CLASSES.option_name).id();
+    let name_text = mount.text("").class(CLASSES.option_name).id();
     let events = dropdown.clone();
-    mount
+    let option_row = mount
         .element()
         .class(CLASSES.option)
         .class_when(CLASSES.highlighted, is_highlighted)
         .state(States::CHECKED, is_chosen)
         .accessible_role(AccessibleRole::ListBoxOption)
-        .accessible_name(name)
         .accessible_item(item)
         .accessible_actions(AccessibleActions::CLICK)
         .on_event(move |runtime, event| {
@@ -111,5 +107,11 @@ fn mount_row(mount: &mut Mount<'_>, dropdown: &Dropdown, row: Memo<usize>, count
         })
         .child(check_mark)
         .child(name_text)
-        .id()
+        .id();
+    mount.effect(move |runtime, tree| {
+        let name = runtime.get(option).map_or("", |option| labels[option].as_str());
+        tree.set_text(name_text, name);
+        tree.set_accessible_name(option_row, name);
+    });
+    option_row
 }

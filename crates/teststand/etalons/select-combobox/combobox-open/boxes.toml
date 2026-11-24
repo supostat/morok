@@ -92,9 +92,9 @@ height = 14.0
 [[light]]
 node = "#13 .option-name"
 x = 67.0
-y = 72.578125
-width = 69.03125
-height = 18.84375
+y = 69.0
+width = 172.0
+height = 26.0
 
 [[light]]
 node = "#14 element"
@@ -120,9 +120,9 @@ height = 14.0
 [[light]]
 node = "#17 .option-name"
 x = 67.0
-y = 98.578125
-width = 66.77344
-height = 18.84375
+y = 95.0
+width = 172.0
+height = 26.0
 
 [[light]]
 node = "#18 .scroll-bar.vertical"
@@ -246,9 +246,9 @@ height = 14.0
 [[dark]]
 node = "#13 .option-name"
 x = 67.0
-y = 72.578125
-width = 69.03125
-height = 18.84375
+y = 69.0
+width = 172.0
+height = 26.0
 
 [[dark]]
 node = "#14 element"
@@ -274,9 +274,9 @@ height = 14.0
 [[dark]]
 node = "#17 .option-name"
 x = 67.0
-y = 98.578125
-width = 66.77344
-height = 18.84375
+y = 95.0
+width = 172.0
+height = 26.0
 
 [[dark]]
 node = "#18 .scroll-bar.vertical"

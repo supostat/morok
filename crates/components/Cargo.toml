@@ -20,3 +20,7 @@ morok-css.workspace = true
 
 [dev-dependencies]
 morok-css.workspace = true
+
+[[test]]
+name = "rebind_allocations"
+harness = false

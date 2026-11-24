@@ -16,11 +16,12 @@
 }
 
 .option {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
   height: 100%;
   padding: 0 var(--space-2);
+  overflow: hidden;
   border-radius: var(--radius-xs);
 }
 
@@ -40,8 +41,15 @@
   opacity: 1;
 }
 
+/* The name lies past the check mark between the insets of the row, so that a row bound to
+   another option sets its name with no box laid out. */
 .option-name {
-  min-width: 0;
+  position: absolute;
+  top: 0;
+  right: var(--space-2);
+  bottom: 0;
+  left: calc(var(--space-2) * 2 + 14px);
+  padding-top: 3.5px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

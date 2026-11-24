@@ -14,7 +14,26 @@
   color: var(--color-text);
   font-family: var(--font-ui);
   font-size: var(--text-md);
+  line-height: var(--text-leading);
   white-space: nowrap;
+}
+
+/* The room of the label: the rest of the row past the chevron. Its text fills it between its
+   insets, so that a row bound to another item sets its text with no box laid out. */
+.tree-label {
+  position: relative;
+  flex-grow: 1;
+  align-self: stretch;
+  overflow: hidden;
+}
+
+.tree-label-text {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding-top: 5px;
 }
 
 .tree-row:hover {

@@ -225,6 +225,14 @@ impl Stage {
         self.frame_of(surface, VIEWPORT);
     }
 
+    /// Runs one frame of an overlay a frame interval after the frame before, laid out in the
+    /// room of the screen as [`frame_all`](Self::frame_all) lays it out, and left where it was
+    /// placed.
+    pub(crate) fn frame_overlay(&mut self, overlay: SurfaceId) {
+        self.time += FRAME_INTERVAL;
+        self.frame_of(overlay, SCREEN.size());
+    }
+
     /// Where the stage placed the top left corner of an overlay opened over its surface, in
     /// CSS pixels of that surface.
     pub(crate) fn origin_of(&self, overlay: SurfaceId) -> Point {
