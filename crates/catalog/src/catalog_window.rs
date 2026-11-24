@@ -9,6 +9,7 @@ use morok::core::{ElementId, Key, KeyChord, Modifiers};
 use morok::reactive::Signal;
 
 use crate::catalog::Catalog;
+use crate::gallery::Gallery;
 use crate::page::Page;
 use crate::styles::CLASSES;
 use crate::token_set::TokenSet;
@@ -31,6 +32,7 @@ pub(crate) fn mount(mount: &mut Mount<'_>, catalog: &Catalog, first_page: Page) 
     let sidebar_width = mount.runtime().signal(SIDEBAR_WIDTH);
     let appearance = catalog.appearance();
     let token_set = catalog.token_set();
+    let gallery = catalog.gallery().clone();
     let opening = catalog.link();
     mount
         .surface_root()
@@ -68,7 +70,7 @@ pub(crate) fn mount(mount: &mut Mount<'_>, catalog: &Catalog, first_page: Page) 
         .pane(SplitPane::sized(sidebar_width, SIDEBAR_LIMITS, move |mount| {
             pages_sidebar(mount, page)
         }))
-        .pane(SplitPane::flexible(move |mount| page_room(mount, page)))
+        .pane(SplitPane::flexible(move |mount| page_room(mount, page, &gallery)))
         .label("Catalog")
         .mount(mount);
     let body = mount.element().class(CLASSES.catalog_body).child(split_view).id();
@@ -105,7 +107,7 @@ fn pages_sidebar(mount: &mut Mount<'_>, page: Signal<Page>) -> ElementId {
 
 /// The room of the open page: a page is built when it opens and goes, with its signals, when
 /// another opens.
-fn page_room(mount: &mut Mount<'_>, page: Signal<Page>) -> ElementId {
+fn page_room(mount: &mut Mount<'_>, page: Signal<Page>, gallery: &Gallery) -> ElementId {
     let is_open = Page::FAMILIES
         .into_iter()
         .chain(Page::SCREENS)
@@ -114,7 +116,8 @@ fn page_room(mount: &mut Mount<'_>, page: Signal<Page>) -> ElementId {
     let mut room = mount.element();
     room.class(CLASSES.catalog_page);
     for (shown, is_open) in is_open {
-        room.show(is_open, move |mount| shown.mount(mount));
+        let gallery = gallery.clone();
+        room.show(is_open, move |mount| shown.mount(mount, &gallery));
     }
     room.id()
 }

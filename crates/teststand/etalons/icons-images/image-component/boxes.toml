@@ -1,0 +1,153 @@
+[[light]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 520.0
+height = 114.0
+
+[[light]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 520.0
+height = 114.0
+
+[[light]]
+node = "#2 .image-frames"
+x = 16.0
+y = 16.0
+width = 488.0
+height = 82.0
+
+[[light]]
+node = "#3 .image-frame"
+x = 32.0
+y = 32.0
+width = 66.0
+height = 50.0
+
+[[light]]
+node = "#4 .image"
+x = 33.0
+y = 33.0
+width = 64.0
+height = 48.0
+
+[[light]]
+node = "#5 .image-frame.boxed.cover"
+x = 114.0
+y = 32.0
+width = 98.0
+height = 50.0
+
+[[light]]
+node = "#6 .image"
+x = 115.0
+y = 33.0
+width = 96.0
+height = 48.0
+
+[[light]]
+node = "#7 .image-frame.boxed.contain"
+x = 228.0
+y = 32.0
+width = 98.0
+height = 50.0
+
+[[light]]
+node = "#8 .image"
+x = 229.0
+y = 33.0
+width = 96.0
+height = 48.0
+
+[[light]]
+node = "#9 .image-frame.boxed"
+x = 342.0
+y = 32.0
+width = 98.0
+height = 50.0
+
+[[light]]
+node = "#10 .image"
+x = 343.0
+y = 33.0
+width = 96.0
+height = 48.0
+
+[[dark]]
+node = "#0 root"
+x = 0.0
+y = 0.0
+width = 520.0
+height = 114.0
+
+[[dark]]
+node = "#1 .stage"
+x = 0.0
+y = 0.0
+width = 520.0
+height = 114.0
+
+[[dark]]
+node = "#2 .image-frames"
+x = 16.0
+y = 16.0
+width = 488.0
+height = 82.0
+
+[[dark]]
+node = "#3 .image-frame"
+x = 32.0
+y = 32.0
+width = 66.0
+height = 50.0
+
+[[dark]]
+node = "#4 .image"
+x = 33.0
+y = 33.0
+width = 64.0
+height = 48.0
+
+[[dark]]
+node = "#5 .image-frame.boxed.cover"
+x = 114.0
+y = 32.0
+width = 98.0
+height = 50.0
+
+[[dark]]
+node = "#6 .image"
+x = 115.0
+y = 33.0
+width = 96.0
+height = 48.0
+
+[[dark]]
+node = "#7 .image-frame.boxed.contain"
+x = 228.0
+y = 32.0
+width = 98.0
+height = 50.0
+
+[[dark]]
+node = "#8 .image"
+x = 229.0
+y = 33.0
+width = 96.0
+height = 48.0
+
+[[dark]]
+node = "#9 .image-frame.boxed"
+x = 342.0
+y = 32.0
+width = 98.0
+height = 50.0
+
+[[dark]]
+node = "#10 .image"
+x = 343.0
+y = 33.0
+width = 96.0
+height = 48.0

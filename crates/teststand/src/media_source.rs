@@ -8,6 +8,7 @@ pub struct IconSource {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ImageSource {
     pub encoded: &'static [u8],
-    /// `image/png` or `image/jpeg`: what the data URL of the page names.
-    pub media_type: &'static str,
+    /// `image/png` or `image/jpeg`: what the data URL of the page names; none for bytes no
+    /// decoder reads, which an element shows as its box alone.
+    pub media_type: Option<&'static str>,
 }

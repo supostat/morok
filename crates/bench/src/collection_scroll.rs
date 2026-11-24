@@ -1,5 +1,5 @@
 use morok::core::{Point, ScrollInput, ScrollPhase, Size};
-use morok_catalog::styles;
+use morok_catalog::{Gallery, styles};
 use morok_platform::Renderer;
 
 use crate::frame_budget::FrameBudget;
@@ -32,7 +32,12 @@ impl CollectionScroll {
     /// scrolls is on screen already.
     pub fn new(renderer: &Renderer, collection: ScrolledCollection) -> Self {
         let page = collection.page();
-        let pipeline = SurfacePipeline::new(renderer, styles(), VIEWPORT, None, |mount| page.mount(mount));
+        let dropping = renderer.clone();
+        let gallery = Gallery::new(
+            |encoded| renderer.add_image(encoded),
+            move |encoded| Some(dropping.add_image(encoded)),
+        );
+        let pipeline = SurfacePipeline::new(renderer, styles(), VIEWPORT, None, |mount| page.mount(mount, &gallery));
         let parts = collection.parts(pipeline.tree());
         let shown_in = pipeline.tree().surface_box(parts.viewport);
         Self {

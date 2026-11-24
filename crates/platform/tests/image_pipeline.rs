@@ -5,9 +5,9 @@ use std::sync::LazyLock;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use morok_core::{CanvasId, ElementId, ImageId, Point, Rect, Role, Size};
+use morok_core::{CanvasId, ElementId, ImageId, ImageStatus, Point, Rect, Role, Size};
 use morok_platform::{
-    CanvasEncoder, CanvasPainter, FrameImage, ImageStatus, OffscreenTarget, Renderer, RendererOptions, RingSector,
+    CanvasEncoder, CanvasPainter, FrameImage, OffscreenTarget, Renderer, RendererOptions, RingSector,
 };
 use morok_style::{Color, Token};
 use support::Scene;

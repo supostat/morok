@@ -1,12 +1,13 @@
 use std::cell::{Cell, Ref, RefCell};
 use std::rc::{Rc, Weak};
 
-use morok::core::Size;
+use morok::core::{ImageId, Size};
 use morok::reactive::Signal;
 use morok::{Appearance, Application, RendererError, Styles, Window, WindowOptions};
 
 use crate::catalog_window;
 use crate::disk_map::DiskMap;
+use crate::gallery::Gallery;
 use crate::page::Page;
 use crate::styles::STYLE_SHEET;
 use crate::token_set::TokenSet;
@@ -62,6 +63,13 @@ impl CatalogLink {
         }
     }
 
+    /// Adds a picture to the application of the catalog; none once the catalog has closed.
+    fn add_image(&self, encoded: Vec<u8>) -> Option<ImageId> {
+        self.shared
+            .upgrade()
+            .map(|shared| shared.application.add_image(encoded))
+    }
+
     /// Runs `work` with the application of the catalog once the event the application is
     /// handling is over; nothing runs once the catalog has closed.
     fn defer(&self, work: impl FnOnce(&Application) + 'static) {
@@ -76,6 +84,7 @@ impl CatalogLink {
 #[derive(Debug)]
 struct Shared {
     application: Application,
+    gallery: Gallery,
     windows: RefCell<Vec<Window>>,
     /// How many windows the catalog has opened, the closed ones among them.
     opened_windows: Cell<usize>,
@@ -95,15 +104,21 @@ impl Catalog {
         application.set_canvas_painter(DiskMap::painter());
         let (appearance, token_set) =
             application.update(|runtime| (runtime.signal(Appearance::System), runtime.signal(TokenSet::Base)));
-        let catalog = Self {
-            shared: Rc::new(Shared {
+        let shared = Rc::new_cyclic(|shared| {
+            let dropping = CatalogLink { shared: shared.clone() };
+            Shared {
+                gallery: Gallery::new(
+                    |encoded| application.add_image(encoded),
+                    move |encoded| dropping.add_image(encoded),
+                ),
                 application,
                 windows: RefCell::new(Vec::new()),
                 opened_windows: Cell::new(0),
                 appearance,
                 token_set,
-            }),
-        };
+            }
+        });
+        let catalog = Self { shared };
         catalog.follow_settings();
         catalog.open_window(first_page);
         Ok(catalog)
@@ -111,6 +126,11 @@ impl Catalog {
 
     pub fn application(&self) -> &Application {
         &self.shared.application
+    }
+
+    /// The pictures the pages of the catalog show.
+    pub fn gallery(&self) -> &Gallery {
+        &self.shared.gallery
     }
 
     /// The windows of the catalog, in the order they were opened. A window the button of its

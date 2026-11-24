@@ -1,0 +1,7 @@
+/* An image: a picture the application added, at its natural size unless a rule of the
+   application sizes it, fitted into its box whole unless that rule names another fit. */
+
+.image {
+  display: block;
+  object-fit: contain;
+}

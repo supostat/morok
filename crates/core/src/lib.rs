@@ -67,6 +67,7 @@ pub use input::shortcut_scope::ShortcutScope;
 pub use media::canvas_id::CanvasId;
 pub use media::icon_id::IconId;
 pub use media::image_id::ImageId;
+pub use media::image_status::ImageStatus;
 pub use menu::menu_command::MenuCommand;
 pub use menu::native_menu::NativeMenu;
 pub use menu::native_menu_item::NativeMenuItem;

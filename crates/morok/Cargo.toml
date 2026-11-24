@@ -53,6 +53,10 @@ name = "drag_windows"
 harness = false
 
 [[test]]
+name = "images"
+harness = false
+
+[[test]]
 name = "multiple_windows"
 harness = false
 

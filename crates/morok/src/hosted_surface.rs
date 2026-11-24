@@ -87,7 +87,8 @@ impl HostedSurface {
 
 impl SurfaceContent for HostedSurface {
     /// The stages run in a fixed order: the events and the timers that wait, the effects,
-    /// style, layout and the display list. The window renders what `show` is given and asks
+    /// style, the natural sizes of the pictures the renderer decoded, layout and the display
+    /// list. The window renders what `show` is given and asks
     /// for the update of the accessibility tree after it. An overlay whose layout changed
     /// asks the surface under it for a frame, after which its window is placed again.
     fn frame(&mut self, viewport: Size, scale: f32, now: Duration, show: &mut dyn FnMut(&ElementTree)) {
@@ -105,8 +106,10 @@ impl SurfaceContent for HostedSurface {
         if !state.surfaces.contains(self.surface) {
             return;
         }
+        let renderer = &state.renderer;
         let tree = state.surfaces.surface_mut(self.surface).tree_mut();
         tree.resolve_styles(now);
+        tree.size_images(|image| renderer.image_status(image));
         let laid_out_elements = tree.compute_layout(viewport, scale, &mut state.text_shaper);
         tree.build_display_list();
         show(tree);

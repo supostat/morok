@@ -1,4 +1,4 @@
-use morok_core::{CanvasId, ElementId, ElementTree, Role};
+use morok_core::{CanvasId, ElementId, ElementTree, ImageId, Role};
 use morok_reactive::{Effect, Runtime, Scope, Signal};
 
 use crate::kit_icon::KitIcon;
@@ -94,6 +94,20 @@ impl<'a> Mount<'a> {
         let element = self.surface.tree.create(Role::Icon);
         self.surface.show_kit_icon(element, icon);
         self.build(element)
+    }
+
+    /// Creates an element that shows the picture `image` names and builds on it: the host gives
+    /// it the natural size of the picture once it is decoded. Another picture written to
+    /// `image` waits for its own size.
+    pub fn image(&mut self, image: impl Into<Property<ImageId>>) -> ElementBuilder<'_, 'a> {
+        let element = self.surface.tree.create(Role::Image);
+        let mut builder = self.build(element);
+        builder.bind(image.into(), |tree, element, image| {
+            if tree.image(element) != Some(*image) {
+                tree.set_image(element, *image, None);
+            }
+        });
+        builder
     }
 
     /// Creates a canvas the application draws `canvas` into and builds on it: the kit lays it

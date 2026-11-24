@@ -10,11 +10,10 @@ use objc2_metal::{
     MTLCreateSystemDefaultDevice, MTLDevice, MTLGPUFamily, MTLLibrary, MTLPixelFormat, MTLRenderPipelineState,
 };
 
-use morok_core::{IconId, ImageId, Size};
+use morok_core::{IconId, ImageId, ImageStatus, Size};
 
 use crate::atlas_statistics::AtlasStatistics;
 use crate::image_statistics::ImageStatistics;
-use crate::image_status::ImageStatus;
 use crate::media::icon_library::IconLibrary;
 use crate::media::image_store::{ImageState, ImageStore};
 use crate::media::image_textures::ImageTextures;

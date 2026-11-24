@@ -3,7 +3,7 @@ use std::rc::Rc;
 use std::time::Duration;
 
 use morok_components::view::{Mount, Surfaces};
-use morok_core::ElementId;
+use morok_core::{ElementId, ImageId, ImageStatus};
 use morok_platform::{Appearance, AtlasStatistics, CanvasPainter, PasteboardClipboard, RendererError, WindowOptions};
 use morok_reactive::Runtime;
 use morok_style::Theme;
@@ -35,7 +35,7 @@ impl Application {
     /// When called from a thread other than the main one.
     pub fn new(styles: Styles) -> Result<Self, RendererError> {
         let platform = morok_platform::Application::new()?;
-        let mut state = ApplicationState::new(styles);
+        let mut state = ApplicationState::new(styles, platform.renderer().clone());
         state.surfaces.register_kit_icons(|svg| {
             platform
                 .renderer()
@@ -124,6 +124,23 @@ impl Application {
     /// dropped; it hands what opens or drops one to this instead.
     pub fn defer(&self, work: impl FnOnce() + 'static) {
         self.platform.run_soon(work);
+    }
+
+    /// Takes an encoded picture — PNG, JPEG, HEIC or any format the system reads — and decodes
+    /// it off the main thread. An [`Image`](morok_components::Image) shows it by the id: at the
+    /// size of its box while it decodes, then at its natural size unless its style sizes it.
+    /// The bytes are the one way in: the application reads the files itself.
+    pub fn add_image(&self, encoded: Vec<u8>) -> ImageId {
+        self.platform.renderer().add_image(encoded)
+    }
+
+    /// How far the decoder has come with a picture the application added.
+    ///
+    /// # Panics
+    ///
+    /// When the id names no picture the application added.
+    pub fn image_status(&self, image: ImageId) -> ImageStatus {
+        self.platform.renderer().image_status(image)
     }
 
     /// The state of the glyph atlases the windows of the application share.

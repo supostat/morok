@@ -80,12 +80,20 @@ fn write_element(scene: &Scene, tokens: &CompiledTokens, element: ElementId, mar
         }
         Role::Image => {
             let image = scene.image_of(element).expect("an image element shows an image");
-            let _ = write!(
-                markup,
-                "<img{attributes} src=\"data:{};base64,{}\">",
-                image.media_type,
-                base64(image.encoded)
-            );
+            match image.media_type {
+                Some(media_type) => {
+                    let _ = write!(
+                        markup,
+                        "<img{attributes} src=\"data:{media_type};base64,{}\">",
+                        base64(image.encoded)
+                    );
+                }
+                // Chrome draws a sign of its own over a picture it cannot read; the kit shows
+                // the box alone.
+                None => {
+                    let _ = write!(markup, "<div{attributes}></div>");
+                }
+            }
             return;
         }
         Role::Canvas => {

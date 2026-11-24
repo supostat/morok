@@ -196,3 +196,79 @@
   font-family: var(--font-mono);
   font-size: var(--text-xs);
 }
+
+/* The image of the kit: a picture in a frame with a caption under it; a frame of the boxed size
+   sizes the picture and gives it the fit its class names. */
+.page-picture-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.page-picture {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface-sunken);
+  overflow: hidden;
+}
+
+.page-picture.boxed > .image {
+  width: 120px;
+  height: 80px;
+}
+
+.page-picture.fit-fill > .image {
+  object-fit: fill;
+}
+
+.page-picture.fit-contain > .image {
+  object-fit: contain;
+}
+
+.page-picture.fit-cover > .image {
+  object-fit: cover;
+}
+
+.page-picture.fit-none > .image {
+  object-fit: none;
+}
+
+.page-picture.fit-scale-down > .image {
+  object-fit: scale-down;
+}
+
+.page-picture-caption {
+  color: var(--color-text-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+/* The zone a picture is dropped on from Finder and dragged out of; it is hovered while a drag
+   it takes is over it. */
+.page-drop-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 320px;
+  height: 200px;
+  padding: var(--space-3);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-sunken);
+}
+
+.page-drop-zone:hover {
+  border-color: var(--color-accent);
+}
+
+.page-drop-zone > .image {
+  width: 100%;
+  height: 100%;
+}
+
+.page-drop-hint {
+  color: var(--color-text-3);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+}

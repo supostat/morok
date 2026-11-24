@@ -1,7 +1,8 @@
 use std::thread;
 use std::time::{Duration, Instant};
 
-use morok_platform::{CoreTextShaper, ImageStatus, OffscreenTarget, Renderer};
+use morok_core::{ImageId, ImageStatus};
+use morok_platform::{CoreTextShaper, OffscreenTarget, Renderer};
 use morok_style::ColorScheme;
 
 use crate::canvas_shapes_painter::CanvasShapesPainter;
@@ -47,9 +48,11 @@ impl MorokSide {
         }
         for (element, image) in scene.images().to_vec() {
             let id = self.renderer.add_image(image.encoded.to_vec());
-            let size = self.decoded_size(id);
-            scene.tree_mut().set_image(element, id, Some(size));
+            scene.tree_mut().set_image(element, id, None);
+            self.wait_for_decoder(id);
         }
+        let renderer = &self.renderer;
+        scene.tree_mut().size_images(|image| renderer.image_status(image));
         scene.frame(case.viewport, &mut self.text_shaper, Duration::ZERO);
         if let Moment::InMotion { change, after } = case.moment {
             change(&mut scene);
@@ -65,21 +68,16 @@ impl MorokSide {
         }
     }
 
-    /// Waits for the decoder of the image: a case is drawn with its pictures in place.
-    fn decoded_size(&self, image: morok_core::ImageId) -> morok_core::Size {
+    /// Waits until the decoder has read the image or found it unreadable: a case is drawn
+    /// with its pictures in place.
+    fn wait_for_decoder(&self, image: ImageId) {
         let started = Instant::now();
-        loop {
-            match self.renderer.image_status(image) {
-                ImageStatus::Decoded(size) => return size,
-                ImageStatus::Unreadable => panic!("the images of a suite are files the system reads"),
-                ImageStatus::Decoding => {
-                    assert!(
-                        started.elapsed() < DECODING_TIMEOUT,
-                        "an image of a suite decodes in time"
-                    );
-                    thread::sleep(DECODING_POLL);
-                }
-            }
+        while self.renderer.image_status(image) == ImageStatus::Decoding {
+            assert!(
+                started.elapsed() < DECODING_TIMEOUT,
+                "an image of a suite decodes in time"
+            );
+            thread::sleep(DECODING_POLL);
         }
     }
 }

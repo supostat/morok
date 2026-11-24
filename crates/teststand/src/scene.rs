@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use morok_components::view::{Mount, SurfaceId, Surfaces};
-use morok_core::{CanvasId, ElementId, ElementTree, Offset, Rect, Role, Size, TextSelection, TextShaper};
+use morok_core::{CanvasId, ElementId, ElementTree, ImageId, Offset, Rect, Role, Size, TextSelection, TextShaper};
 use morok_reactive::Runtime;
 use morok_style::{States, StyleSheet, Theme};
 
@@ -26,6 +26,8 @@ pub struct Scene {
     icons: Vec<(ElementId, IconSource)>,
     /// The images of the scene with the elements that show them.
     images: Vec<(ElementId, ImageSource)>,
+    /// The pictures a case hands components, at the position the id of each names.
+    pictures: Vec<ImageSource>,
     /// The `Scroll` elements the case scrolls, with the offsets it asks for.
     scroll_offsets: Vec<(ElementId, Offset)>,
     /// The canvases of the scene with the shapes they are filled with.
@@ -44,6 +46,7 @@ impl Scene {
             style_sheet,
             icons: Vec::new(),
             images: Vec::new(),
+            pictures: Vec::new(),
             scroll_offsets: Vec::new(),
             canvases: Vec::new(),
         }
@@ -54,7 +57,8 @@ impl Scene {
     }
 
     /// Mounts a component of the kit as the last child of `parent` and returns the element
-    /// it built. Both sides draw the icons of the kit it shows from their SVG.
+    /// it built. Both sides draw the icons of the kit it shows from their SVG, and the
+    /// pictures of [`picture`](Self::picture) it shows from their files.
     pub fn mount(&mut self, parent: ElementId, component: impl FnOnce(&mut Mount<'_>) -> ElementId) -> ElementId {
         let mounted = self.surfaces.mount(&mut self.runtime, self.surface, parent, component);
         // What the component shows by its signals — rows of a list among them — is built in
@@ -65,6 +69,9 @@ impl Scene {
         while let Some(element) = unvisited.pop() {
             if let Some(icon) = surface.kit_icon_of(element) {
                 self.icons.push((element, IconSource { svg: icon.svg() }));
+            }
+            if let Some(picture) = surface.tree().image(element) {
+                self.images.push((element, self.pictures[picture.0 as usize]));
             }
             unvisited.extend(surface.tree().children(element));
         }
@@ -120,6 +127,14 @@ impl Scene {
         let element = self.add_with_role(parent, Role::Image, class_names);
         self.images.push((element, image));
         element
+    }
+
+    /// The id a component of the case shows the picture by; both sides show the same encoded
+    /// file.
+    pub fn picture(&mut self, image: ImageSource) -> ImageId {
+        let id = ImageId(u32::try_from(self.pictures.len()).expect("a case shows fewer than 2^32 pictures"));
+        self.pictures.push(image);
+        id
     }
 
     /// Fills the canvas with the shapes, in their order: both sides draw them into every

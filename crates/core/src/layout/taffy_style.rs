@@ -35,6 +35,9 @@ pub(crate) struct TaffyStyle<'a> {
     pub(crate) theme: &'a Theme,
     /// Whether the element is the root: the box of the root is the viewport unless it is sized.
     pub(crate) fills_viewport: bool,
+    /// Whether the element shows a picture, as an `<img>` does: left `auto`, its width is its
+    /// own rather than the width of its container.
+    pub(crate) is_replaced: bool,
 }
 
 impl<'a> TaffyStyle<'a> {
@@ -161,6 +164,14 @@ impl CoreStyle for TaffyStyle<'_> {
 
     fn is_block(&self) -> bool {
         self.style.display == Display::Block
+    }
+
+    fn is_replaced(&self) -> bool {
+        self.is_replaced
+    }
+
+    fn is_compressible_replaced(&self) -> bool {
+        self.is_replaced
     }
 
     fn overflow(&self) -> Point<Overflow> {

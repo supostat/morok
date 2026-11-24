@@ -6,6 +6,7 @@ use crate::layout::calc_handle::CalcHandle;
 use crate::layout::grid_tracks::GridTracks;
 use crate::layout::length_slot::LengthSlot;
 use crate::layout::taffy_style::TaffyStyle;
+use crate::role::Role;
 use crate::style::layout_style::LayoutStyle;
 use crate::style::resolved_length::ResolvedLength;
 use crate::style::resolved_length_or_auto::ResolvedLengthOrAuto;
@@ -27,6 +28,7 @@ impl<'a> ElementStyles<'a> {
             tracks: self.grid_tracks(id),
             theme: self.theme,
             fills_viewport: element.parent.is_none(),
+            is_replaced: element.role == Role::Image,
         }
     }
 

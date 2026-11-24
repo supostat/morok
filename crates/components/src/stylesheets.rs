@@ -10,7 +10,7 @@ pub const KIT_TOKENS: StylesheetSource = StylesheetSource {
 /// The stylesheets of the components, in the order the build compiles them: the order of
 /// their paths. A host that compiles them first, in this order, and its own stylesheets after
 /// them gets a style sheet in which every class of the kit has the ID the components know it by.
-pub const STYLESHEETS: [StylesheetSource; 31] = [
+pub const STYLESHEETS: [StylesheetSource; 32] = [
     StylesheetSource {
         path: "crates/components/src/button.css",
         text: include_str!("button.css"),
@@ -30,6 +30,10 @@ pub const STYLESHEETS: [StylesheetSource; 31] = [
     StylesheetSource {
         path: "crates/components/src/icon_button.css",
         text: include_str!("icon_button.css"),
+    },
+    StylesheetSource {
+        path: "crates/components/src/image.css",
+        text: include_str!("image.css"),
     },
     StylesheetSource {
         path: "crates/components/src/list.css",

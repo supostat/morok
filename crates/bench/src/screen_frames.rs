@@ -1,6 +1,6 @@
 use morok::core::{ElementId, ElementTree};
 use morok::style::States;
-use morok_catalog::{DiskMap, Page, WINDOW_SIZE, styles};
+use morok_catalog::{DiskMap, Gallery, Page, WINDOW_SIZE, styles};
 use morok_platform::Renderer;
 
 use crate::frame_budget::FrameBudget;
@@ -26,12 +26,17 @@ pub struct ScreenFrames {
 impl ScreenFrames {
     /// Mounts the screen under the light theme of the catalog and runs its first frame.
     pub fn new(renderer: &Renderer, screen: Page) -> Self {
+        let dropping = renderer.clone();
+        let gallery = Gallery::new(
+            |encoded| renderer.add_image(encoded),
+            move |encoded| Some(dropping.add_image(encoded)),
+        );
         let pipeline = SurfacePipeline::new(
             renderer,
             styles(),
             WINDOW_SIZE,
             Some(Box::new(DiskMap::painter())),
-            |mount| screen.mount(mount),
+            |mount| screen.mount(mount, &gallery),
         );
         let elements = elements_of(pipeline.tree());
         let changes_per_frame = ((elements.len() as f64 * CHANGED_SHARE) as usize).max(1);

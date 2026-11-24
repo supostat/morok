@@ -4,9 +4,10 @@ use morok::core::ElementId;
 
 use crate::disk_map::DiskMap;
 use crate::file_manager::FileManager;
+use crate::gallery::Gallery;
 use crate::pages::{
-    buttons_page, collections_page, controls_page, icons_page, overlays_page, pickers_page, scaffolding_page,
-    table_page, text_fields_page,
+    buttons_page, collections_page, controls_page, icons_page, images_page, overlays_page, pickers_page,
+    scaffolding_page, table_page, text_fields_page,
 };
 
 /// A page of the catalog: a family of the components of the kit, or a screen built of them.
@@ -14,6 +15,7 @@ use crate::pages::{
 pub enum Page {
     Buttons,
     Icons,
+    Images,
     TextFields,
     Controls,
     Collections,
@@ -27,9 +29,10 @@ pub enum Page {
 
 impl Page {
     /// The pages of the component families, in the order of the sidebar.
-    pub const FAMILIES: [Self; 9] = [
+    pub const FAMILIES: [Self; 10] = [
         Self::Buttons,
         Self::Icons,
+        Self::Images,
         Self::TextFields,
         Self::Controls,
         Self::Collections,
@@ -45,6 +48,7 @@ impl Page {
         match self {
             Self::Buttons => "Buttons",
             Self::Icons => "Icons",
+            Self::Images => "Images",
             Self::TextFields => "Text fields",
             Self::Controls => "Controls",
             Self::Collections => "Collections",
@@ -62,6 +66,7 @@ impl Page {
         match self {
             Self::Buttons => "Button · IconButton",
             Self::Icons => "the icons of the kit",
+            Self::Images => "Image",
             Self::TextFields => "TextField · SearchField · TextArea",
             Self::Controls => "Checkbox · RadioGroup · Switch · Slider · SegmentedControl · ProgressBar · Spinner",
             Self::Collections => "List · Tree · Tabs",
@@ -78,6 +83,7 @@ impl Page {
         match self {
             Self::Buttons => KitIcon::Bolt,
             Self::Icons => KitIcon::Star,
+            Self::Images => KitIcon::Image,
             Self::TextFields => KitIcon::Search,
             Self::Controls => KitIcon::Gear,
             Self::Collections => KitIcon::Grid,
@@ -90,15 +96,21 @@ impl Page {
         }
     }
 
-    /// Builds the page. A page of a family taller than the room it has scrolls inside it; the
-    /// table and the screens fill that room.
-    pub fn mount(self, mount: &mut Mount<'_>) -> ElementId {
+    /// Builds the page, which shows the pictures of `gallery`. A page of a family taller than
+    /// the room it has scrolls inside it; the table and the screens fill that room.
+    pub fn mount(self, mount: &mut Mount<'_>, gallery: &Gallery) -> ElementId {
         let scrolled = |build: fn(&mut Mount<'_>) -> ElementId, mount: &mut Mount<'_>| {
             ScrollView::new(build).label(self.title()).mount(mount)
         };
         match self {
             Self::Buttons => scrolled(buttons_page::mount, mount),
             Self::Icons => scrolled(icons_page::mount, mount),
+            Self::Images => {
+                let gallery = gallery.clone();
+                ScrollView::new(move |mount| images_page::mount(mount, &gallery))
+                    .label(self.title())
+                    .mount(mount)
+            }
             Self::TextFields => scrolled(text_fields_page::mount, mount),
             Self::Controls => scrolled(controls_page::mount, mount),
             Self::Collections => scrolled(collections_page::mount, mount),

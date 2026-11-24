@@ -50,6 +50,7 @@ use crate::layout::layout_pass::LayoutPass;
 use crate::media::canvas_id::CanvasId;
 use crate::media::icon_id::IconId;
 use crate::media::image_id::ImageId;
+use crate::media::image_status::ImageStatus;
 use crate::media::media_content::MediaContent;
 use crate::motion::motion_resolver::MotionResolver;
 use crate::motion::running_spring::RunningSpring;
@@ -121,6 +122,9 @@ pub struct ElementTree {
     ancestor_layers: Vec<(ElementId, bool, bool)>,
     /// The elements of the `Scroll` role, in or out of the tree.
     scrollers: Vec<ElementId>,
+    /// The elements of the `Image` role, in or out of the tree, whose picture the host has
+    /// not sized yet.
+    images_awaiting_size: Vec<ElementId>,
     /// Scratch space for the groups open while the display list is written.
     open_groups: Vec<OpenGroup>,
     /// The element of every clip the display list holds, in the order of the clips.
@@ -171,6 +175,7 @@ impl ElementTree {
             paint_steps: Vec::new(),
             ancestor_layers: Vec::new(),
             scrollers: Vec::new(),
+            images_awaiting_size: Vec::new(),
             open_groups: Vec::new(),
             clip_owners: Vec::new(),
             paint_order_is_stale: true,
@@ -308,6 +313,7 @@ impl ElementTree {
         }
         let elements = &self.elements;
         self.scrollers.retain(|scroller| elements.contains(*scroller));
+        self.images_awaiting_size.retain(|image| elements.contains(*image));
         let shown_in_menu_bar = self.menu_bar_shortcuts().count();
         self.input.shortcuts.retain(|shortcut| match shortcut.scope {
             ShortcutScope::Surface => true,
@@ -460,13 +466,59 @@ impl ElementTree {
 
     /// Shows the image in a [`Role::Image`] element. The picture takes `natural_size` CSS
     /// pixels once decoded; until the host knows it, the element shows its box alone and is
-    /// laid out without a size of its own.
+    /// laid out without a size of its own, and [`size_images`](Self::size_images) gives it the
+    /// size the host learns.
     ///
     /// # Panics
     ///
     /// When the element is not an image.
     pub fn set_image(&mut self, element: ElementId, image: ImageId, natural_size: Option<Size>) {
         self.set_media(element, Role::Image, MediaContent::Image { image, natural_size });
+        if natural_size.is_none() && !self.images_awaiting_size.contains(&element) {
+            self.images_awaiting_size.push(element);
+        }
+    }
+
+    /// The image a [`Role::Image`] element shows; none for an element that was given no image.
+    pub fn image(&self, element: ElementId) -> Option<ImageId> {
+        match self.elements[element].media {
+            MediaContent::Image { image, .. } => Some(image),
+            _ => None,
+        }
+    }
+
+    /// Gives every image the tree shows without a size the natural size its host has learnt:
+    /// `status_of` tells how far the host has come with a picture. An unreadable picture leaves
+    /// its element the box it has. While a picture an element of the tree shows decodes, the
+    /// tree asks for the next frame. A host calls this in every frame, between the style stage
+    /// and the layout stage.
+    pub fn size_images(&mut self, mut status_of: impl FnMut(ImageId) -> ImageStatus) {
+        let mut awaiting = mem::take(&mut self.images_awaiting_size);
+        let mut shows_a_decoding_image = false;
+        awaiting.retain(|&element| {
+            let MediaContent::Image {
+                image,
+                natural_size: None,
+            } = self.elements[element].media
+            else {
+                return false;
+            };
+            match status_of(image) {
+                ImageStatus::Decoding => {
+                    shows_a_decoding_image |= self.elements[element].is_attached;
+                    true
+                }
+                ImageStatus::Unreadable => false,
+                ImageStatus::Decoded(natural_size) => {
+                    self.set_image(element, image, Some(natural_size));
+                    false
+                }
+            }
+        });
+        self.images_awaiting_size = awaiting;
+        if shows_a_decoding_image {
+            self.request_frame();
+        }
     }
 
     /// Shows the icon in a [`Role::Icon`] element, tinted with the `color` of the element.

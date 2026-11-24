@@ -1,6 +1,6 @@
-use morok_core::Size;
+use crate::geometry::size::Size;
 
-/// How far an image handed to the renderer has come.
+/// How far the host has come with an image an application handed it.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ImageStatus {
     /// The decoder has not finished.

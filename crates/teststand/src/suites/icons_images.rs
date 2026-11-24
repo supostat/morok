@@ -1,3 +1,4 @@
+use morok_components::Image;
 use morok_core::{ElementId, Size};
 use morok_css::SourceFile;
 
@@ -6,7 +7,7 @@ use crate::media_source::{IconSource, ImageSource};
 use crate::moment::Moment;
 use crate::scene::Scene;
 use crate::suite::Suite;
-use crate::suites::kit_tokens;
+use crate::suites::{component_stylesheet, kit_tokens};
 
 pub(crate) const NAME: &str = "icons-images";
 
@@ -38,23 +39,34 @@ const FLAG: IconSource = IconSource {
 
 const SKY_PNG: ImageSource = ImageSource {
     encoded: include_bytes!("../../suites/images/sky.png"),
-    media_type: "image/png",
+    media_type: Some("image/png"),
 };
 const SKY_JPEG: ImageSource = ImageSource {
     encoded: include_bytes!("../../suites/images/sky.jpg"),
-    media_type: "image/jpeg",
+    media_type: Some("image/jpeg"),
+};
+
+/// Bytes no decoder reads.
+const UNREADABLE: ImageSource = ImageSource {
+    encoded: b"not an image",
+    media_type: None,
 };
 
 const OBJECT_FITS: [&str; 5] = ["fill", "contain", "cover", "none", "scale-down"];
 
-/// Icons at every size of the design book and pictures under every `object-fit`.
+/// Icons at every size of the design book, pictures under every `object-fit`, and the image
+/// of the kit.
 pub(crate) fn suite() -> Suite {
     Suite {
         name: NAME,
         tokens: kit_tokens(),
-        component_stylesheets: Vec::new(),
+        component_stylesheets: vec![component_stylesheet("crates/components/src/image.css")],
         stylesheets: vec![SourceFile::new(STYLESHEET_PATH, STYLESHEET)],
-        cases: vec![case("icons", 420.0, 200.0, icons), case("images", 580.0, 260.0, images)],
+        cases: vec![
+            case("icons", 420.0, 200.0, icons),
+            case("images", 580.0, 260.0, images),
+            case("image-component", 520.0, 114.0, image_component),
+        ],
     }
 }
 
@@ -99,4 +111,21 @@ fn images(scene: &mut Scene) {
     for fit in OBJECT_FITS {
         scene.add_image(pictures, &["picture", "tall", fit], SKY_JPEG);
     }
+}
+
+/// The image of the kit: a picture at its natural size, the same picture in a box of the suite
+/// under `cover` and under `contain`, and an unreadable picture, which leaves the box alone.
+fn image_component(scene: &mut Scene) {
+    let stage = stage(scene);
+    let frames = scene.add(stage, &["image-frames"]);
+    let sky = scene.picture(SKY_PNG);
+    let unreadable = scene.picture(UNREADABLE);
+    let natural = scene.add(frames, &["image-frame"]);
+    scene.mount(natural, move |mount| Image::new(sky, "Sky").mount(mount));
+    for fit in ["cover", "contain"] {
+        let frame = scene.add(frames, &["image-frame", "boxed", fit]);
+        scene.mount(frame, move |mount| Image::new(sky, "Sky").mount(mount));
+    }
+    let frame = scene.add(frames, &["image-frame", "boxed"]);
+    scene.mount(frame, move |mount| Image::new(unreadable, "Unreadable").mount(mount));
 }
