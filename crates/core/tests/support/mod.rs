@@ -1,13 +1,15 @@
 #![allow(dead_code)]
 
+use std::cell::Cell;
 use std::ops::Range;
 use std::time::Duration;
 
 use morok_core::{
     AccessibilityAction, CaretLine, CaretLines, CaretStop, DragEvent, DragEventKind, DragOutcome, DragStart, ElementId,
-    ElementTree, FontId, FontMetrics, FontRequest, InputHandler, ItemRange, Key, KeyEvent, KeyPhase, Modifiers,
-    Payload, Point, PointerButton, PointerEvent, PointerEventKind, PointerInput, PointerInputKind, Propagation, Rect,
-    Role, ShapedGlyph, ShapedLine, ShapedRun, ShapedText, ShortcutId, Size, TextExtent, TextRequest, TextShaper,
+    ElementTree, FontId, FontMetrics, FontRequest, FrameOutcome, FrameStage, ImageId, ImageStatus, ImageStatuses,
+    InputHandler, ItemRange, Key, KeyEvent, KeyPhase, Modifiers, Payload, Point, PointerButton, PointerEvent,
+    PointerEventKind, PointerInput, PointerInputKind, Propagation, Rect, Role, ShapedGlyph, ShapedLine, ShapedRun,
+    ShapedText, ShortcutId, Size, StageObserver, TextExtent, TextRequest, TextShaper, TreeFrame, Unobserved,
     WidthConstraint,
 };
 use morok_css::{CompiledTokens, SourceFile, TokenId, compile_stylesheets, compile_tokens};
@@ -243,18 +245,46 @@ impl TextShaper for MonospaceShaper {
     }
 }
 
-/// How much work each stage of one frame did.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) struct Frame {
-    pub(crate) resolved: usize,
-    pub(crate) laid_out: usize,
-    pub(crate) rebuilt: usize,
+/// The pictures as a host reports them to a tree: every one at the status a test reported last,
+/// still decoding until it reports another.
+#[derive(Debug)]
+pub(crate) struct ReportedImages {
+    status: ImageStatus,
+    times_asked: Cell<usize>,
+}
+
+impl ReportedImages {
+    pub(crate) fn report(&mut self, status: ImageStatus) {
+        self.status = status;
+    }
+
+    /// How many times the tree has asked how far a picture has come.
+    pub(crate) fn times_asked(&self) -> usize {
+        self.times_asked.get()
+    }
+}
+
+impl Default for ReportedImages {
+    fn default() -> Self {
+        Self {
+            status: ImageStatus::Decoding,
+            times_asked: Cell::new(0),
+        }
+    }
+}
+
+impl ImageStatuses for ReportedImages {
+    fn image_status(&self, _image: ImageId) -> ImageStatus {
+        self.times_asked.set(self.times_asked.get() + 1);
+        self.status
+    }
 }
 
 /// An element tree styled by a stylesheet the real compiler compiled against the base tokens.
 pub(crate) struct Scene {
     pub(crate) tree: ElementTree,
     pub(crate) text_shaper: MonospaceShaper,
+    pub(crate) images: ReportedImages,
     pub(crate) viewport: Size,
     /// Device pixels to a CSS pixel on the surface the scene is laid out for.
     pub(crate) scale: f32,
@@ -279,6 +309,7 @@ impl Scene {
         Self {
             tree: ElementTree::new(style_sheet.clone(), tokens.light.clone()),
             text_shaper: MonospaceShaper::default(),
+            images: ReportedImages::default(),
             viewport: VIEWPORT,
             scale: 1.0,
             time: Duration::ZERO,
@@ -318,24 +349,44 @@ impl Scene {
         }
     }
 
-    /// Runs the three stages of a frame at the time of the frame before.
-    pub(crate) fn frame(&mut self) -> Frame {
+    /// Runs a frame at the time of the frame before, as a host runs it.
+    pub(crate) fn frame(&mut self) -> FrameOutcome {
         self.frame_at(self.time)
     }
 
-    /// Runs the three stages of a frame at `time`.
-    pub(crate) fn frame_at(&mut self, time: Duration) -> Frame {
+    /// Runs a frame at `time`, as a host runs it.
+    pub(crate) fn frame_at(&mut self, time: Duration) -> FrameOutcome {
+        self.frame_observed(time, &mut Unobserved)
+    }
+
+    /// Runs a frame at `time` whose stages `observer` hears end.
+    pub(crate) fn frame_observed(
+        &mut self,
+        time: Duration,
+        observer: &mut dyn StageObserver<FrameStage>,
+    ) -> FrameOutcome {
         self.time = time;
-        let resolved = self.tree.resolve_styles(time);
-        let laid_out = self
-            .tree
-            .compute_layout(self.viewport, self.scale, &mut self.text_shaper);
-        let rebuilt = self.tree.build_display_list();
-        Frame {
-            resolved,
-            laid_out,
-            rebuilt,
-        }
+        let frame = TreeFrame {
+            viewport: self.viewport,
+            scale: self.scale,
+            now: time,
+            text_shaper: &mut self.text_shaper,
+            images: &self.images,
+        };
+        self.tree.run_frame(frame, observer)
+    }
+
+    /// Lays the tree out at the time of the frame before, as a host lays out an overlay before
+    /// it shows it, with `observer` hearing its stages end.
+    pub(crate) fn lay_out_observed(&mut self, observer: &mut dyn StageObserver<FrameStage>) -> FrameOutcome {
+        let frame = TreeFrame {
+            viewport: self.viewport,
+            scale: self.scale,
+            now: self.time,
+            text_shaper: &mut self.text_shaper,
+            images: &self.images,
+        };
+        self.tree.lay_out(frame, observer)
     }
 
     pub(crate) fn border_box(&self, element: ElementId) -> Rect {

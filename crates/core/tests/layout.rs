@@ -224,7 +224,7 @@ fn another_viewport_lays_the_tree_out_again_though_no_box_changed() {
     let toast = scene.add(container, Role::Element, &["toast"]);
     scene.frame();
     assert_eq!(
-        scene.frame().laid_out,
+        scene.frame().laid_out_elements,
         0,
         "a frame with nothing changed lays nothing out"
     );
@@ -453,7 +453,7 @@ fn only_the_subtree_that_changed_is_laid_out_again() {
     let right = scene.add(columns, Role::Element, &["column"]);
     let right_texts = [scene.add_text(right, "right one"), scene.add_text(right, "right two")];
     let first_frame = scene.frame();
-    assert_eq!(first_frame.laid_out, 8);
+    assert_eq!(first_frame.laid_out_elements, 8);
     assert_eq!(scene.border_box(right_texts[1]), rect(200.0, 20.0, 200.0, 20.0));
     scene.text_shaper.measured_texts.clear();
 
@@ -475,7 +475,7 @@ fn only_the_subtree_that_changed_is_laid_out_again() {
         scene.text_shaper.measured_texts
     );
     assert_eq!(
-        widened.laid_out, 5,
+        widened.laid_out_elements, 5,
         "the root, the columns, the widened column and its two texts"
     );
 }
@@ -490,9 +490,9 @@ fn a_frame_without_changes_lays_nothing_out() {
 
     let steady = scene.frame();
 
-    assert_eq!(steady.resolved, 0);
-    assert_eq!(steady.laid_out, 0);
-    assert_eq!(steady.rebuilt, 0);
+    assert_eq!(steady.styled_elements, 0);
+    assert_eq!(steady.laid_out_elements, 0);
+    assert_eq!(steady.rebuilt_elements, 0);
     assert!(scene.text_shaper.measured_texts.is_empty());
 }
 
@@ -508,8 +508,8 @@ fn a_change_that_only_paints_lays_nothing_out() {
     scene.tree.set_state(button, States::HOVER, true);
     let hovered = scene.frame();
 
-    assert_eq!(hovered.resolved, 1);
-    assert_eq!(hovered.laid_out, 0);
+    assert_eq!(hovered.styled_elements, 1);
+    assert_eq!(hovered.laid_out_elements, 0);
 }
 
 #[test]

@@ -24,8 +24,8 @@ fn a_displaced_element_moves_as_a_picture_with_no_style_resolved_and_no_box_laid
     scene.tree.set_displacement(card, Offset { x: 30.0, y: 50.0 });
     let frame = scene.frame();
 
-    assert_eq!((frame.resolved, frame.laid_out), (0, 0));
-    assert!(frame.rebuilt > 0, "the picture is drawn at its new place");
+    assert_eq!((frame.styled_elements, frame.laid_out_elements), (0, 0));
+    assert!(frame.rebuilt_elements > 0, "the picture is drawn at its new place");
     assert_eq!(
         scene.border_box(card),
         Rect::new(0.0, 0.0, 40.0, 20.0),
@@ -51,7 +51,10 @@ fn a_displacement_set_again_to_what_it_is_asks_for_no_frame_work() {
     scene.tree.set_displacement(card, Offset { x: 30.0, y: 50.0 });
     let frame = scene.frame();
 
-    assert_eq!((frame.resolved, frame.laid_out, frame.rebuilt), (0, 0, 0));
+    assert_eq!(
+        (frame.styled_elements, frame.laid_out_elements, frame.rebuilt_elements),
+        (0, 0, 0)
+    );
 }
 
 #[test]
@@ -92,8 +95,11 @@ fn a_text_of_a_fixed_size_under_a_parent_that_hides_overflow_changes_without_a_b
     scene.tree.set_text(cell, "another text");
     let frame = scene.frame();
 
-    assert_eq!(frame.laid_out, 0, "the box of the cell is the same whatever it says");
-    assert!(frame.rebuilt > 0);
+    assert_eq!(
+        frame.laid_out_elements, 0,
+        "the box of the cell is the same whatever it says"
+    );
+    assert!(frame.rebuilt_elements > 0);
     let line = scene.tree.line_boxes(cell)[0].rect;
     assert!(line.width > line_before.width, "the line is set again: {line:?}");
     assert_eq!(scene.border_box(cell), Rect::new(0.0, 0.0, 100.0, 20.0));
@@ -111,10 +117,10 @@ fn a_text_its_insets_fill_under_a_parent_that_hides_overflow_changes_without_a_b
     let frame = scene.frame();
 
     assert_eq!(
-        frame.laid_out, 0,
+        frame.laid_out_elements, 0,
         "the insets set the box of the label whatever it says"
     );
-    assert!(frame.rebuilt > 0);
+    assert!(frame.rebuilt_elements > 0);
     assert_eq!(scene.border_box(label), Rect::new(0.0, 0.0, 200.0, 20.0));
 }
 
@@ -129,7 +135,10 @@ fn a_text_placed_by_one_inset_of_an_axis_is_laid_out_when_it_changes() {
     scene.tree.set_text(label, "another text");
     let frame = scene.frame();
 
-    assert!(frame.laid_out > 0, "with no right inset its width follows its text");
+    assert!(
+        frame.laid_out_elements > 0,
+        "with no right inset its width follows its text"
+    );
 }
 
 #[test]
@@ -143,5 +152,5 @@ fn a_text_as_wide_as_what_it_says_is_laid_out_when_it_changes() {
     scene.tree.set_text(label, "another text");
     let frame = scene.frame();
 
-    assert!(frame.laid_out > 0, "its width follows its text");
+    assert!(frame.laid_out_elements > 0, "its width follows its text");
 }

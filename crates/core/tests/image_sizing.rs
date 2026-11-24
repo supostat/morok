@@ -46,12 +46,8 @@ fn hosted_row() -> (Scene, ElementId, Rc<Cell<usize>>) {
 /// by `status`, and returns how many frames the tree asked for in it.
 fn hosted_frame(scene: &mut Scene, requested_frames: &Cell<usize>, status: ImageStatus) -> usize {
     let before = requested_frames.get();
-    scene.tree.resolve_styles(scene.time);
-    scene.tree.size_images(|_| status);
-    scene
-        .tree
-        .compute_layout(scene.viewport, scene.scale, &mut scene.text_shaper);
-    scene.tree.build_display_list();
+    scene.images.report(status);
+    scene.frame();
     requested_frames.get() - before
 }
 
@@ -129,14 +125,10 @@ fn a_removed_image_waits_for_its_size_no_longer() {
     hosted_frame(&mut scene, &requested_frames, ImageStatus::Decoding);
 
     scene.tree.remove(photo);
-    let asked_of_host = Cell::new(0);
-    scene.tree.resolve_styles(scene.time);
-    scene.tree.size_images(|_| {
-        asked_of_host.set(asked_of_host.get() + 1);
-        ImageStatus::Decoding
-    });
+    let asked_before = scene.images.times_asked();
+    scene.frame();
 
-    assert_eq!(asked_of_host.get(), 0);
+    assert_eq!(scene.images.times_asked(), asked_before);
 }
 
 #[test]

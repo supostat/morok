@@ -129,7 +129,7 @@ fn the_first_display_list_holds_every_box_and_damages_the_whole_surface() {
 
     let first_frame = scene.frame();
 
-    assert_eq!(first_frame.rebuilt, 4);
+    assert_eq!(first_frame.rebuilt_elements, 4);
     let root_box = Rect::new(0.0, 0.0, 800.0, 600.0);
     assert_eq!(
         item_kinds(&scene),
@@ -157,7 +157,7 @@ fn a_state_flip_damages_only_its_rectangle_and_the_display_list_changes_only_ins
     scene.tree.set_state(buttons[1], States::HOVER, true);
     let hovered = scene.frame();
 
-    assert_eq!(hovered.rebuilt, 1);
+    assert_eq!(hovered.rebuilt_elements, 1);
     assert_eq!(damage(&scene), [hovered_box]);
     let after = painted_items(&scene);
     assert_eq!(after.len(), before.len());
@@ -188,7 +188,7 @@ fn a_frame_without_changes_damages_nothing_and_keeps_the_display_list() {
     scene.tree.set_state(buttons[0], States::HOVER, true);
     let steady = scene.frame();
 
-    assert_eq!(steady.rebuilt, 0);
+    assert_eq!(steady.rebuilt_elements, 0);
     assert!(scene.tree.damage().is_empty());
     assert_eq!(painted_items(&scene), before);
 }
@@ -608,7 +608,7 @@ fn an_element_that_moves_damages_where_it_was_and_where_it_is() {
     scene.add_classes(rows[0], &["tall"]);
     let grown = scene.frame();
 
-    assert_eq!(grown.rebuilt, 3);
+    assert_eq!(grown.rebuilt_elements, 3);
     assert_eq!(scene.border_box(rows[0]), Rect::new(0.0, 0.0, 300.0, 50.0));
     assert_eq!(scene.border_box(rows[2]), Rect::new(0.0, 80.0, 300.0, 30.0));
     assert_eq!(damage_bounds(&scene), Rect::new(0.0, 0.0, 300.0, 110.0));
@@ -635,7 +635,7 @@ fn an_element_that_leaves_the_tree_damages_what_it_drew() {
     scene.tree.remove(buttons[2]);
     let removed = scene.frame();
 
-    assert_eq!(removed.rebuilt, 0);
+    assert_eq!(removed.rebuilt_elements, 0);
     assert_eq!(damage(&scene), [last_bounds]);
     assert_eq!(item_kinds(&scene).len(), 5);
 
@@ -647,7 +647,7 @@ fn an_element_that_leaves_the_tree_damages_what_it_drew() {
 
     scene.tree.append_child(scene.root(), buttons[1]);
     let returned = scene.frame();
-    assert_eq!(returned.rebuilt, 1);
+    assert_eq!(returned.rebuilt_elements, 1);
     assert_eq!(damage(&scene), [middle_box]);
     assert_eq!(item_kinds(&scene).len(), 5);
 }
@@ -673,7 +673,10 @@ fn an_element_without_a_box_leaves_the_display_list_with_its_descendants() {
     scene.tree.remove_class(buttons[0], hidden);
     let shown = scene.frame();
 
-    assert_eq!(shown.rebuilt, 4, "the two that came back and the two that moved back");
+    assert_eq!(
+        shown.rebuilt_elements, 4,
+        "the two that came back and the two that moved back"
+    );
     assert_eq!(scene.border_box(buttons[1]), second_box);
     assert_eq!(item_kinds(&scene).len(), 9);
     assert_eq!(background_color_of(&scene, inside), scene.light_color("color-surface"));
@@ -688,7 +691,7 @@ fn switching_the_theme_repaints_every_element_in_the_colors_of_the_other_table()
     scene.tree.set_theme(scene.dark_theme());
     let switched = scene.frame();
 
-    assert_eq!(switched.rebuilt, 4);
+    assert_eq!(switched.rebuilt_elements, 4);
     assert!(damage(&scene).contains(&Rect::new(0.0, 0.0, 800.0, 600.0)));
     assert_eq!(background_color_of(&scene, scene.root()), scene.dark_color("color-bg"));
     assert_eq!(
@@ -712,7 +715,7 @@ fn a_gradient_that_did_not_change_keeps_its_stops_when_another_one_changes() {
     scene.tree.set_state(first, States::HOVER, true);
     let hovered = scene.frame();
 
-    assert_eq!(hovered.rebuilt, 1);
+    assert_eq!(hovered.rebuilt_elements, 1);
     let after = painted_items(&scene);
     assert_eq!(after[0].gradient_stops.len(), 2);
     assert_eq!(after[0].gradient_stops[0].color, scene.light_color("color-danger"));
@@ -753,7 +756,7 @@ fn a_root_without_a_box_paints_nothing_and_damages_what_the_tree_drew() {
     scene.add_classes(scene.root(), &["hidden"]);
     let hidden = scene.frame();
 
-    assert_eq!(hidden.rebuilt, 0);
+    assert_eq!(hidden.rebuilt_elements, 0);
     assert!(scene.tree.display_list().items().is_empty());
     assert_eq!(damage(&scene), [Rect::new(0.0, 0.0, 800.0, 600.0)]);
 
@@ -761,7 +764,7 @@ fn a_root_without_a_box_paints_nothing_and_damages_what_the_tree_drew() {
     scene.tree.remove_class(scene.root(), class);
     let shown = scene.frame();
 
-    assert_eq!(shown.rebuilt, 4);
+    assert_eq!(shown.rebuilt_elements, 4);
     assert_eq!(item_kinds(&scene).len(), 7);
 }
 
@@ -812,7 +815,7 @@ fn a_canvas_repainted_on_request_damages_its_box_and_asks_for_a_frame() {
         asked_before + 1,
         "the tree asks the host for the frame that draws the canvas again"
     );
-    assert_eq!(repainted.rebuilt, 0, "the display list stays as it is");
+    assert_eq!(repainted.rebuilt_elements, 0, "the display list stays as it is");
     assert_eq!(damage(&scene), [scene.border_box(chart)]);
     scene.frame();
     assert!(damage(&scene).is_empty(), "one request draws the canvas once");

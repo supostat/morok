@@ -116,8 +116,8 @@ fn an_offset_is_kept_within_the_limits_and_moves_the_content_with_no_layout_pass
     list.scene.tree.scroll_to(list.viewport, Offset { x: 0.0, y: 120.0 });
     let frame = list.scene.frame();
 
-    assert_eq!(frame.laid_out, 0, "a scroll lays nothing out");
-    assert!(frame.rebuilt > 0, "the content is painted where it shows now");
+    assert_eq!(frame.laid_out_elements, 0, "a scroll lays nothing out");
+    assert!(frame.rebuilt_elements > 0, "the content is painted where it shows now");
     assert_eq!(list.offset(), Offset { x: 0.0, y: 120.0 });
     assert_near(
         list.scene.tree.surface_box(list.rows[3]).y,
@@ -179,7 +179,7 @@ fn a_gesture_pulls_the_content_past_a_limit_against_resistance_and_the_spring_ta
     list.scroll(0.0, ScrollPhase::GestureEnded);
     let start = list.scene.time;
     let first = list.scene.frame_at(start);
-    assert_eq!(first.laid_out, 0);
+    assert_eq!(first.laid_out_elements, 0);
     assert_near(
         list.offset().y,
         pulled_further,
@@ -193,7 +193,7 @@ fn a_gesture_pulls_the_content_past_a_limit_against_resistance_and_the_spring_ta
     );
     let frame = list.scene.frame_at(start + Duration::from_secs(2));
     assert_near(list.offset().y, 0.0, "the spring brings the content to the limit");
-    assert_eq!(frame.laid_out, 0);
+    assert_eq!(frame.laid_out_elements, 0);
     list.scene.frame_at(start + Duration::from_secs(3));
     assert_near(list.offset().y, 0.0, "it stays there");
 }
@@ -232,7 +232,7 @@ fn a_sticky_header_stays_at_the_top_of_the_scrollport_until_its_section_ends() {
 
     scene.tree.scroll_to(viewport, Offset { x: 0.0, y: 50.0 });
     let frame = scene.frame();
-    assert_eq!(frame.laid_out, 0);
+    assert_eq!(frame.laid_out_elements, 0);
     assert_near(
         scene.tree.surface_box(headers[0]).y,
         0.0,
@@ -292,7 +292,7 @@ fn focus_the_keyboard_moves_is_scrolled_into_view() {
     assert!(list.scene.tree.focus(ninth_row));
     let frame = list.scene.frame();
 
-    assert_eq!(frame.laid_out, 0);
+    assert_eq!(frame.laid_out_elements, 0);
     assert_near(list.offset().y, 260.0, "the row is brought just into view");
     assert_near(
         list.scene.tree.surface_box(ninth_row).bottom(),
@@ -350,7 +350,10 @@ fn a_thumb_is_as_long_as_the_share_the_viewport_shows_and_travels_with_the_offse
 
     list.scroll(150.0, ScrollPhase::Discrete);
     let frame = list.scene.frame();
-    assert_eq!(frame.laid_out, 0, "a thumb that keeps its length is not laid out");
+    assert_eq!(
+        frame.laid_out_elements, 0,
+        "a thumb that keeps its length is not laid out"
+    );
     assert_eq!(
         list.scene.tree.scroll_thumb_travel(thumb),
         Some(Offset { x: 0.0, y: 37.5 })

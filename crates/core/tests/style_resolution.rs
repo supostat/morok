@@ -244,12 +244,12 @@ fn a_state_flip_restyles_the_element_and_only_the_children_its_child_rules_name(
     scene.add(toolbar, Role::Element, &["label"]);
     scene.add(first_button, Role::Element, &["button"]);
     let first_frame = scene.frame();
-    assert_eq!(first_frame.resolved, 6);
+    assert_eq!(first_frame.styled_elements, 6);
 
     scene.tree.set_state(toolbar, States::HOVER, true);
     let hovered = scene.frame();
 
-    assert_eq!(hovered.resolved, 3);
+    assert_eq!(hovered.styled_elements, 3);
     let surface_2 = scene.light_color("color-surface-2");
     assert_eq!(scene.tree.style(first_button).paint.background_color, surface_2);
     assert_eq!(scene.tree.style(second_button).paint.background_color, surface_2);
@@ -257,7 +257,7 @@ fn a_state_flip_restyles_the_element_and_only_the_children_its_child_rules_name(
     scene.tree.set_state(toolbar, States::ACTIVE, true);
     let pressed = scene.frame();
 
-    assert_eq!(pressed.resolved, 1);
+    assert_eq!(pressed.styled_elements, 1);
     assert_eq!(
         scene.tree.style(toolbar).paint.background_color,
         scene.light_color("color-surface-sunken")
@@ -274,7 +274,7 @@ fn setting_a_state_to_what_it_already_is_restyles_nothing() {
     scene.tree.set_state(button, States::HOVER, true);
     scene.tree.set_state(button, States::ACTIVE, false);
 
-    assert_eq!(scene.frame().resolved, 0);
+    assert_eq!(scene.frame().styled_elements, 0);
 }
 
 #[test]
@@ -344,7 +344,7 @@ fn a_change_of_an_inherited_color_restyles_the_descendants_that_inherit_it() {
     assert_eq!(scene.tree.style(badge).paint.color, on_accent);
     assert_eq!(scene.tree.style(badge_text).paint.color, on_accent);
     assert_eq!(
-        disabled.resolved, 4,
+        disabled.styled_elements, 4,
         "the item, its label, the text of the label and the badge"
     );
 }
@@ -454,7 +454,7 @@ fn switching_the_theme_restyles_every_element_against_the_other_table() {
     scene.tree.set_theme(scene.dark_theme());
     let switched = scene.frame();
 
-    assert_eq!(switched.resolved, 4);
+    assert_eq!(switched.styled_elements, 4);
     assert_eq!(
         scene.tree.style(app).paint.background_color,
         scene.dark_color("color-bg")
@@ -497,7 +497,7 @@ fn a_subtree_is_styled_when_it_joins_the_tree_and_by_the_parent_it_joins() {
     scene.tree.append_child(app, entry);
     let joined = scene.frame();
 
-    assert_eq!(joined.resolved, 2);
+    assert_eq!(joined.styled_elements, 2);
     assert_eq!(
         scene.tree.style(entry_text).paint.color,
         scene.light_color("color-text")

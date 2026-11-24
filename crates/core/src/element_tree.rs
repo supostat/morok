@@ -22,6 +22,10 @@ use crate::drag::drag_router::DragRouter;
 use crate::element::Element;
 use crate::element_arena::ElementArena;
 use crate::element_id::ElementId;
+use crate::frame::frame_outcome::FrameOutcome;
+use crate::frame::frame_stage::FrameStage;
+use crate::frame::stage_observer::StageObserver;
+use crate::frame::tree_frame::TreeFrame;
 use crate::frame_requests::FrameRequests;
 use crate::frame_scheduler::FrameScheduler;
 use crate::geometry::offset::Offset;
@@ -651,6 +655,51 @@ impl ElementTree {
         &self.damage
     }
 
+    /// Runs the stages of a frame up to layout: style, the natural sizes of the pictures the
+    /// host has decoded, layout. Each stage tells `observer` of its end. The display list stays
+    /// as the frame before built it: this lays out a tree that is not shown yet, as an overlay
+    /// is before its window opens.
+    ///
+    /// # Panics
+    ///
+    /// When the frame is earlier than the frame before it.
+    pub fn lay_out(&mut self, frame: TreeFrame<'_>, observer: &mut dyn StageObserver<FrameStage>) -> FrameOutcome {
+        let TreeFrame {
+            viewport,
+            scale,
+            now,
+            text_shaper,
+            images,
+        } = frame;
+        let styled_elements = self.resolve_styles(now);
+        observer.stage_ended(FrameStage::Styles);
+        self.size_images(|image| images.image_status(image));
+        observer.stage_ended(FrameStage::Images);
+        let laid_out_elements = self.compute_layout(viewport, scale, text_shaper);
+        observer.stage_ended(FrameStage::Layout);
+        FrameOutcome {
+            styled_elements,
+            laid_out_elements,
+            rebuilt_elements: 0,
+        }
+    }
+
+    /// Runs a frame: the stages of [`lay_out`](Self::lay_out), then the display list. Each
+    /// stage tells `observer` of its end.
+    ///
+    /// # Panics
+    ///
+    /// When the frame is earlier than the frame before it.
+    pub fn run_frame(&mut self, frame: TreeFrame<'_>, observer: &mut dyn StageObserver<FrameStage>) -> FrameOutcome {
+        let laid_out = self.lay_out(frame, observer);
+        let rebuilt_elements = self.build_display_list();
+        observer.stage_ended(FrameStage::DisplayList);
+        FrameOutcome {
+            rebuilt_elements,
+            ..laid_out
+        }
+    }
+
     /// The style stage of the frame shown at `now`, a time on the clock of the host: resolves
     /// the style of every element a change marked, and of the elements that inherit from them,
     /// and works out what every element in motion shows at that time. While a transition, an
@@ -833,18 +882,18 @@ impl ElementTree {
             self.scale = scale;
             self.forget_layout();
         }
-        let mut laid_out_elements = self.lay_out(viewport, scale, text_shaper);
+        let mut laid_out_elements = self.run_layout_pass(viewport, scale, text_shaper);
         if self.update_scrolling(laid_out_elements > 0) {
             // A scroll thumb changed its length: style and lay out the thumbs again, and only them.
             self.run_style_pass();
-            laid_out_elements += self.lay_out(viewport, scale, text_shaper);
+            laid_out_elements += self.run_layout_pass(viewport, scale, text_shaper);
         }
         laid_out_elements
     }
 
     /// Lays out the elements whose boxes may have changed, places their boxes on the surface
     /// and lays out their lines. Returns the number of elements laid out.
-    fn lay_out(&mut self, viewport: Size, scale: f32, text_shaper: &mut dyn TextShaper) -> usize {
+    fn run_layout_pass(&mut self, viewport: Size, scale: f32, text_shaper: &mut dyn TextShaper) -> usize {
         let mut laid_out_elements = 0;
         if self.may_have_moved_boxes(viewport) {
             laid_out_elements = LayoutPass {
