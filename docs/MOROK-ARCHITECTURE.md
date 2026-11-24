@@ -202,8 +202,9 @@ event ─► signals/effects ─► style(flags) ─► layout(dirty) ─► dis
   failing case writes a diff PNG under `target/teststand/`.
 - **Benchmarks.** `crates/bench` gates the budgets of §7 with failing exit codes
   (`crates/bench/budgets.toml`): `frame` on the reference scene of 2,000 boxes and on the two
-  screens of the catalog, `idle`, `cold-start`, `input-latency` and `scroll-1m` on the catalog
-  itself; `all` runs every scenario.
+  screens of the catalog, `idle`, `cold-start`, `input-latency`, `scroll-1m` (the table of a
+  million rows) and `scroll-list` (the list of ten thousand documents) on the catalog itself;
+  `all` runs every scenario.
 
 ## 13. Platform and publishing
 

@@ -6,6 +6,7 @@ use crate::budgets::Budgets;
 use crate::frame_gate;
 use crate::reference_scene::ReferenceScene;
 use crate::screen_frames::ScreenFrames;
+use crate::scrolled_collection::ScrolledCollection;
 use crate::verdict::Verdict;
 use crate::{catalog_idle, cold_start_scenario, frame_scenario, input_latency_scenario, scroll_scenario};
 
@@ -14,11 +15,12 @@ const IDLE: &str = "idle";
 const COLD_START: &str = "cold-start";
 const INPUT_LATENCY: &str = "input-latency";
 const SCROLL_1M: &str = "scroll-1m";
+const SCROLL_LIST: &str = "scroll-list";
 
 /// The name that stands for every scenario, run one after another.
 pub const ALL: &str = "all";
 /// The scenarios the harness runs by name.
-pub const NAMES: [&str; 5] = [FRAME, IDLE, COLD_START, INPUT_LATENCY, SCROLL_1M];
+pub const NAMES: [&str; 6] = [FRAME, IDLE, COLD_START, INPUT_LATENCY, SCROLL_1M, SCROLL_LIST];
 
 /// Runs the scenario of one of [`NAMES`] against the budgets: a verdict for every scene it
 /// measures. The scenarios run on the scenes of the catalog; `frame` measures the reference
@@ -36,7 +38,18 @@ pub fn run(name: &str, budgets: &Budgets) -> Result<Vec<Verdict>, BenchError> {
             INPUT_LATENCY,
             &budgets.input_latency,
         )?]),
-        SCROLL_1M => Ok(vec![scroll_scenario::run(SCROLL_1M, &Renderer::new()?, budgets)]),
+        SCROLL_1M => Ok(vec![scroll_scenario::run(
+            SCROLL_1M,
+            &Renderer::new()?,
+            budgets,
+            ScrolledCollection::MillionRowTable,
+        )]),
+        SCROLL_LIST => Ok(vec![scroll_scenario::run(
+            SCROLL_LIST,
+            &Renderer::new()?,
+            budgets,
+            ScrolledCollection::DocumentList,
+        )]),
         _ => panic!("no scenario is named `{name}`"),
     }
 }

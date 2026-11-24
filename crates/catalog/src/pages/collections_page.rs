@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use morok::components::view::Mount;
 use morok::components::{List, RowSelection, Tabs, Tree, TreeItem};
 use morok::core::ElementId;
@@ -5,8 +7,9 @@ use morok::core::ElementId;
 use crate::page_layout::{page, row, section};
 use crate::styles::CLASSES;
 
-/// The rows of the list.
-const LIST_ROWS: usize = 10_000;
+/// The rows of each list.
+pub const LIST_ROWS: usize = 10_000;
+const WRITTEN: &str = "a string takes what is written to it";
 
 /// A tab of the strip of tabs.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -25,13 +28,21 @@ pub(crate) fn mount(mount: &mut Mount<'_>) -> ElementId {
     let tree_selected = mount.runtime().signal(Some("crates"));
     let panel = mount.runtime().signal(Panel::General);
 
-    let single = List::new(LIST_ROWS, |row| format!("Document {}", row + 1), one_selected)
-        .label("Documents")
-        .mount(mount);
-    let multiple = List::new(LIST_ROWS, |row| format!("Photo {}", row + 1), several_selected)
-        .selection(RowSelection::Multiple)
-        .label("Photos")
-        .mount(mount);
+    let single = List::new(
+        LIST_ROWS,
+        |row, label| write!(label, "Document {}", row + 1).expect(WRITTEN),
+        one_selected,
+    )
+    .label("Documents")
+    .mount(mount);
+    let multiple = List::new(
+        LIST_ROWS,
+        |row, label| write!(label, "Photo {}", row + 1).expect(WRITTEN),
+        several_selected,
+    )
+    .selection(RowSelection::Multiple)
+    .label("Photos")
+    .mount(mount);
     let tree = Tree::new(folders(), expanded, tree_selected)
         .label("Projects")
         .mount(mount);

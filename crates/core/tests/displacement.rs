@@ -9,6 +9,8 @@ const STAGE: &str = ".port { overflow: hidden; width: 100px; height: 100px; }\n\
     .pin { position: relative; width: 30px; height: 20px; }\n\
     .row { position: relative; overflow: hidden; width: 200px; height: 20px; }\n\
     .cell { position: absolute; top: 0; left: 0; width: 100px; height: 20px; }\n\
+    .filling { position: absolute; top: 0; right: 0; bottom: 0; left: 0; padding: 0 12px; }\n\
+    .anchored { position: absolute; top: 0; bottom: 0; left: 0; }\n\
     .label { height: 20px; }";
 
 #[test]
@@ -95,6 +97,39 @@ fn a_text_of_a_fixed_size_under_a_parent_that_hides_overflow_changes_without_a_b
     let line = scene.tree.line_boxes(cell)[0].rect;
     assert!(line.width > line_before.width, "the line is set again: {line:?}");
     assert_eq!(scene.border_box(cell), Rect::new(0.0, 0.0, 100.0, 20.0));
+}
+
+#[test]
+fn a_text_its_insets_fill_under_a_parent_that_hides_overflow_changes_without_a_box_laid_out() {
+    let mut scene = Scene::new(STAGE);
+    let row = scene.add(scene.root(), Role::Element, &["row"]);
+    let label = scene.add(row, Role::Text, &["filling"]);
+    scene.tree.set_text(label, "first");
+    scene.frame();
+
+    scene.tree.set_text(label, "another text");
+    let frame = scene.frame();
+
+    assert_eq!(
+        frame.laid_out, 0,
+        "the insets set the box of the label whatever it says"
+    );
+    assert!(frame.rebuilt > 0);
+    assert_eq!(scene.border_box(label), Rect::new(0.0, 0.0, 200.0, 20.0));
+}
+
+#[test]
+fn a_text_placed_by_one_inset_of_an_axis_is_laid_out_when_it_changes() {
+    let mut scene = Scene::new(STAGE);
+    let row = scene.add(scene.root(), Role::Element, &["row"]);
+    let label = scene.add(row, Role::Text, &["anchored"]);
+    scene.tree.set_text(label, "first");
+    scene.frame();
+
+    scene.tree.set_text(label, "another text");
+    let frame = scene.frame();
+
+    assert!(frame.laid_out > 0, "with no right inset its width follows its text");
 }
 
 #[test]

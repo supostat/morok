@@ -80,8 +80,8 @@ fn list_offsets(scene: &mut Scene) {
     let stage = stage(scene);
     for offset in [0.0, 57.0, 1000.0] {
         let (viewport, content) = view(scene, stage);
-        let list = scene.add(content, &["list"]);
-        rows(scene, list, 1, 10, &["list-row"]);
+        let list = scene.add(content, &["scroll-list"]);
+        rows(scene, list, 1, 10, &["scroll-row"]);
         scene.scroll_to(viewport, Offset { x: 0.0, y: offset });
     }
 }
@@ -91,10 +91,10 @@ fn sticky_sections(scene: &mut Scene) {
     for offset in [40.0, 100.0, 140.0] {
         let (viewport, content) = view(scene, stage);
         for section in 1..=4 {
-            let list = scene.add(content, &["list"]);
+            let list = scene.add(content, &["scroll-list"]);
             let header = scene.add(list, &["section-header"]);
             scene.add_text(header, &[], &format!("Section {section}"));
-            rows(scene, list, section * 10 + 1, 3, &["list-row"]);
+            rows(scene, list, section * 10 + 1, 3, &["scroll-row"]);
         }
         scene.scroll_to(viewport, Offset { x: 0.0, y: offset });
     }
@@ -108,8 +108,8 @@ fn wide_rows(scene: &mut Scene) {
         Offset { x: 400.0, y: 400.0 },
     ] {
         let (viewport, content) = view(scene, stage);
-        let list = scene.add(content, &["list"]);
-        rows(scene, list, 1, 8, &["list-row", "wide"]);
+        let list = scene.add(content, &["scroll-list"]);
+        rows(scene, list, 1, 8, &["scroll-row", "wide"]);
         scene.scroll_to(viewport, offset);
     }
 }

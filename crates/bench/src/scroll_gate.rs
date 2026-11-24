@@ -5,10 +5,10 @@ const LAST_ROW: &str = "last row";
 /// pixels, so a row that ends where it should ends there exactly.
 const PLACEMENT_TOLERANCE: f32 = 0.01;
 
-/// Holds where a scroll through every row of a table ended against where it must end: with the
-/// last row in a slot whose bottom lies at the bottom of the viewport. `below_viewport` is how
-/// far below that the last row ends, or none when no slot shows the last row. A scroll that did
-/// not come this far measured frames that bound no rows.
+/// Holds where a scroll through every row of a collection ended against where it must end:
+/// with the last row in a slot whose bottom lies at the bottom of the viewport. `below_viewport`
+/// is how far below that the last row ends, or none when no slot shows the last row. A scroll
+/// that did not come this far measured frames that bound no rows.
 pub(crate) fn judge_end(below_viewport: Option<f32>) -> Check {
     Check {
         subject: LAST_ROW,

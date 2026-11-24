@@ -18,23 +18,27 @@ use crate::virtual_rows::VirtualRows;
 /// How high a row of a list is.
 const ROW_HEIGHT: f32 = 28.0;
 
+/// Writes the text of the row of the given index.
+type RowLabel = dyn Fn(usize, &mut String);
+
 /// Rows of text the user selects from, as many as there may be: only the rows the viewport
-/// shows have elements. The arrow keys move through the rows, Home and End to the ends, and
-/// the list scrolls to keep the row the keyboard is on in view.
+/// shows have elements, and a scroll allocates nothing. The arrow keys move through the rows,
+/// Home and End to the ends, and the list scrolls to keep the row the keyboard is on in view.
 pub struct List {
     count: Property<usize>,
-    label_of: Rc<dyn Fn(usize) -> String>,
+    label_of: Rc<RowLabel>,
     selected: Signal<Vec<usize>>,
     selection: RowSelection,
     label: Property<String>,
 }
 
 impl List {
-    /// A list of `count` rows, each the text `label_of` gives for its index, whose selected
-    /// rows are the indices `selected` holds, in ascending order. One row is selected at once.
+    /// A list of `count` rows, each the text `label_of` writes for its index into the string
+    /// it is given, empty, whose selected rows are the indices `selected` holds, in ascending
+    /// order. One row is selected at once.
     pub fn new(
         count: impl Into<Property<usize>>,
-        label_of: impl Fn(usize) -> String + 'static,
+        label_of: impl Fn(usize, &mut String) + 'static,
         selected: Signal<Vec<usize>>,
     ) -> Self {
         Self {
@@ -73,21 +77,18 @@ impl List {
         let choice = RowChoice::new(runtime, selected, selection);
         let rows = VirtualRows::mount(mount, count.into(), ROW_HEIGHT, move |mount, index| {
             let runtime = mount.runtime();
-            let label_of = Rc::clone(&label_of);
-            let text = runtime.memo(move |runtime| label_of(runtime.get(index)));
             let is_selected = choice.is_selected(runtime, index);
             let item = runtime.memo(move |runtime| AccessibleItem {
                 position_in_set: Some(runtime.get(index) + 1),
                 size_of_set: Some(runtime.get(count)),
                 ..AccessibleItem::default()
             });
-            let label_text = mount.text(text).id();
-            mount
+            let label_text = mount.text("").class(CLASSES.list_row_label).id();
+            let row = mount
                 .element()
                 .class(CLASSES.list_row)
                 .state(States::CHECKED, is_selected)
                 .accessible_role(AccessibleRole::ListBoxOption)
-                .accessible_name(text)
                 .accessible_item(item)
                 .accessible_actions(AccessibleActions::CLICK)
                 .on_event(move |runtime, event| {
@@ -105,7 +106,16 @@ impl List {
                     }
                 })
                 .child(label_text)
-                .id()
+                .id();
+            let label_of = Rc::clone(&label_of);
+            let mut label = String::new();
+            mount.effect(move |runtime, tree| {
+                label.clear();
+                label_of(runtime.get(index), &mut label);
+                tree.set_text(label_text, &label);
+                tree.set_accessible_name(row, &label);
+            });
+            row
         });
         mount
             .build(rows.frame.viewport)

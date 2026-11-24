@@ -131,19 +131,29 @@ impl Element {
         }
     }
 
-    /// Whether the boxes of the tree stay as they are whatever text the element holds: its width
-    /// and its height are lengths, and its parent hides what overflows it, so that no scroll is
-    /// as long as the text.
+    /// Whether the boxes of the tree stay as they are whatever text the element holds: along each
+    /// axis its size is a length, or the element is absolutely positioned between two insets
+    /// with no size of its own, which its containing block alone sets; and its parent hides what
+    /// overflows it, so that no scroll is as long as the text.
     pub(crate) fn keeps_its_box_for_any_text(&self, parent: &Self) -> bool {
+        let layout = &self.style.layout;
         let is_length = |size: ResolvedLengthOrAuto| {
             matches!(
                 size,
                 ResolvedLengthOrAuto::Length(ResolvedLength { fraction: None, .. })
             )
         };
+        let is_absolute = layout.positioning == Positioning::Absolute;
+        let is_set_by = |size: ResolvedLengthOrAuto, start: ResolvedLengthOrAuto, end: ResolvedLengthOrAuto| {
+            is_length(size)
+                || (is_absolute
+                    && matches!(size, ResolvedLengthOrAuto::Auto)
+                    && matches!(start, ResolvedLengthOrAuto::Length(_))
+                    && matches!(end, ResolvedLengthOrAuto::Length(_)))
+        };
         let hides_overflow = |overflow: Overflow| overflow == Overflow::Hidden;
-        is_length(self.style.layout.width)
-            && is_length(self.style.layout.height)
+        is_set_by(layout.width, layout.inset.left, layout.inset.right)
+            && is_set_by(layout.height, layout.inset.top, layout.inset.bottom)
             && hides_overflow(parent.style.layout.overflow_x)
             && hides_overflow(parent.style.layout.overflow_y)
     }

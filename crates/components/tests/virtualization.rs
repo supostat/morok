@@ -1,6 +1,7 @@
 mod support;
 
 use std::borrow::Cow;
+use std::fmt::Write;
 
 use morok_components::{List, RowSelection};
 use morok_core::{DisplayItem, ElementId, Offset, Point, ScrollInput, ScrollPhase};
@@ -35,9 +36,13 @@ impl MillionRows {
         let mut stage = Stage::new();
         let view = stage.mount(move |mount| {
             let selected = mount.runtime().signal(Vec::new());
-            let view = List::new(ROWS, |index| format!("Row {index}"), selected)
-                .selection(RowSelection::Multiple)
-                .mount(mount);
+            let view = List::new(
+                ROWS,
+                |index, label| write!(label, "Row {index}").expect("a string takes what is written to it"),
+                selected,
+            )
+            .selection(RowSelection::Multiple)
+            .mount(mount);
             mount
                 .build(view)
                 .inline(Declaration::Width(pixels(200.0)))
@@ -172,7 +177,7 @@ fn a_million_rows_have_elements_for_the_rows_in_view_alone() {
 }
 
 #[test]
-fn a_scroll_of_one_row_binds_one_slot_to_the_row_that_came_into_view() {
+fn a_scroll_of_one_row_binds_one_slot_to_the_text_and_the_name_of_the_row_that_came_into_view() {
     let mut list = MillionRows::new(280.0);
     let slots = list.slots();
     let before = list.shown_rows();
@@ -197,9 +202,21 @@ fn a_scroll_of_one_row_binds_one_slot_to_the_row_that_came_into_view() {
 
     assert_eq!(list.slots(), slots, "every slot stays");
     let after = list.shown_rows();
-    let rebound = before.iter().zip(&after).filter(|(was, is)| was != is).count();
-    assert_eq!(rebound, 1, "one slot shows another row: {before:?} then {after:?}");
-    assert!(after.contains(&format!("Row {FIRST_POOL}")) && !after.contains(&String::from("Row 0")));
+    let rebound: Vec<usize> = (0..slots.len()).filter(|slot| before[*slot] != after[*slot]).collect();
+    assert_eq!(
+        rebound.len(),
+        1,
+        "one slot shows another row: {before:?} then {after:?}"
+    );
+    let came_into_view = format!("Row {FIRST_POOL}");
+    assert_eq!(after[rebound[0]], came_into_view);
+    assert!(!after.contains(&String::from("Row 0")));
+    let row = list.stage.tree().children(slots[rebound[0]])[0];
+    assert_eq!(
+        list.stage.accessible_node(row).label(),
+        Some(came_into_view.as_str()),
+        "an assistive technology hears the row the slot shows now"
+    );
     assert!(list.shows_row_in_place(1) && list.shows_row_in_place(10));
 }
 

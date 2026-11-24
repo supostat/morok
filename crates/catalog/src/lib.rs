@@ -34,6 +34,7 @@ pub use disk_map::{DISK_MAP_CANVAS, DiskMap};
 pub use file_manager::FileManager;
 pub use folder_usage::FolderUsage;
 pub use page::Page;
+pub use pages::collections_page::LIST_ROWS;
 pub use pages::table_page::TABLE_ROWS;
 pub use stylesheets::{EMBER_TOKENS_STYLESHEET, STYLESHEETS, TOKENS_STYLESHEET};
 pub use sunburst::{SUNBURST_SIZE, Sunburst};

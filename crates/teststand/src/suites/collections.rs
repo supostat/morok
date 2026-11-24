@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use morok_components::view::Mount;
 use morok_components::{List, RowSelection, Tabs, Tree, TreeItem};
 use morok_core::{ElementId, Size};
@@ -74,9 +76,13 @@ fn list_states(scene: &mut Scene) {
     let list = |selected: Vec<usize>, selection: RowSelection| {
         move |mount: &mut Mount<'_>| {
             let selected = mount.runtime().signal(selected);
-            List::new(12, |index| format!("Document {}", index + 1), selected)
-                .selection(selection)
-                .mount(mount)
+            List::new(
+                12,
+                |index, label| write!(label, "Document {}", index + 1).expect("a string takes what is written to it"),
+                selected,
+            )
+            .selection(selection)
+            .mount(mount)
         }
     };
     let pointed = scene.mount(stage, list(vec![1], RowSelection::Single));

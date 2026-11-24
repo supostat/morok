@@ -1,6 +1,7 @@
 mod support;
 
 use std::borrow::Cow;
+use std::fmt::Write;
 
 use morok_components::view::Mount;
 use morok_components::{List, RowSelection, Tabs, Tree, TreeItem};
@@ -38,10 +39,14 @@ fn list(selection: RowSelection) -> (Stage, ElementId, Signal<Vec<usize>>) {
     let mut stage = Stage::new();
     let selected = stage.runtime.signal(Vec::new());
     let view = stage.mount(move |mount| {
-        let view = List::new(6, |index| format!("File {index}"), selected)
-            .selection(selection)
-            .label("Files")
-            .mount(mount);
+        let view = List::new(
+            6,
+            |index, label| write!(label, "File {index}").expect("a string takes what is written to it"),
+            selected,
+        )
+        .selection(selection)
+        .label("Files")
+        .mount(mount);
         sized(mount, view)
     });
     stage.frame();

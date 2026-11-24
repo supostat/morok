@@ -4,10 +4,20 @@ use crate::geometry::rect::Rect;
 /// piece, so the damage collapses into their bounding rectangle.
 const MAXIMUM_RECTANGLES: usize = 16;
 
-/// The parts of a surface whose pixels changed since the last display list.
-#[derive(Clone, Debug, Default, PartialEq)]
+/// The parts of a surface whose pixels changed since the last display list. It holds room for
+/// as many rectangles as it ever tracks from the start, so a frame adds damage with no
+/// allocation.
+#[derive(Clone, Debug, PartialEq)]
 pub struct Damage {
     rectangles: Vec<Rect>,
+}
+
+impl Default for Damage {
+    fn default() -> Self {
+        Self {
+            rectangles: Vec::with_capacity(MAXIMUM_RECTANGLES),
+        }
+    }
 }
 
 impl Damage {
@@ -79,6 +89,19 @@ mod tests {
         damage.add(Rect::new(5.0, 5.0, 0.0, 30.0));
 
         assert!(damage.is_empty());
+    }
+
+    #[test]
+    fn the_damage_tracks_every_rectangle_in_the_room_it_holds_from_the_start() {
+        let mut damage = Damage::default();
+        let room = damage.rectangles.capacity();
+
+        for position in 0..3 * MAXIMUM_RECTANGLES {
+            damage.add(Rect::new(position as f32 * 20.0, 0.0, 10.0, 10.0));
+        }
+
+        assert!(room >= MAXIMUM_RECTANGLES);
+        assert_eq!(damage.rectangles.capacity(), room);
     }
 
     #[test]
