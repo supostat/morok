@@ -15,7 +15,7 @@
 
 - Prior spec: `docs/SPEC-morok-debts.md` — all 11 phases closed (run 4349f514), committed up to
   `8aa8010`; HEAD is `3b2e8a0`, pushed to `origin/main`.
-- Prior spec-hash: sha256:<placeholder — confirm>
+- Prior spec-hash: sha256:7aaae7e06adf90b3f74ee538cfd09a323151a953ed9c679dcd18d6d815086855
 - The debt: `docs/SPEC-morok-debts.md` left out of scope that `OptionList`
   (`crates/components/src/option_list.rs:62-66`) and `Tree` (`crates/components/src/tree.rs:84-90`)
   clone a label on every rebind; `Tree` also clones its `ShownItem` and the key of the row.
