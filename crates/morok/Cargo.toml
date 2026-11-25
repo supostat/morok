@@ -42,7 +42,15 @@ objc2-core-graphics = { workspace = true, features = [
   "CGImage",
   "CGWindow",
 ] }
-objc2-foundation = { workspace = true, features = ["NSArray", "NSDate", "NSGeometry", "NSRunLoop", "NSString"] }
+objc2-foundation = { workspace = true, features = [
+  "NSArray",
+  "NSDate",
+  "NSGeometry",
+  "NSNotification",
+  "NSObjCRuntime",
+  "NSRunLoop",
+  "NSString",
+] }
 
 [[test]]
 name = "button_interaction"

@@ -1,5 +1,6 @@
 mod support;
 
+use std::cell::RefCell;
 use std::process::{self, ExitCode};
 use std::thread;
 use std::time::Duration;
@@ -8,10 +9,11 @@ use morok::components::{Button, ContextMenu, MenuItem, Popover, Select};
 use morok::core::{ElementId, Point, Rect, Size};
 use morok::reactive::Signal;
 use morok::{Application, Styles, Window, WindowOptions};
-use objc2::MainThreadMarker;
 use objc2::rc::Retained;
-use objc2_app_kit::{NSApplication, NSWindow};
-use objc2_foundation::NSPoint;
+use objc2::runtime::{AnyObject, NSObject};
+use objc2::{DefinedClass, MainThreadMarker, MainThreadOnly, define_class, msg_send, sel};
+use objc2_app_kit::{NSApplication, NSEventTrackingRunLoopMode, NSMenu, NSMenuDidBeginTrackingNotification, NSWindow};
+use objc2_foundation::{NSArray, NSNotification, NSNotificationCenter, NSObjectNSDelayedPerforming, NSPoint};
 use support::{EventSource, Expectations};
 
 const CONTENT_SIZE: Size = Size {
@@ -22,7 +24,7 @@ const CONTENT_SIZE: Size = Size {
 const SETTLING: Duration = Duration::from_millis(1500);
 /// Long enough for the frames an input asks for to be drawn and for a window to open or close.
 const ONE_CHANGE: Duration = Duration::from_millis(700);
-/// A menu of the system that takes none of the keys of the test never closes by itself.
+/// A menu of the system the test fails to choose from never closes by itself.
 const MENU_PATIENCE: Duration = Duration::from_secs(30);
 /// The virtual key codes of Escape, of the down arrow and of Return, with what each types.
 const ESCAPE_KEY: (u16, &str) = (0x35, "\u{1b}");
@@ -57,6 +59,78 @@ const ARROW_TOLERANCE: f64 = 1.0;
 /// The alpha from which a pixel of an overlay window is opaque: the arrow is, the shadow
 /// around the panel is not.
 const OPAQUE: u8 = 250;
+
+/// The titles of the commands of the menu of the system the chooser saw.
+#[derive(Debug, Default)]
+struct SeenMenu {
+    titles: RefCell<Vec<String>>,
+}
+
+define_class!(
+    /// Chooses the first command of a menu of the system once the system tracks it, as a
+    /// click of the user on that command does: the keys and the pointer of the machine the
+    /// test runs on take no part in the choice.
+    #[unsafe(super(NSObject))]
+    #[thread_kind = MainThreadOnly]
+    #[ivars = SeenMenu]
+    struct FirstCommandChooser;
+
+    impl FirstCommandChooser {
+        #[unsafe(method(menuDidBeginTracking:))]
+        fn menu_did_begin_tracking(&self, notification: &NSNotification) {
+            let menu = notification
+                .object()
+                .and_then(|object| object.downcast::<NSMenu>().ok())
+                .expect("the object of the notification is the menu that is tracked");
+            *self.ivars().titles.borrow_mut() = menu
+                .itemArray()
+                .to_vec()
+                .iter()
+                .map(|item| item.title().to_string())
+                .collect();
+            menu.performActionForItemAtIndex(0);
+            // `cancelTracking` is ignored before the tracking loop runs, so it waits for the
+            // first turn of that loop.
+            // SAFETY: the name is a constant of `AppKit`.
+            let tracking = NSArray::from_slice(&[unsafe { NSEventTrackingRunLoopMode }]);
+            // SAFETY: a menu implements `cancelTracking`, which takes no argument.
+            unsafe { menu.performSelector_withObject_afterDelay_inModes(sel!(cancelTracking), None, 0.0, &tracking) };
+        }
+    }
+);
+
+impl FirstCommandChooser {
+    /// A chooser that chooses for every menu of the system tracked until it is dropped.
+    fn observing(main_thread: MainThreadMarker) -> Retained<Self> {
+        let chooser = Self::alloc(main_thread).set_ivars(SeenMenu::default());
+        // SAFETY: the superclass is initialized without arguments.
+        let chooser: Retained<Self> = unsafe { msg_send![super(chooser), init] };
+        let observer: &AnyObject = &chooser;
+        // SAFETY: the chooser implements the selector, taking the notification, and stops
+        // observing when it is dropped. The name is a constant of `AppKit`.
+        unsafe {
+            NSNotificationCenter::defaultCenter().addObserver_selector_name_object(
+                observer,
+                sel!(menuDidBeginTracking:),
+                Some(NSMenuDidBeginTrackingNotification),
+                None,
+            );
+        }
+        chooser
+    }
+
+    fn seen_titles(&self) -> Vec<String> {
+        self.ivars().titles.borrow().clone()
+    }
+}
+
+impl Drop for FirstCommandChooser {
+    fn drop(&mut self) {
+        let observer: &AnyObject = self;
+        // SAFETY: the chooser was added as an observer when it was made.
+        unsafe { NSNotificationCenter::defaultCenter().removeObserver(observer) };
+    }
+}
 
 /// What the root component of the window built.
 #[derive(Clone, Copy, Debug)]
@@ -430,22 +504,26 @@ fn a_click_on_a_row_of_the_list_of_a_select_chooses_its_option(stage: &mut Stage
     );
 }
 
-/// The menu of the system takes the keys that wait in the queue of the application while it
-/// is open: the down arrow highlights its first command and Return chooses it.
+/// The first command of the menu of the system is chosen as soon as the system tracks the
+/// menu, the way a click of the user on it chooses it.
 fn a_secondary_press_shows_the_menu_of_the_system_and_its_command_runs(stage: &mut Stage) {
     thread::spawn(|| {
         thread::sleep(MENU_PATIENCE);
-        eprintln!("overlay windows failed:\nthe menu of the system took none of the keys queued for it");
+        eprintln!("overlay windows failed:\nthe menu of the system never closed");
         process::exit(1);
     });
+    let chooser = FirstCommandChooser::observing(stage.main_thread);
 
     stage.source.secondary_click(stage.middle_of(stage.built.menu_area));
-    for (key_code, characters) in [DOWN_KEY, RETURN_KEY] {
-        stage.source.queue_key_press(stage.main_thread, key_code, characters);
-    }
     stage.application.run_for(ONE_CHANGE);
     stage.application.run_for(ONE_CHANGE);
 
+    let titles = chooser.seen_titles();
+    stage.expectations.expect(
+        titles == ["Reveal", "Rename"],
+        "the menu of the system shows the commands of the context menu",
+        &format!("{titles:?}"),
+    );
     let chosen = stage.application.update(|runtime| runtime.get(stage.chosen));
     stage.expectations.expect(
         chosen == ["reveal"],

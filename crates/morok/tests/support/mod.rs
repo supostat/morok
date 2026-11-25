@@ -234,15 +234,6 @@ impl EventSource {
         }
     }
 
-    /// Puts a key that goes down and up into the queue of the application, for whatever
-    /// takes the events of the queue next: a menu of the system does while it is open.
-    pub(crate) fn queue_key_press(&self, main_thread: MainThreadMarker, key_code: u16, characters: &str) {
-        let application = NSApplication::sharedApplication(main_thread);
-        for kind in [NSEventType::KeyDown, NSEventType::KeyUp] {
-            application.postEvent_atStart(&self.key_event(kind, key_code, characters), false);
-        }
-    }
-
     fn key_event(&self, kind: NSEventType, key_code: u16, characters: &str) -> Retained<NSEvent> {
         let characters = NSString::from_str(characters);
         NSEvent::keyEventWithType_location_modifierFlags_timestamp_windowNumber_context_characters_charactersIgnoringModifiers_isARepeat_keyCode(
