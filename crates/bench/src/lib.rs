@@ -36,6 +36,7 @@ pub mod scroll_scenario;
 mod scrolled_collection;
 mod stage;
 mod stage_budgets;
+mod stage_clock;
 mod surface_pipeline;
 mod verdict;
 

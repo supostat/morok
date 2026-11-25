@@ -106,6 +106,15 @@ fn reports_over_budget(verdict: &Verdict, scenario: &str, subject: &str) -> bool
             .any(|line| line.starts_with(&format!("{scenario}: {subject}")) && line.ends_with("OVER BUDGET"))
 }
 
+/// Whether the allocation check of the verdict names `stage_allocations`, a budget stage and the
+/// count of the allocations made in it.
+fn names_allocations_of(verdict: &Verdict, scenario: &str, stage_allocations: &str) -> bool {
+    verdict
+        .to_string()
+        .lines()
+        .any(|line| line.starts_with(&format!("{scenario}: allocations")) && line.contains(stage_allocations))
+}
+
 fn main() -> ExitCode {
     let application = Application::new().expect("this Mac runs Metal 4");
     let budgets = Budgets::of_workspace().expect("the budgets of the workspace read");
@@ -133,6 +142,11 @@ fn main() -> ExitCode {
     expectations.expect(
         reports_over_budget(&allocating, "allocating", "allocations"),
         "an allocation in a steady frame fails",
+        &allocating.to_string(),
+    );
+    expectations.expect(
+        names_allocations_of(&allocating, "allocating", "(events 1,"),
+        "the allocation check names the stage of the run the scene allocated in: its change counts into events",
         &allocating.to_string(),
     );
 

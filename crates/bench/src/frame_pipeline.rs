@@ -1,29 +1,31 @@
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
-use morok_core::Size;
+use morok_core::{Size, TreeFrame};
 use morok_platform::{CoreTextShaper, OffscreenTarget, Renderer};
 use morok_style::ColorScheme;
 
 use crate::bench_error::BenchError;
-use crate::counting_allocator::CountingAllocator;
 use crate::frame_budget::FrameBudget;
 use crate::frame_measurements::FrameMeasurements;
 use crate::frame_sample::FrameSample;
 use crate::scene::Scene;
 use crate::scene_tree::SceneTree;
+use crate::stage_clock::StageClock;
 
 /// Frames are measured as a Retina display shows them.
 const DEVICE_SCALE: f32 = 2.0;
 /// The frames follow one another at the rate of a `ProMotion` display.
 const FRAMES_PER_SECOND: f64 = 120.0;
 
-/// The frame pipeline of the kit on a surface that is not on screen: the stages run on the
-/// tree of a scene and their CPU time and heap allocations are taken frame by frame.
+/// The frame of the kit on a surface that is not on screen: the run of the tree of a scene,
+/// its pictures sized by the renderer, and the CPU time and heap allocations of each stage
+/// taken frame by frame.
 #[derive(Debug)]
 pub struct FramePipeline {
     scene_tree: SceneTree,
     viewport: Size,
     text_shaper: CoreTextShaper,
+    renderer: Renderer,
     target: OffscreenTarget,
 }
 
@@ -35,6 +37,7 @@ impl FramePipeline {
             scene_tree: SceneTree::of(scene, ColorScheme::Light)?,
             viewport,
             text_shaper: CoreTextShaper::new(),
+            renderer: renderer.clone(),
             target: OffscreenTarget::new(renderer, viewport, DEVICE_SCALE),
         })
     }
@@ -52,31 +55,23 @@ impl FramePipeline {
         FrameMeasurements::new(samples)
     }
 
-    /// Runs one frame: the changes of the scene and the stages of the pipeline, timed one
-    /// after another. The GPU draws the frame after the sample is taken.
+    /// Runs one frame: the changes of the scene and the run of its tree, then the encoding,
+    /// timed by budget stage. The GPU draws the frame after the sample is taken.
     pub fn run_frame(&mut self, scene: &mut dyn Scene, frame: usize) -> FrameSample {
-        let allocations_before = CountingAllocator::allocations_so_far();
+        let mut clock = StageClock::start();
         let tree = self.scene_tree.tree_mut();
-        let started = Instant::now();
         scene.change(frame, tree);
-        tree.resolve_styles(Duration::from_secs_f64(frame as f64 / FRAMES_PER_SECOND));
-        let events_done = Instant::now();
-        tree.compute_layout(self.viewport, DEVICE_SCALE, &mut self.text_shaper);
-        let layout_done = Instant::now();
-        tree.build_display_list();
-        let display_list_done = Instant::now();
+        let tree_frame = TreeFrame {
+            viewport: self.viewport,
+            scale: DEVICE_SCALE,
+            now: Duration::from_secs_f64(frame as f64 / FRAMES_PER_SECOND),
+            text_shaper: &mut self.text_shaper,
+            images: &self.renderer,
+        };
+        tree.run_frame(tree_frame, &mut clock);
         self.target.draw(tree.display_list(), tree.theme());
-        let encoding_done = Instant::now();
-        let allocations = CountingAllocator::allocations_so_far() - allocations_before;
+        let sample = clock.encoding_ended();
         self.target.wait_until_drawn();
-        FrameSample::new(
-            [
-                events_done - started,
-                layout_done - events_done,
-                display_list_done - layout_done,
-                encoding_done - display_list_done,
-            ],
-            allocations,
-        )
+        sample
     }
 }

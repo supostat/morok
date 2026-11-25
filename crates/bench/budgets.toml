@@ -4,7 +4,8 @@
 # The stages of a frame in the order they run; the 95th percentile of every stage over the
 # measured frames stays at or under its budget, in milliseconds.
 [stages]
-# The changes of the frame are applied to the tree and the styles they touched are resolved.
+# The input or the changes of the frame reach the tree, and the stages a run declares before
+# its layout prepare it: hover, scrolls, timers, effects, styles and pictures.
 events = 1.0
 layout = 1.0
 display_list = 1.0

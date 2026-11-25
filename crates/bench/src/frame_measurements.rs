@@ -33,12 +33,12 @@ impl FrameMeasurements {
         percentile_95(self.samples.iter().map(FrameSample::total).collect())
     }
 
-    /// The most heap allocations any measured frame made.
-    pub fn most_allocations(&self) -> u64 {
+    /// The measured frame that made the most heap allocations; the first of them on a tie.
+    pub fn most_allocating_frame(&self) -> &FrameSample {
         self.samples
             .iter()
-            .map(FrameSample::allocations)
-            .max()
+            .rev()
+            .max_by_key(|sample| sample.allocations())
             .expect("a measurement holds at least one frame")
     }
 }

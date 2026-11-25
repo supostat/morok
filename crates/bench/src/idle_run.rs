@@ -26,7 +26,7 @@ pub(crate) fn observe(
         content_size: scene.viewport(),
         blur_behind: false,
     };
-    let mut content = SceneContent::new(scene, application.surface_settings())?;
+    let mut content = SceneContent::new(scene, application.surface_settings(), application.renderer())?;
     let window = Window::open(application, &options, |frame_scheduler, _| {
         content.set_frame_scheduler(frame_scheduler);
         content

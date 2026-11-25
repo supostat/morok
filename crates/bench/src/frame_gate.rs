@@ -25,12 +25,20 @@ pub(crate) fn judge(scenario: &str, measurements: &FrameMeasurements, budgets: &
         Milliseconds::of(measurements.total_percentile_95()),
         budgets.frame.total,
     ));
-    let most_allocations = measurements.most_allocations();
+    let most_allocating_frame = measurements.most_allocating_frame();
+    let allocations_per_stage: Vec<String> = Stage::ALL
+        .into_iter()
+        .map(|stage| format!("{} {}", stage.name(), most_allocating_frame.allocations_of(stage)))
+        .collect();
     checks.push(Check {
         subject: ALLOCATIONS,
-        measured: format!("most {most_allocations} per frame"),
+        measured: format!(
+            "most {} per frame ({})",
+            most_allocating_frame.allocations(),
+            allocations_per_stage.join(", ")
+        ),
         budget: budgets.frame.allocations.to_string(),
-        holds: most_allocations <= budgets.frame.allocations,
+        holds: most_allocating_frame.allocations() <= budgets.frame.allocations,
     });
     let notes = vec![format!(
         "{} frames measured after {} of warm-up",

@@ -1,14 +1,14 @@
 use std::fmt::{self, Debug, Formatter};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use morok::Styles;
-use morok::components::view::{Mount, Surface, SurfaceId, Surfaces};
-use morok::core::{ElementId, ElementTree, Size};
+use morok::components::view::{Mount, Surface, SurfaceFrame, SurfaceId, Surfaces};
+use morok::core::{ElementId, ElementTree, Size, TreeFrame};
 use morok::reactive::Runtime;
 use morok_platform::{CanvasPainter, CoreTextShaper, OffscreenTarget, Renderer};
 
-use crate::counting_allocator::CountingAllocator;
 use crate::frame_sample::FrameSample;
+use crate::stage_clock::StageClock;
 
 /// Frames are measured as a Retina display shows them.
 const DEVICE_SCALE: f32 = 2.0;
@@ -17,15 +17,16 @@ const FRAMES_PER_SECOND: f64 = 120.0;
 /// The frames a surface runs before it is used.
 const SETTLING_FRAMES: usize = 2;
 
-/// A surface of components that is not on screen, with the frame pipeline of the kit over it:
-/// a frame applies the input of a scenario, runs the effects it woke, and the stages of the
-/// tree, timed one after another, with the heap allocations they make counted.
+/// A surface of components that is not on screen, with the frame of the kit over it: a frame
+/// applies the input of a scenario and runs the frame of the surface, its pictures sized by
+/// the renderer, timed and with its heap allocations counted by budget stage.
 pub(crate) struct SurfacePipeline {
     runtime: Runtime<Surfaces>,
     surfaces: Surfaces,
     surface: SurfaceId,
     viewport: Size,
     text_shaper: CoreTextShaper,
+    renderer: Renderer,
     target: OffscreenTarget,
 }
 
@@ -61,6 +62,7 @@ impl SurfacePipeline {
             surface,
             viewport,
             text_shaper: CoreTextShaper::new(),
+            renderer: renderer.clone(),
             target,
         };
         for _ in 0..SETTLING_FRAMES {
@@ -73,38 +75,35 @@ impl SurfacePipeline {
         self.surfaces.surface(self.surface).tree()
     }
 
-    /// Runs frame number `frame`: `input` reaches the surface, the scrolls it moved are
-    /// followed, the effects it woke run, and the stages of the tree run, timed one after
-    /// another. The GPU draws the frame after the sample is taken.
+    /// Runs frame number `frame`: `input` reaches the surface, then the frame of the surface
+    /// runs, then the encoding. The GPU draws the frame after the sample is taken.
+    ///
+    /// # Panics
+    ///
+    /// When the effects of the frame wake one another in a cycle, or close the surface.
     pub(crate) fn run_frame(&mut self, frame: usize, input: impl FnOnce(&mut Surface)) -> FrameSample {
-        let allocations_before = CountingAllocator::allocations_so_far();
-        let started = Instant::now();
-        let surface = self.surfaces.surface_mut(self.surface);
-        input(surface);
-        surface.follow_scrolls(&mut self.runtime);
-        self.runtime
-            .flush(&mut self.surfaces)
-            .expect("the effects of the components wake no cycle");
-        let tree = self.surfaces.surface_mut(self.surface).tree_mut();
-        tree.resolve_styles(Duration::from_secs_f64(frame as f64 / FRAMES_PER_SECOND));
-        let events_done = Instant::now();
-        tree.compute_layout(self.viewport, DEVICE_SCALE, &mut self.text_shaper);
-        let layout_done = Instant::now();
-        tree.build_display_list();
-        let display_list_done = Instant::now();
+        let mut clock = StageClock::start();
+        input(self.surfaces.surface_mut(self.surface));
+        let tree_frame = TreeFrame {
+            viewport: self.viewport,
+            scale: DEVICE_SCALE,
+            now: Duration::from_secs_f64(frame as f64 / FRAMES_PER_SECOND),
+            text_shaper: &mut self.text_shaper,
+            images: &self.renderer,
+        };
+        match self
+            .surfaces
+            .run_frame(&mut self.runtime, self.surface, tree_frame, &mut clock)
+        {
+            Ok(SurfaceFrame::Ran(_)) => {}
+            Ok(SurfaceFrame::Closed) => panic!("a scenario closed the surface it measures"),
+            Err(cycle) => panic!("{cycle}"),
+        }
+        let tree = self.surfaces.surface(self.surface).tree();
         self.target.draw(tree.display_list(), tree.theme());
-        let encoding_done = Instant::now();
-        let allocations = CountingAllocator::allocations_so_far() - allocations_before;
+        let sample = clock.encoding_ended();
         self.target.wait_until_drawn();
-        FrameSample::new(
-            [
-                events_done - started,
-                layout_done - events_done,
-                display_list_done - layout_done,
-                encoding_done - display_list_done,
-            ],
-            allocations,
-        )
+        sample
     }
 }
 

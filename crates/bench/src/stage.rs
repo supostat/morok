@@ -1,7 +1,8 @@
 /// The stages of a frame the harness times, in the order they run.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Stage {
-    /// The changes of the frame are applied to the tree and the styles they touched are resolved.
+    /// The input or the changes of the frame reach the tree, and the stages a run declares
+    /// before its layout prepare it: hover, scrolls, timers, effects, styles and pictures.
     Events,
     Layout,
     DisplayList,
