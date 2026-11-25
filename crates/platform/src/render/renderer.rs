@@ -10,7 +10,7 @@ use objc2_metal::{
     MTLCreateSystemDefaultDevice, MTLDevice, MTLGPUFamily, MTLLibrary, MTLPixelFormat, MTLRenderPipelineState,
 };
 
-use morok_core::{IconId, ImageId, ImageStatus, Size};
+use morok_core::{IconId, ImageId, ImageStatus, ImageStatuses, Size};
 
 use crate::atlas_statistics::AtlasStatistics;
 use crate::image_statistics::ImageStatistics;
@@ -224,6 +224,13 @@ impl Renderer {
 
     pub(crate) fn blur_pipeline(&self) -> &ProtocolObject<dyn MTLRenderPipelineState> {
         &self.blur_pipeline
+    }
+}
+
+/// The tree of a window learns from the renderer that decodes them how far its pictures are.
+impl ImageStatuses for Renderer {
+    fn image_status(&self, image: ImageId) -> ImageStatus {
+        Renderer::image_status(self, image)
     }
 }
 

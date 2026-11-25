@@ -4,11 +4,12 @@ use std::ops::Range;
 use std::rc::Rc;
 use std::time::Duration;
 
-use morok_components::view::SurfaceId;
+use morok_components::view::{SurfaceFrame, SurfaceId};
 use morok_core::accesskit::{ActionRequest, Node, NodeId, Role, TreeId, TreeInfo, TreeUpdate};
 use morok_core::{
     DisplayList, DragOutcome, ElementId, ElementTree, FrameScheduler, KeyEvent, Modifiers, NativeMenu, NativeMenuItem,
-    Payload, PayloadType, PlacedOverlay, Point, PointerInput, Rect, ScrollInput, Size, TextCommand,
+    Payload, PayloadType, PlacedOverlay, Point, PointerInput, Rect, ScrollInput, Size, TextCommand, TreeFrame,
+    Unobserved,
 };
 use morok_platform::{
     FocusedText, OverlayId, OverlayRequest, PasteboardClipboard, SurfaceContent, SurfaceKey, SurfaceSettings,
@@ -86,11 +87,16 @@ impl HostedSurface {
 }
 
 impl SurfaceContent for HostedSurface {
-    /// The stages run in a fixed order: the events and the timers that wait, the effects,
-    /// style, the natural sizes of the pictures the renderer decoded, layout and the display
-    /// list. The window renders what `show` is given and asks
-    /// for the update of the accessibility tree after it. An overlay whose layout changed
-    /// asks the surface under it for a frame, after which its window is placed again.
+    /// The frame is the run of the surface, its pictures sized by the renderer that decodes
+    /// them; a surface an effect closed in it shows nothing. The window renders what `show` is
+    /// given and asks for the update of the accessibility tree after it. An overlay whose
+    /// layout changed asks the surface under it for a frame, after which its window is placed
+    /// again.
+    ///
+    /// # Panics
+    ///
+    /// When an effect keeps waking itself: the application wrote a signal in an effect that
+    /// reads it.
     fn frame(&mut self, viewport: Size, scale: f32, now: Duration, show: &mut dyn FnMut(&ElementTree)) {
         let now = now.max(self.last_frame_time);
         self.last_frame_time = now;
@@ -98,22 +104,23 @@ impl SurfaceContent for HostedSurface {
             return;
         };
         let state = &mut *state;
-        let surface = state.surfaces.surface_mut(self.surface);
-        surface.refresh_hover(&mut state.runtime);
-        surface.follow_scrolls(&mut state.runtime);
-        surface.run_due_timers(&mut state.runtime, now);
-        state.flush();
-        if !state.surfaces.contains(self.surface) {
-            return;
-        }
-        let renderer = &state.renderer;
-        let tree = state.surfaces.surface_mut(self.surface).tree_mut();
-        tree.resolve_styles(now);
-        tree.size_images(|image| renderer.image_status(image));
-        let laid_out_elements = tree.compute_layout(viewport, scale, &mut state.text_shaper);
-        tree.build_display_list();
-        show(tree);
-        if laid_out_elements > 0
+        let frame = TreeFrame {
+            viewport,
+            scale,
+            now,
+            text_shaper: &mut state.text_shaper,
+            images: &state.renderer,
+        };
+        let outcome = match state
+            .surfaces
+            .run_frame(&mut state.runtime, self.surface, frame, &mut Unobserved)
+        {
+            Ok(SurfaceFrame::Ran(outcome)) => outcome,
+            Ok(SurfaceFrame::Closed) => return,
+            Err(cycle) => panic!("{cycle}"),
+        };
+        show(state.surfaces.surface(self.surface).tree());
+        if outcome.laid_out_elements > 0
             && let Some(parent) = state.surfaces.parent_of(self.surface)
         {
             state.surfaces.surface_mut(parent).tree_mut().request_frame();
@@ -315,9 +322,18 @@ impl SurfaceContent for HostedSurface {
         state.surfaces.overlays_of(self.surface, &mut self.open_overlays);
         for overlay in &self.open_overlays {
             if !self.listed_overlays.contains(overlay) {
-                let tree = state.surfaces.surface_mut(*overlay).tree_mut();
-                tree.resolve_styles(now);
-                tree.compute_layout(available, scale, &mut state.text_shaper);
+                let frame = TreeFrame {
+                    viewport: available,
+                    scale,
+                    now,
+                    text_shaper: &mut state.text_shaper,
+                    images: &state.renderer,
+                };
+                state
+                    .surfaces
+                    .surface_mut(*overlay)
+                    .tree_mut()
+                    .lay_out(frame, &mut Unobserved);
             }
             if let Some(geometry) = state.surfaces.overlay_geometry(*overlay) {
                 overlays.push(OverlayRequest {

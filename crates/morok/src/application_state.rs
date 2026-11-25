@@ -26,16 +26,4 @@ impl ApplicationState {
             styles,
         }
     }
-
-    /// Runs the effects that wait.
-    ///
-    /// # Panics
-    ///
-    /// When an effect keeps waking itself: the application wrote a signal in an effect that
-    /// reads it.
-    pub(crate) fn flush(&mut self) {
-        if let Err(cycle) = self.runtime.flush(&mut self.surfaces) {
-            panic!("{cycle}");
-        }
-    }
 }
