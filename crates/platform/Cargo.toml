@@ -131,6 +131,7 @@ objc2-metal = { workspace = true, features = [
   "dispatch2",
 ] }
 objc2-quartz-core = { workspace = true, features = [
+  "CABase",
   "CADisplayLink",
   "CALayer",
   "CAMetalLayer",
@@ -166,6 +167,10 @@ objc2-foundation = { workspace = true, features = [
 
 [[test]]
 name = "accessibility_adapter"
+harness = false
+
+[[test]]
+name = "delayed_frames"
 harness = false
 
 [[test]]

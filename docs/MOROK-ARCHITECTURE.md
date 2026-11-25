@@ -93,7 +93,10 @@ the budget gates) and `crates/xtask` (formatting, clippy and comment rules).
   out before its window opens. A caller that times the stages or counts what they allocate
   passes a `StageObserver`, which hears the end of every stage; the host passes `Unobserved`.
   The display link starts on damage or an active animation and stops after a frame that leaves
-  neither.
+  neither. What changes with time alone — a caret that blinks, a timer that waits — asks for a
+  frame at a time on the clock of the frames of its tree (`FrameScheduler::request_frame_at`);
+  the frame loop of a window keeps that time and waits for it with one block on the main queue,
+  however many frames ask for it again, while the display link stays stopped.
 - **Canvases.** A `Canvas` element hands its content box to the painter the application names;
   one painter draws the canvases of every window, through a `CanvasEncoder` that offers the fills
   of the kit (rectangles, ring sectors) and the Metal encoder, and carries the theme of the

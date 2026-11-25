@@ -620,7 +620,10 @@ impl SurfaceView {
     }
 
     pub(crate) fn statistics(&self) -> FrameStatistics {
-        self.ivars().statistics.get()
+        FrameStatistics {
+            queued_blocks: self.frame_loop().queued_blocks(),
+            ..self.ivars().statistics.get()
+        }
     }
 
     /// The pixels of the picture of the last drag the view began in the system, read back from

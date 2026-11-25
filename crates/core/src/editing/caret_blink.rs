@@ -17,15 +17,17 @@ impl CaretBlink {
         self.shown_since = None;
     }
 
-    /// Whether the frame at `now` shows the caret, and how long from then until it turns.
+    /// Whether the frame at `now` shows the caret, and the time it turns next. Every frame
+    /// before a turn gets the very same time of it.
     pub(crate) fn phase_at(&mut self, now: Duration) -> (bool, Duration) {
         let shown_since = *self.shown_since.get_or_insert(now);
-        let elapsed = now.saturating_sub(shown_since);
-        let half_periods = elapsed.as_nanos() / HALF_PERIOD.as_nanos();
-        let into_half_period = elapsed.as_nanos() % HALF_PERIOD.as_nanos();
-        let until_turn = HALF_PERIOD.as_nanos() - into_half_period;
-        let until_turn = Duration::from_nanos(u64::try_from(until_turn).expect("a half period fits in 64 bits"));
-        (half_periods.is_multiple_of(2), until_turn)
+        let half_periods = now.saturating_sub(shown_since).as_nanos() / HALF_PERIOD.as_nanos();
+        let half_periods_at_next_turn =
+            u32::try_from(half_periods + 1).expect("a caret blinks for fewer than 2^32 half periods");
+        (
+            half_periods.is_multiple_of(2),
+            shown_since + HALF_PERIOD * half_periods_at_next_turn,
+        )
     }
 }
 
@@ -43,10 +45,10 @@ mod tests {
     fn a_caret_is_shown_for_a_half_period_from_its_first_frame_and_then_turns() {
         let mut blink = CaretBlink::default();
 
-        assert_eq!(blink.phase_at(milliseconds(1000)), (true, milliseconds(530)));
-        assert_eq!(blink.phase_at(milliseconds(1500)), (true, milliseconds(30)));
-        assert_eq!(blink.phase_at(milliseconds(1530)), (false, milliseconds(530)));
-        assert_eq!(blink.phase_at(milliseconds(2060)), (true, milliseconds(530)));
+        assert_eq!(blink.phase_at(milliseconds(1000)), (true, milliseconds(1530)));
+        assert_eq!(blink.phase_at(milliseconds(1500)), (true, milliseconds(1530)));
+        assert_eq!(blink.phase_at(milliseconds(1530)), (false, milliseconds(2060)));
+        assert_eq!(blink.phase_at(milliseconds(2060)), (true, milliseconds(2590)));
     }
 
     #[test]
@@ -57,6 +59,6 @@ mod tests {
 
         blink.restart();
 
-        assert_eq!(blink.phase_at(milliseconds(610)), (true, milliseconds(530)));
+        assert_eq!(blink.phase_at(milliseconds(610)), (true, milliseconds(1140)));
     }
 }

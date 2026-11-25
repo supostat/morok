@@ -7,8 +7,9 @@ pub trait FrameScheduler: Debug {
     /// Asks for the stages of a frame to run soon.
     fn request_frame(&self);
 
-    /// Asks for the stages of a frame to run once `delay` has passed, in place of the frame
-    /// that was asked for this way before and has not run: what a tree shows may change with
-    /// time alone, as a caret that blinks does.
-    fn request_frame_after(&self, delay: Duration);
+    /// Asks for the stages of a frame to run at `time`, on the clock of the `now` the host
+    /// passes to the frames of the tree, in place of the frame that was asked for this way
+    /// before and has not run: what a tree shows may change with time alone, as a caret that
+    /// blinks does. A time that has passed asks for a frame soon.
+    fn request_frame_at(&self, time: Duration);
 }

@@ -771,7 +771,7 @@ impl FrameScheduler for CountingScheduler {
         self.requested_frames.set(self.requested_frames.get() + 1);
     }
 
-    fn request_frame_after(&self, _delay: Duration) {}
+    fn request_frame_at(&self, _time: Duration) {}
 }
 
 /// A page that shows one canvas, after its first frame and a frame that changed nothing; the

@@ -24,7 +24,7 @@ impl FrameScheduler for CountingScheduler {
     }
 
     /// A frame asked for later is no frame asked for now.
-    fn request_frame_after(&self, _delay: Duration) {}
+    fn request_frame_at(&self, _time: Duration) {}
 }
 
 /// A change of a scene, made through its tree.

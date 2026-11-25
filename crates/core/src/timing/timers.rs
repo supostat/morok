@@ -44,15 +44,12 @@ impl Timers {
         });
     }
 
-    /// Counts the delays of the timers started since the last frame from `now`. Returns how
-    /// long from `now` until the earliest timer falls due; none while no timer runs.
+    /// Counts the delays of the timers started since the last frame from `now`. Returns the
+    /// time the earliest timer falls due; none while no timer runs.
     pub(crate) fn arm(&mut self, now: Duration) -> Option<Duration> {
         self.pending
             .iter_mut()
-            .map(|pending| {
-                let due_at = *pending.due_at.get_or_insert(now + pending.delay);
-                due_at.saturating_sub(now)
-            })
+            .map(|pending| *pending.due_at.get_or_insert(now + pending.delay))
             .min()
     }
 

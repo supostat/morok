@@ -17,7 +17,9 @@ impl FrameScheduler for FrameRequester {
         self.frame_loop.request_frame();
     }
 
-    fn request_frame_after(&self, delay: Duration) {
-        self.frame_loop.request_frame_after(delay);
+    /// The time is that of the display link of the window, which passes its target timestamp
+    /// to the frames of the tree.
+    fn request_frame_at(&self, time: Duration) {
+        self.frame_loop.request_frame_at(time);
     }
 }

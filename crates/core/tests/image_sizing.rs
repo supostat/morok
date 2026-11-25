@@ -28,7 +28,7 @@ impl FrameScheduler for CountingScheduler {
         self.requested_frames.set(self.requested_frames.get() + 1);
     }
 
-    fn request_frame_after(&self, _delay: Duration) {}
+    fn request_frame_at(&self, _time: Duration) {}
 }
 
 /// A row of a scene whose tree has a host, and the number of frames the tree asked for.

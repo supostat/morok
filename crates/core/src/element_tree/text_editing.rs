@@ -1,4 +1,5 @@
 use std::ops::Range;
+use std::time::Duration;
 
 use accesskit::{Action, ActionData, ActionRequest};
 
@@ -296,8 +297,9 @@ impl ElementTree {
 
     /// Follows the focus of edited texts into the frame at the time of the timeline: a text
     /// shows its selection and its caret only while its element has focus, and the caret
-    /// blinks, so the tree asks for the frame in which the caret turns.
-    pub(super) fn advance_caret(&mut self) {
+    /// blinks. Returns the time the caret turns next, which the tree asks a frame for; none
+    /// while no caret blinks.
+    pub(super) fn advance_caret(&mut self) -> Option<Duration> {
         let focused = self.focused_text_input();
         if self.text_focus != focused {
             for shown in [self.text_focus, focused].into_iter().flatten() {
@@ -313,12 +315,10 @@ impl ElementTree {
             }
             self.text_focus = focused;
         }
-        let Some(focused) = focused else {
-            return;
-        };
+        let focused = focused?;
         let now = self.timeline.now;
         let editable = self.editable_mut(focused);
-        let (shows_caret, until_turn) = editable.blink.phase_at(now);
+        let (shows_caret, turns_at) = editable.blink.phase_at(now);
         let turned = editable.shows_caret != shows_caret;
         editable.shows_caret = shows_caret;
         let blinks = editable.editor.selection().is_caret();
@@ -326,9 +326,7 @@ impl ElementTree {
             self.elements[focused].dirty.insert(Dirty::PAINT);
             self.has_unpainted_changes = true;
         }
-        if blinks {
-            self.frame_requests.request_after(until_turn);
-        }
+        blinks.then_some(turns_at)
     }
 
     /// Marks what a change of an edited text touches: its lines when its characters changed,

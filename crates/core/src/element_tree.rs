@@ -723,9 +723,10 @@ impl ElementTree {
         self.show_moving_scroll_bars();
         let resolved_elements = self.run_style_pass();
         self.advance_springs();
-        self.advance_caret();
-        if let Some(until_due) = self.timers.arm(now) {
-            self.frame_requests.request_after(until_due);
+        let caret_turns_at = self.advance_caret();
+        let timer_falls_due_at = self.timers.arm(now);
+        if let Some(time) = caret_turns_at.into_iter().chain(timer_falls_due_at).min() {
+            self.frame_requests.request_at(time);
         }
         if !self.moving_elements.is_empty() || self.springs.iter().any(|spring| !spring.is_settled) {
             self.request_frame();
