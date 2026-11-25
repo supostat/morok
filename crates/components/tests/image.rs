@@ -13,15 +13,6 @@ const SUNSET_SIZE: Size = Size {
     height: 80.0,
 };
 
-/// The host tells the tree of the stage how far it has come with every picture.
-fn host_reports(stage: &mut Stage, status: ImageStatus) {
-    stage
-        .surfaces
-        .surface_mut(stage.surface)
-        .tree_mut()
-        .size_images(|_| status);
-}
-
 #[test]
 fn an_image_is_a_named_picture_of_the_image_role() {
     let mut stage = Stage::new();
@@ -52,7 +43,7 @@ fn an_image_takes_the_size_of_its_picture_from_the_host() {
         "while its picture decodes the image is its box alone"
     );
 
-    host_reports(&mut stage, ImageStatus::Decoded(SUNSET_SIZE));
+    stage.report_image(SUNSET, ImageStatus::Decoded(SUNSET_SIZE));
     stage.frame();
 
     assert_eq!(stage.tree().border_box(image).size(), SUNSET_SIZE);
@@ -64,7 +55,7 @@ fn an_image_shows_the_picture_its_signal_names() {
     let shown = stage.runtime.signal(SUNSET);
     let image = stage.mount(move |mount| Image::new(shown, "Photo").mount(mount));
     stage.flush();
-    host_reports(&mut stage, ImageStatus::Decoded(SUNSET_SIZE));
+    stage.report_image(SUNSET, ImageStatus::Decoded(SUNSET_SIZE));
     stage.frame();
 
     stage.runtime.set(shown, SUNSET);

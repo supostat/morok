@@ -4,15 +4,15 @@ use std::time::Duration;
 
 use morok_components::styles::STYLE_SHEET;
 use morok_components::tokens::LIGHT;
-use morok_components::view::{Mount, SurfaceId, Surfaces};
+use morok_components::view::{Mount, SurfaceFrame, SurfaceId, SurfaceStage, Surfaces};
 use morok_core::accesskit::{Action, ActionData, ActionRequest, Node, NodeId, TreeId, TreeUpdate};
 use morok_core::{
-    CaretLine, CaretLines, CaretStop, ElementId, ElementTree, FontId, FontMetrics, FontRequest, ItemRange, Key,
-    KeyEvent, KeyPhase, Modifiers, PlacedOverlay, Point, PointerButton, PointerInput, PointerInputKind, Rect,
-    ScrollInput, ScrollPhase, ShapedGlyph, ShapedLine, ShapedRun, ShapedText, Size, TextExtent, TextRequest,
-    TextShaper,
+    CaretLine, CaretLines, CaretStop, ElementId, ElementTree, FontId, FontMetrics, FontRequest, ImageId, ImageStatus,
+    ImageStatuses, ItemRange, Key, KeyEvent, KeyPhase, Modifiers, PlacedOverlay, Point, PointerButton, PointerInput,
+    PointerInputKind, Rect, ScrollInput, ScrollPhase, ShapedGlyph, ShapedLine, ShapedRun, ShapedText, Size,
+    StageObserver, TextExtent, TextRequest, TextShaper, TreeFrame, Unobserved,
 };
-use morok_reactive::Runtime;
+use morok_reactive::{FlushCycle, Runtime};
 
 const VIEWPORT: Size = Size {
     width: 400.0,
@@ -115,14 +115,30 @@ impl TextShaper for OneLineShaper {
     }
 }
 
+/// The pictures as a host reports them to every surface of the stage: each at the status the
+/// test reported last for it, still decoding until the test reports one.
+#[derive(Debug, Default)]
+pub(crate) struct ReportedImages {
+    reported: Vec<(ImageId, ImageStatus)>,
+}
+
+impl ImageStatuses for ReportedImages {
+    fn image_status(&self, image: ImageId) -> ImageStatus {
+        self.reported
+            .iter()
+            .find(|(reported, _)| *reported == image)
+            .map_or(ImageStatus::Decoding, |(_, status)| *status)
+    }
+}
+
 /// One surface of the kit with the signal graph its components live in, driven as a host
-/// drives it: input goes to the surface, and a frame flushes the effects and runs the stages
-/// of the tree.
+/// drives it: input goes to the surface, and a frame runs the frame of the surface.
 pub(crate) struct Stage {
     pub(crate) runtime: Runtime<Surfaces>,
     pub(crate) surfaces: Surfaces,
     pub(crate) surface: SurfaceId,
     text_shaper: OneLineShaper,
+    images: ReportedImages,
     time: Duration,
 }
 
@@ -137,8 +153,16 @@ impl Stage {
             surfaces,
             surface,
             text_shaper: OneLineShaper,
+            images: ReportedImages::default(),
             time: Duration::ZERO,
         }
+    }
+
+    /// The host tells the surfaces of the stage how far it has come with a picture: the frames
+    /// from here on size it by `status`.
+    pub(crate) fn report_image(&mut self, image: ImageId, status: ImageStatus) {
+        self.images.reported.retain(|(reported, _)| *reported != image);
+        self.images.reported.push((image, status));
     }
 
     /// Opens another surface on the signal graph of the stage.
@@ -179,10 +203,21 @@ impl Stage {
             .expect("the components of the test have no cycle");
     }
 
-    /// Runs one frame of the surface: the effects that wait, then style, layout and display list.
+    /// Runs one frame of the surface, a frame interval after the frame before.
     pub(crate) fn frame(&mut self) {
         self.time += FRAME_INTERVAL;
         self.frame_of(self.surface, VIEWPORT);
+    }
+
+    /// Runs one frame of the surface `after` the frame before, whose stages `observer` hears
+    /// end.
+    pub(crate) fn frame_observed(
+        &mut self,
+        after: Duration,
+        observer: &mut dyn StageObserver<SurfaceStage>,
+    ) -> Result<SurfaceFrame, FlushCycle> {
+        self.time += after;
+        self.run_frame_of(self.surface, VIEWPORT, observer)
     }
 
     /// Runs one frame of every surface `after` the frame before, as the windows of a host
@@ -272,17 +307,24 @@ impl Stage {
         if !self.surfaces.contains(surface) {
             return;
         }
-        let shown = self.surfaces.surface_mut(surface);
-        shown.follow_scrolls(&mut self.runtime);
-        shown.run_due_timers(&mut self.runtime, self.time);
-        self.flush();
-        if !self.surfaces.contains(surface) {
-            return;
-        }
-        let tree = self.surfaces.surface_mut(surface).tree_mut();
-        tree.resolve_styles(self.time);
-        tree.compute_layout(viewport, 1.0, &mut self.text_shaper);
-        tree.build_display_list();
+        self.run_frame_of(surface, viewport, &mut Unobserved)
+            .expect("the components of the test have no cycle");
+    }
+
+    fn run_frame_of(
+        &mut self,
+        surface: SurfaceId,
+        viewport: Size,
+        observer: &mut dyn StageObserver<SurfaceStage>,
+    ) -> Result<SurfaceFrame, FlushCycle> {
+        let frame = TreeFrame {
+            viewport,
+            scale: 1.0,
+            now: self.time,
+            text_shaper: &mut self.text_shaper,
+            images: &self.images,
+        };
+        self.surfaces.run_frame(&mut self.runtime, surface, frame, observer)
     }
 
     /// Runs the frames of the overlays opened over `parent`, whose top left corner lies at

@@ -1,16 +1,19 @@
 mod dragging;
 mod overlays;
 
-use morok_core::{ElementId, IconId};
-use morok_reactive::{Runtime, Scope};
+use morok_core::{ElementId, IconId, StageObserver, TreeFrame};
+use morok_reactive::{FlushCycle, Runtime, Scope};
 use morok_style::{StyleSheet, Theme};
 
 use crate::kit_icon::KitIcon;
 use crate::view::carried_drag::CarriedDrag;
 use crate::view::mount::Mount;
 use crate::view::surface::Surface;
+use crate::view::surface_frame::SurfaceFrame;
 use crate::view::surface_id::SurfaceId;
 use crate::view::surface_slot::SurfaceSlot;
+use crate::view::surface_stage::SurfaceStage;
+use crate::view::tree_stage_relay::TreeStageRelay;
 
 const CLOSED_SURFACE: &str = "a surface is not used after it is closed";
 
@@ -118,6 +121,45 @@ impl Surfaces {
         for surface in self.slots.iter_mut().filter_map(|slot| slot.surface.as_mut()) {
             surface.tree.set_theme(theme.clone());
         }
+    }
+
+    /// Runs the frame of the surface: a resting pointer is hit-tested again, the followers of
+    /// the scrolls and the timers that fall due write what they write, the effects run, and
+    /// then the stages of the tree. Each stage tells `observer` of its end. A surface an effect
+    /// closed during the frame runs no stage of its tree.
+    ///
+    /// # Errors
+    ///
+    /// When an effect kept waking itself in the flush of the frame.
+    ///
+    /// # Panics
+    ///
+    /// When the surface was closed before the frame, or the frame is earlier than the frame
+    /// before it.
+    pub fn run_frame(
+        &mut self,
+        runtime: &mut Runtime<Self>,
+        surface: SurfaceId,
+        frame: TreeFrame<'_>,
+        observer: &mut dyn StageObserver<SurfaceStage>,
+    ) -> Result<SurfaceFrame, FlushCycle> {
+        let shown = self.surface_mut(surface);
+        shown.refresh_hover(runtime);
+        observer.stage_ended(SurfaceStage::Hover);
+        shown.follow_scrolls(runtime);
+        observer.stage_ended(SurfaceStage::Scrolls);
+        shown.run_due_timers(runtime, frame.now);
+        observer.stage_ended(SurfaceStage::Timers);
+        runtime.flush(self)?;
+        observer.stage_ended(SurfaceStage::Effects);
+        if !self.contains(surface) {
+            return Ok(SurfaceFrame::Closed);
+        }
+        let outcome = self
+            .surface_mut(surface)
+            .tree
+            .run_frame(frame, &mut TreeStageRelay { observer });
+        Ok(SurfaceFrame::Ran(outcome))
     }
 
     /// Asks the host of every surface for a frame. A frame begins with a flush of the effects,
