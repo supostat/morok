@@ -4,7 +4,10 @@ use std::process::ExitCode;
 use std::time::Duration;
 
 use morok_core::accesskit::{ActionRequest, TreeUpdate};
-use morok_core::{ElementId, ElementTree, FrameScheduler, KeyEvent, PointerInput, Rect, Role, ScrollInput, Size};
+use morok_core::{
+    ElementId, ElementTree, FrameScheduler, ImageId, ImageStatus, ImageStatuses, KeyEvent, PointerInput, Rect, Role,
+    ScrollInput, Size, TreeFrame, Unobserved,
+};
 use morok_css::{CompiledTokens, SourceFile, TokenId, compile_stylesheets, compile_tokens};
 use morok_platform::{CoreTextShaper, FrameImage, OffscreenTarget, Renderer, SurfaceContent, SurfaceSettings};
 use morok_style::{Color, ColorScheme, StyleSheet, Theme, Token};
@@ -98,23 +101,43 @@ impl Scene {
         }
     }
 
-    /// Runs the three stages of a frame.
+    /// Runs a frame of a scene that shows no picture awaiting its size.
     pub(crate) fn frame(&mut self) {
-        self.tree.resolve_styles(self.time);
-        self.tree
-            .compute_layout(self.viewport, self.scale, &mut self.text_shaper);
-        self.tree.build_display_list();
+        self.run_frame(&NoPictures);
+    }
+
+    /// Runs a frame whose pictures are sized by what `images` tells of them.
+    fn run_frame(&mut self, images: &dyn ImageStatuses) {
+        let frame = TreeFrame {
+            viewport: self.viewport,
+            scale: self.scale,
+            now: self.time,
+            text_shaper: &mut self.text_shaper,
+            images,
+        };
+        self.tree.run_frame(frame, &mut Unobserved);
     }
 
     pub(crate) fn border_box(&self, element: ElementId) -> Rect {
         self.tree.border_box(element)
     }
 
-    /// Runs a frame and draws its display list offscreen with `scale` device pixels to a CSS pixel.
+    /// Runs a frame whose pictures `renderer` sizes and draws its display list offscreen with
+    /// `scale` device pixels to a CSS pixel.
     pub(crate) fn render(&mut self, renderer: &Renderer, scale: f32) -> FrameImage {
         self.scale = scale;
-        self.frame();
+        self.run_frame(renderer);
         OffscreenTarget::new(renderer, self.viewport, scale).render(self.tree.display_list(), self.tree.theme())
+    }
+}
+
+/// The port of a scene framed without a renderer: such a scene shows no picture awaiting its
+/// size, so the tree never asks it.
+pub(crate) struct NoPictures;
+
+impl ImageStatuses for NoPictures {
+    fn image_status(&self, image: ImageId) -> ImageStatus {
+        panic!("a scene framed without a renderer shows no picture awaiting its size, yet {image:?} does")
     }
 }
 

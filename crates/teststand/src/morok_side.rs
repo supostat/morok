@@ -12,8 +12,8 @@ use crate::moment::Moment;
 use crate::rendering::{DEVICE_SCALE, Rendering};
 use crate::stand_error::StandError;
 
-/// The kit as the stand drives it: the tree of a case goes through the stages of a frame and
-/// is drawn offscreen by the renderer of the kit.
+/// The kit as the stand drives it: the surface of a case runs its frames, its pictures sized
+/// by the renderer of the kit, which then draws it offscreen.
 #[derive(Debug)]
 pub struct MorokSide {
     renderer: Renderer,
@@ -50,13 +50,11 @@ impl MorokSide {
             scene.tree_mut().set_image(element, id, None);
             self.wait_for_decoder(id);
         }
-        let renderer = &self.renderer;
-        scene.tree_mut().size_images(|image| renderer.image_status(image));
-        scene.frame(case.viewport, &mut self.text_shaper, Duration::ZERO);
+        scene.frame(case.viewport, &mut self.text_shaper, &self.renderer, Duration::ZERO);
         if let Moment::InMotion { change, after } = case.moment {
             change(&mut scene);
-            scene.frame(case.viewport, &mut self.text_shaper, Duration::ZERO);
-            scene.frame(case.viewport, &mut self.text_shaper, after);
+            scene.frame(case.viewport, &mut self.text_shaper, &self.renderer, Duration::ZERO);
+            scene.frame(case.viewport, &mut self.text_shaper, &self.renderer, after);
         }
         let mut target = OffscreenTarget::new(&self.renderer, case.viewport, DEVICE_SCALE);
         target.set_canvas_painter(Box::new(scene.take_canvas_painters()));

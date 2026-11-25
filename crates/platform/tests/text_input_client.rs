@@ -8,11 +8,11 @@ use std::time::Duration;
 use morok_components::TextField;
 use morok_components::styles::STYLE_SHEET;
 use morok_components::tokens::{DARK, LIGHT};
-use morok_components::view::{SurfaceId, Surfaces};
+use morok_components::view::{SurfaceFrame, SurfaceId, Surfaces};
 use morok_core::accesskit::{ActionRequest, TreeUpdate};
 use morok_core::{
     DisplayItem, ElementId, ElementTree, FrameScheduler, KeyEvent, Point, PointerInput, Rect, ScrollInput, Size,
-    TextCommand,
+    TextCommand, TreeFrame, Unobserved,
 };
 use morok_platform::{
     Application, CoreTextShaper, FocusedText, PasteboardClipboard, SurfaceContent, SurfaceSettings, Window,
@@ -27,7 +27,7 @@ use objc2_app_kit::{
     NSApplication, NSEvent, NSEventModifierFlags, NSEventType, NSPasteboard, NSPasteboardTypeString, NSView, NSWindow,
 };
 use objc2_foundation::{NSNotFound, NSPoint, NSRange, NSRect, NSString};
-use support::{Expectations, run_main_loop};
+use support::{Expectations, NoPictures, run_main_loop};
 
 const CONTENT_SIZE: Size = Size {
     width: 320.0,
@@ -98,13 +98,22 @@ impl FieldWindow {
 
 impl SurfaceContent for FieldWindow {
     fn frame(&mut self, viewport: Size, scale: f32, now: Duration, show: &mut dyn FnMut(&ElementTree)) {
-        self.surfaces.surface_mut(self.surface).refresh_hover(&mut self.runtime);
-        self.flush();
-        let tree = self.surfaces.surface_mut(self.surface).tree_mut();
-        tree.resolve_styles(now);
-        tree.compute_layout(viewport, scale, &mut self.text_shaper);
-        tree.build_display_list();
-        show(tree);
+        let frame = TreeFrame {
+            viewport,
+            scale,
+            now,
+            text_shaper: &mut self.text_shaper,
+            images: &NoPictures,
+        };
+        let ran = self
+            .surfaces
+            .run_frame(&mut self.runtime, self.surface, frame, &mut Unobserved)
+            .expect("the effects of the field settle");
+        assert!(
+            matches!(ran, SurfaceFrame::Ran(_)),
+            "the window of the field keeps its surface open"
+        );
+        show(self.tree());
     }
 
     fn color_scheme_changed(&mut self, _color_scheme: ColorScheme) {}

@@ -1,8 +1,11 @@
 use std::mem;
 use std::time::Duration;
 
-use morok_components::view::{Mount, SurfaceId, Surfaces};
-use morok_core::{CanvasId, ElementId, ElementTree, ImageId, Offset, Rect, Role, Size, TextSelection, TextShaper};
+use morok_components::view::{Mount, SurfaceFrame, SurfaceId, Surfaces};
+use morok_core::{
+    CanvasId, ElementId, ElementTree, ImageId, ImageStatuses, Offset, Rect, Role, Size, TextSelection, TextShaper,
+    TreeFrame, Unobserved,
+};
 use morok_platform::CanvasPainter;
 use morok_reactive::Runtime;
 use morok_style::{States, StyleSheet, Theme};
@@ -264,17 +267,34 @@ impl Scene {
         }
     }
 
-    /// Runs the frame at `now`, counted from the first frame, on a surface of `viewport` at
-    /// the scale of the stand: the effects that wait, then the stages of the tree.
-    pub(crate) fn frame(&mut self, viewport: Size, text_shaper: &mut dyn TextShaper, now: Duration) {
-        self.surfaces
-            .surface_mut(self.surface)
-            .follow_scrolls(&mut self.runtime);
-        self.flush();
-        let tree = self.tree_mut();
-        tree.resolve_styles(now);
-        tree.compute_layout(viewport, DEVICE_SCALE, text_shaper);
-        tree.build_display_list();
+    /// Runs the frame of the surface at `now`, counted from the first frame, on a viewport of
+    /// `viewport` at the scale of the stand, its pictures sized by what `images` tells of them.
+    ///
+    /// # Panics
+    ///
+    /// When an effect of a component keeps waking itself, or closes the surface of the scene.
+    pub(crate) fn frame(
+        &mut self,
+        viewport: Size,
+        text_shaper: &mut dyn TextShaper,
+        images: &dyn ImageStatuses,
+        now: Duration,
+    ) {
+        let frame = TreeFrame {
+            viewport,
+            scale: DEVICE_SCALE,
+            now,
+            text_shaper,
+            images,
+        };
+        match self
+            .surfaces
+            .run_frame(&mut self.runtime, self.surface, frame, &mut Unobserved)
+        {
+            Ok(SurfaceFrame::Ran(_)) => {}
+            Ok(SurfaceFrame::Closed) => panic!("a case closed the surface of its scene"),
+            Err(cycle) => panic!("{cycle}"),
+        }
     }
 
     /// The elements in document order: every element before its children, the children in
