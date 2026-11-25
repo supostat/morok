@@ -42,3 +42,7 @@ png.workspace = true
 [[test]]
 name = "wire_main_path"
 harness = false
+
+[[test]]
+name = "wire_frame_run"
+harness = false

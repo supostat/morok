@@ -86,7 +86,7 @@ impl Surface {
 
     /// Runs what the timers that fall due by `now`, the time of the frame that begins, were
     /// started for. Called at the start of every frame, before its flush.
-    pub fn run_due_timers(&mut self, runtime: &mut Runtime<Surfaces>, now: Duration) {
+    pub(crate) fn run_due_timers(&mut self, runtime: &mut Runtime<Surfaces>, now: Duration) {
         self.tree.take_due_timers(now, &mut self.due_timers);
         for timer in self.due_timers.drain(..) {
             let mut handler = self
@@ -211,7 +211,7 @@ impl Surface {
 
     /// Works out again what a resting pointer is over once a frame moved the boxes under it:
     /// called at the start of every frame.
-    pub fn refresh_hover(&mut self, runtime: &mut Runtime<Surfaces>) {
+    pub(crate) fn refresh_hover(&mut self, runtime: &mut Runtime<Surfaces>) {
         let mut dispatch = EventDispatch {
             handlers: &mut self.event_handlers,
             runtime,
@@ -222,7 +222,7 @@ impl Surface {
     /// Writes how far each followed `Scroll` element is scrolled, and how large its viewport is,
     /// to the signal that follows it: what the input since the last frame and the last frame
     /// itself did to them. Called at the start of every frame, before its flush.
-    pub fn follow_scrolls(&mut self, runtime: &mut Runtime<Surfaces>) {
+    pub(crate) fn follow_scrolls(&mut self, runtime: &mut Runtime<Surfaces>) {
         for (scroller, area) in &self.scroll_followers {
             let now = ScrollArea {
                 offset: self.tree.scroll_offset(*scroller),

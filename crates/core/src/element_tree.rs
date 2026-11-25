@@ -86,9 +86,9 @@ use crate::transfer::clipboard::Clipboard;
 
 /// The retained tree of one surface: its elements, their styles, their boxes and its display list.
 ///
-/// Changing the tree only marks what the change touches. The work is done by the three stages
-/// of a frame, called in this order: [`resolve_styles`](Self::resolve_styles),
-/// [`compute_layout`](Self::compute_layout), [`build_display_list`](Self::build_display_list).
+/// Changing the tree only marks what the change touches. The work is done by the stages of a
+/// frame, which [`run_frame`](Self::run_frame) runs in their order: style, the sizes of the
+/// pictures, layout, the display list.
 /// A tree with a [`FrameScheduler`] asks it for a frame whenever a change waits for one, and for
 /// every next frame while a transition, an animation or a spring runs.
 ///
@@ -473,8 +473,8 @@ impl ElementTree {
 
     /// Shows the image in a [`Role::Image`] element. The picture takes `natural_size` CSS
     /// pixels once decoded; until the host knows it, the element shows its box alone and is
-    /// laid out without a size of its own, and [`size_images`](Self::size_images) gives it the
-    /// size the host learns.
+    /// laid out without a size of its own, and the run of a frame gives it the size the host
+    /// learns.
     ///
     /// # Panics
     ///
@@ -497,9 +497,9 @@ impl ElementTree {
     /// Gives every image the tree shows without a size the natural size its host has learnt:
     /// `status_of` tells how far the host has come with a picture. An unreadable picture leaves
     /// its element the box it has. While a picture an element of the tree shows decodes, the
-    /// tree asks for the next frame. A host calls this in every frame, between the style stage
-    /// and the layout stage.
-    pub fn size_images(&mut self, mut status_of: impl FnMut(ImageId) -> ImageStatus) {
+    /// tree asks for the next frame. It runs between the style stage and the layout stage: the
+    /// frame the style stage began is the one a decoding picture asks to follow.
+    pub(crate) fn size_images(&mut self, mut status_of: impl FnMut(ImageId) -> ImageStatus) {
         let mut awaiting = mem::take(&mut self.images_awaiting_size);
         let mut shows_a_decoding_image = false;
         awaiting.retain(|&element| {
@@ -709,7 +709,7 @@ impl ElementTree {
     /// # Panics
     ///
     /// When `now` is earlier than the time of the frame before it.
-    pub fn resolve_styles(&mut self, now: Duration) -> usize {
+    pub(crate) fn resolve_styles(&mut self, now: Duration) -> usize {
         assert!(now >= self.timeline.now, "the time of a frame never goes back");
         self.timeline.now = now;
         self.frame_requests.frame_began();
@@ -871,7 +871,7 @@ impl ElementTree {
     /// # Panics
     ///
     /// When a change waits for the style stage.
-    pub fn compute_layout(&mut self, viewport: Size, scale: f32, text_shaper: &mut dyn TextShaper) -> usize {
+    pub(crate) fn compute_layout(&mut self, viewport: Size, scale: f32, text_shaper: &mut dyn TextShaper) -> usize {
         assert!(
             !self.elements[self.root]
                 .dirty
@@ -940,7 +940,7 @@ impl ElementTree {
     /// # Panics
     ///
     /// When a change waits for the layout stage.
-    pub fn build_display_list(&mut self) -> usize {
+    pub(crate) fn build_display_list(&mut self) -> usize {
         assert!(
             !self.elements.layout_is_stale(),
             "layout is computed before the display list"

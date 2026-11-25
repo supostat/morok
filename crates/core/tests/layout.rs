@@ -571,14 +571,3 @@ fn children_are_laid_out_in_their_order_and_follow_every_change_of_it() {
     assert_eq!(scene.border_box(second), rect(0.0, 0.0, 800.0, 30.0));
     assert_eq!(scene.border_box(first), rect(0.0, 30.0, 800.0, 30.0));
 }
-
-#[test]
-#[should_panic(expected = "styles are resolved before layout")]
-fn laying_out_a_tree_whose_styles_are_not_resolved_panics() {
-    let mut scene = Scene::new(".row { height: 30px; }");
-    scene.add(scene.root(), Role::Element, &["row"]);
-
-    scene
-        .tree
-        .compute_layout(scene.viewport, scene.scale, &mut scene.text_shaper);
-}

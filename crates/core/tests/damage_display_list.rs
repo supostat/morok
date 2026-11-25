@@ -738,17 +738,6 @@ impl PaintedItem {
 }
 
 #[test]
-#[should_panic(expected = "layout is computed before the display list")]
-fn building_the_display_list_of_a_tree_that_is_not_laid_out_panics() {
-    let (mut scene, buttons) = toolbar();
-    scene.frame();
-
-    scene.add_classes(buttons[0], &["tall"]);
-    scene.tree.resolve_styles(scene.time);
-    scene.tree.build_display_list();
-}
-
-#[test]
 fn a_root_without_a_box_paints_nothing_and_damages_what_the_tree_drew() {
     let (mut scene, _) = toolbar();
     scene.frame();

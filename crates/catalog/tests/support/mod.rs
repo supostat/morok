@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::process::ExitCode;
 use std::time::Duration;
 
@@ -11,7 +13,7 @@ use objc2_app_kit::{
 };
 use objc2_core_foundation::CGPoint;
 use objc2_core_graphics::{CGEvent, CGScrollEventUnit};
-use objc2_foundation::{NSArray, NSDate, NSDefaultRunLoopMode, NSNumber, NSPoint, NSString};
+use objc2_foundation::{NSArray, NSDate, NSDefaultRunLoopMode, NSNumber, NSPoint, NSRect, NSString};
 
 /// How long the system has at most to bring the application to the front.
 const COMING_TO_FRONT: Duration = Duration::from_secs(3);
@@ -159,6 +161,14 @@ impl EventSource {
             1.0,
         )
         .expect("the mouse event is made")
+    }
+
+    /// The pointer moves to a point of the surface with no button down. The tracking area of
+    /// the view hands it the moves of the cursor of the system, so the move goes to the view as
+    /// the tracking area hands it on.
+    pub(crate) fn move_to(&self, at: Point) {
+        self.surface_view()
+            .mouseMoved(&self.mouse_event(NSEventType::MouseMoved, at));
     }
 
     /// The primary button goes down and up at a point of the surface.
@@ -312,6 +322,12 @@ impl AccessibleElement {
                 .ok()
                 .map(|number| number.stringValue().to_string()),
         }
+    }
+
+    /// Where the element lies on the desktop, in the coordinates of the screen.
+    pub(crate) fn frame(&self) -> NSRect {
+        // SAFETY: an accessibility element answers `accessibilityFrame` with a rectangle.
+        unsafe { msg_send![&*self.0, accessibilityFrame] }
     }
 
     /// Which way the element runs, for an element of a role that has a direction, such as a

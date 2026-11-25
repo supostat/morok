@@ -81,9 +81,19 @@ the budget gates) and `crates/xtask` (formatting, clippy and comment rules).
   resources (device, pipelines, atlases, image textures). A window is a platform window whose
   content is a surface of the application; overlays are borderless windows placed against an
   anchor, flipped at screen edges, their trees owned by the component that opened them.
-- **Frame stages**, per surface, in a fixed order: due timers and the events of the surface, the
-  flush of effects, style, layout, the display list, rendering, the AccessKit delta. The display
-  link starts on damage or an active animation and stops after a frame that leaves neither.
+- **Frame stages**, per surface, in a fixed order: hover under a resting pointer, the signals
+  that follow scrolls, the due timers, the flush of effects, style, the sizes of the pictures,
+  layout, the display list, rendering, the AccessKit delta. The order up to the display list has
+  one owner, two nested runs: `ElementTree::run_frame` runs the stages of a tree (style, the
+  sizes of the pictures, layout, the display list), and `Surfaces::run_frame` runs the stages of
+  a surface (hover, scrolls, timers, the flush) and then the run of its tree, unless the flush
+  closed the surface. The stages are visible to their own crate alone: the host, the bench, the
+  stand and the test stages call the runs, so none of them can leave a stage out or call one out
+  of order. `ElementTree::lay_out` runs the stages of a tree up to layout, for an overlay laid
+  out before its window opens. A caller that times the stages or counts what they allocate
+  passes a `StageObserver`, which hears the end of every stage; the host passes `Unobserved`.
+  The display link starts on damage or an active animation and stops after a frame that leaves
+  neither.
 - **Canvases.** A `Canvas` element hands its content box to the painter the application names;
   one painter draws the canvases of every window, through a `CanvasEncoder` that offers the fills
   of the kit (rectangles, ring sectors) and the Metal encoder, and carries the theme of the
