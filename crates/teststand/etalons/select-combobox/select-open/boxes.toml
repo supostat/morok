@@ -69,7 +69,7 @@ width = 210.0
 height = 26.0
 
 [[light]]
-node = "#10 .option"
+node = "#10 .option.with-mark"
 x = 37.0
 y = 69.0
 width = 210.0
@@ -97,7 +97,7 @@ width = 210.0
 height = 26.0
 
 [[light]]
-node = "#14 .option"
+node = "#14 .option.with-mark"
 x = 37.0
 y = 95.0
 width = 210.0
@@ -125,7 +125,7 @@ width = 210.0
 height = 26.0
 
 [[light]]
-node = "#18 .option.highlighted"
+node = "#18 .option.with-mark.highlighted"
 x = 37.0
 y = 121.0
 width = 210.0
@@ -153,7 +153,7 @@ width = 210.0
 height = 26.0
 
 [[light]]
-node = "#22 .option"
+node = "#22 .option.with-mark"
 x = 37.0
 y = 147.0
 width = 210.0
@@ -272,7 +272,7 @@ width = 210.0
 height = 26.0
 
 [[dark]]
-node = "#10 .option"
+node = "#10 .option.with-mark"
 x = 37.0
 y = 69.0
 width = 210.0
@@ -300,7 +300,7 @@ width = 210.0
 height = 26.0
 
 [[dark]]
-node = "#14 .option"
+node = "#14 .option.with-mark"
 x = 37.0
 y = 95.0
 width = 210.0
@@ -328,7 +328,7 @@ width = 210.0
 height = 26.0
 
 [[dark]]
-node = "#18 .option.highlighted"
+node = "#18 .option.with-mark.highlighted"
 x = 37.0
 y = 121.0
 width = 210.0
@@ -356,7 +356,7 @@ width = 210.0
 height = 26.0
 
 [[dark]]
-node = "#22 .option"
+node = "#22 .option.with-mark"
 x = 37.0
 y = 147.0
 width = 210.0

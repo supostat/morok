@@ -5,6 +5,7 @@ mod button;
 mod cell_alignment;
 mod check_row;
 mod checkbox;
+mod chosen_mark;
 mod column_drag;
 mod column_edges;
 mod column_slot;

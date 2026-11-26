@@ -5,6 +5,7 @@ use morok_core::{AccessibilityAction, AccessibleActions, AccessibleItem, Element
 use morok_reactive::Memo;
 use morok_style::{Declaration, States};
 
+use crate::chosen_mark::ChosenMark;
 use crate::dropdown::Dropdown;
 use crate::kit_icon::KitIcon;
 use crate::length_in_pixels::pixels;
@@ -18,8 +19,9 @@ const ROW_HEIGHT: f32 = 26.0;
 const MOST_ROWS_IN_VIEW: u8 = 8;
 
 /// What an open dropdown shows: a floating panel around a row for each option the dropdown
-/// shows, of which only the rows in view have elements. The row of the option the control
-/// holds carries a check mark, and the highlighted row is the one a click or Return chooses.
+/// shows, of which only the rows in view have elements. In a list that marks, the row of the
+/// option the control holds carries a check mark; the highlighted row is the one a click or
+/// Return chooses.
 pub(crate) struct OptionList {
     pub(crate) dropdown: Dropdown,
     /// What an assistive technology calls the list.
@@ -51,7 +53,8 @@ impl OptionList {
     }
 }
 
-/// Builds what a row slot holds: the check mark and the name of the option the row shows.
+/// Builds what a row slot holds: the name of the option the row shows, after the check mark in
+/// a list that marks.
 fn mount_row(mount: &mut Mount<'_>, dropdown: &Dropdown, row: Memo<usize>, count: Memo<usize>) -> ElementId {
     let (shown, chosen, highlighted) = (dropdown.shown, dropdown.chosen, dropdown.highlighted);
     let labels = Rc::clone(&dropdown.labels);
@@ -71,11 +74,14 @@ fn mount_row(mount: &mut Mount<'_>, dropdown: &Dropdown, row: Memo<usize>, count
         size_of_set: Some(runtime.get(count)),
         ..AccessibleItem::default()
     });
-    let check_mark = mount.kit_icon(KitIcon::Check).class(CLASSES.option_mark).id();
+    let check_mark = match dropdown.chosen_mark {
+        ChosenMark::CheckMark => Some(mount.kit_icon(KitIcon::Check).class(CLASSES.option_mark).id()),
+        ChosenMark::NoMark => None,
+    };
     let name_text = mount.text("").class(CLASSES.option_name).id();
     let events = dropdown.clone();
-    let option_row = mount
-        .element()
+    let mut option_row = mount.element();
+    option_row
         .class(CLASSES.option)
         .class_when(CLASSES.highlighted, is_highlighted)
         .state(States::CHECKED, is_chosen)
@@ -104,10 +110,11 @@ fn mount_row(mount: &mut Mount<'_>, dropdown: &Dropdown, row: Memo<usize>, count
                 }
                 _ => Propagation::Continue,
             }
-        })
-        .child(check_mark)
-        .child(name_text)
-        .id();
+        });
+    if let Some(check_mark) = check_mark {
+        option_row.class(CLASSES.with_mark).child(check_mark);
+    }
+    let option_row = option_row.child(name_text).id();
     mount.effect(move |runtime, tree| {
         let name = runtime.get(option).map_or("", |option| labels[option].as_str());
         tree.set_text(name_text, name);

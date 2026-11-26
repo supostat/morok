@@ -4,6 +4,7 @@ use morok_core::{ElementId, OverlayAlignment, OverlayPlacement, OverlaySide};
 use morok_reactive::{Memo, Runtime, Signal, Source};
 use morok_style::Declaration;
 
+use crate::chosen_mark::ChosenMark;
 use crate::dropdown_step::DropdownStep;
 use crate::length_in_pixels::pixels;
 use crate::option_list::OptionList;
@@ -30,8 +31,9 @@ pub(crate) struct Dropdown {
     /// The options the list shows now, by their places among the options, in the order of
     /// its rows.
     pub(crate) shown: Source<Vec<usize>>,
-    /// The option the control holds now; its row is marked.
+    /// The option the control holds now: its row is checked.
     pub(crate) chosen: Source<Option<usize>>,
+    pub(crate) chosen_mark: ChosenMark,
     pub(crate) is_open: Signal<bool>,
     /// Whether the list is on screen: it is open and has a row to show.
     pub(crate) is_shown: Memo<bool>,
@@ -47,6 +49,7 @@ impl Dropdown {
         labels: Rc<[String]>,
         shown: Source<Vec<usize>>,
         chosen: Source<Option<usize>>,
+        chosen_mark: ChosenMark,
         on_choose: OptionChooser,
     ) -> Self {
         let is_open = runtime.signal(false);
@@ -56,6 +59,7 @@ impl Dropdown {
             labels,
             shown,
             chosen,
+            chosen_mark,
             is_open,
             is_shown,
             highlighted: runtime.signal(None),

@@ -1,6 +1,7 @@
 /* The list a select or a combo box drops down: a floating panel of rows, as a menu is. The
-   highlighted row is the one a click or Return chooses; the row of the option the control
-   holds carries a check mark. */
+   highlighted row is the one a click or Return chooses. The list of a select marks the row of
+   the option the select holds with a check and keeps a column for the mark in every row; the
+   list of a combo box marks no row and keeps no column. */
 
 .options {
   min-width: 180px;
@@ -41,16 +42,21 @@
   opacity: 1;
 }
 
-/* The name lies past the check mark between the insets of the row, so that a row bound to
-   another option sets its name with no box laid out. */
+/* The name lies between the insets of the row, so that a row bound to another option sets
+   its name with no box laid out. */
 .option-name {
   position: absolute;
   top: 0;
   right: var(--space-2);
   bottom: 0;
-  left: calc(var(--space-2) * 2 + 14px);
+  left: var(--space-2);
   padding-top: 3.5px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* In a list that marks, the name lies past the column of the check mark. */
+.option.with-mark > .option-name {
+  left: calc(var(--space-2) * 2 + 14px);
 }

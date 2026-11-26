@@ -18,6 +18,10 @@ use support::Stage;
 const ROW_HEIGHT: f32 = 26.0;
 /// The padding and the border of the panel of a dropdown list, above and below its rows.
 const PANEL_EDGES: f32 = 10.0;
+/// How far the name of a row lies from the left edge of the row: the inset of the row.
+const NAME_INSET: f32 = 8.0;
+/// The same in a list that marks: past the check mark and the gap after it.
+const NAME_INSET_PAST_MARK: f32 = 30.0;
 
 /// Clicks the element of the surface of the window and runs the frames that follow.
 fn click(stage: &mut Stage, element: ElementId) {
@@ -80,14 +84,35 @@ fn rows_of(stage: &Stage, overlay: SurfaceId) -> Vec<ElementId> {
     slots.iter().map(|slot| tree.children(*slot)[0]).collect()
 }
 
-/// The name a row of a dropdown list shows, after its check mark.
-fn name_of(stage: &Stage, overlay: SurfaceId, row: ElementId) -> String {
+/// The element that shows the name of a row of a dropdown list: the last child of the row,
+/// after the check mark in a list that marks.
+fn name_element_of(stage: &Stage, overlay: SurfaceId, row: ElementId) -> ElementId {
     let tree = stage.tree_of(overlay);
-    let [mark, name] = tree.children(row) else {
-        panic!("a row holds its check mark and the name of its option");
-    };
-    assert_eq!(tree.classes(*mark), [CLASSES.option_mark]);
-    tree.text(*name).to_owned()
+    let name = *tree.children(row).last().expect("a row holds the name of its option");
+    assert_eq!(tree.classes(name), [CLASSES.option_name]);
+    name
+}
+
+/// The name a row of a dropdown list shows.
+fn name_of(stage: &Stage, overlay: SurfaceId, row: ElementId) -> String {
+    let name = name_element_of(stage, overlay, row);
+    stage.tree_of(overlay).text(name).to_owned()
+}
+
+/// What every row of a dropdown list is built of: how many children it holds, and how far its
+/// name lies from its left edge.
+fn row_shapes(stage: &Stage, overlay: SurfaceId) -> Vec<(usize, f32)> {
+    let tree = stage.tree_of(overlay);
+    rows_of(stage, overlay)
+        .into_iter()
+        .map(|row| {
+            let name = name_element_of(stage, overlay, row);
+            (
+                tree.children(row).len(),
+                tree.border_box(name).x - tree.border_box(row).x,
+            )
+        })
+        .collect()
 }
 
 fn names_of(stage: &Stage, overlay: SurfaceId) -> Vec<String> {
@@ -213,7 +238,10 @@ mod select {
             "the list opens with the highlight on the chosen option"
         );
         let rows = rows_of(&stage, overlay);
-        assert_eq!(stage.tree_of(overlay).classes(rows[0]), [CLASSES.option]);
+        assert_eq!(
+            stage.tree_of(overlay).classes(rows[0]),
+            [CLASSES.option, CLASSES.with_mark]
+        );
         assert!(stage.tree_of(overlay).states(rows[1]).contains(States::CHECKED));
         assert!(!stage.tree_of(overlay).states(rows[0]).contains(States::CHECKED));
 
@@ -231,6 +259,20 @@ mod select {
         assert_eq!((chosen.position_in_set(), chosen.size_of_set()), (Some(2), Some(4)));
         assert_eq!(stage.accessible_node_on(overlay, rows[0]).is_selected(), Some(false));
         assert_eq!(stage.accessible_node(select).is_expanded(), Some(true));
+    }
+
+    #[test]
+    fn every_row_of_a_select_holds_the_check_mark_and_its_name_past_the_column_of_the_mark() {
+        let (mut stage, select, _) = select();
+
+        click(&mut stage, select);
+
+        let overlay = overlay_over_window(&stage);
+        assert_eq!(row_shapes(&stage, overlay), [(2, NAME_INSET_PAST_MARK); 4]);
+        let tree = stage.tree_of(overlay);
+        for row in rows_of(&stage, overlay) {
+            assert_eq!(tree.classes(tree.children(row)[0]), [CLASSES.option_mark]);
+        }
     }
 
     #[test]
@@ -755,6 +797,35 @@ mod combobox {
             "a text no name holds leaves no list to show"
         );
         assert_eq!(stage.accessible_node(input).is_expanded(), Some(false));
+    }
+
+    #[test]
+    fn every_row_of_a_combo_box_holds_its_name_alone_at_the_inset_of_the_row() {
+        let ComboboxStage { mut stage, chevron, .. } = combobox();
+
+        click(&mut stage, chevron);
+
+        let overlay = overlay_over_window(&stage);
+        assert_eq!(row_shapes(&stage, overlay), [(1, NAME_INSET); 5]);
+    }
+
+    #[test]
+    fn a_text_that_names_an_option_in_full_checks_its_row_and_adds_no_mark() {
+        let ComboboxStage {
+            mut stage,
+            chevron,
+            folder,
+            ..
+        } = combobox();
+        stage.runtime.set(folder, String::from("Movies"));
+        stage.frame_all();
+
+        click(&mut stage, chevron);
+
+        let overlay = overlay_over_window(&stage);
+        let named = rows_of(&stage, overlay)[4];
+        assert!(stage.tree_of(overlay).states(named).contains(States::CHECKED));
+        assert_eq!(row_shapes(&stage, overlay), [(1, NAME_INSET); 5]);
     }
 
     #[test]

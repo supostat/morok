@@ -6,6 +6,7 @@ use morok_core::{AccessibleActions, AccessibleItem, ElementId, Focusability};
 use morok_reactive::{Runtime, Signal};
 use morok_style::States;
 
+use crate::chosen_mark::ChosenMark;
 use crate::dropdown::Dropdown;
 use crate::kit_icon::KitIcon;
 use crate::select_input::SelectInput;
@@ -123,7 +124,8 @@ impl<Value: Clone + PartialEq + 'static> Select<Value> {
     }
 }
 
-/// The list of the options: every one of them, the one whose value the signal holds marked.
+/// The list of the options: every one of them, the one whose value the signal holds marked
+/// with a check.
 fn dropdown_of<Value: Clone + PartialEq + 'static>(
     runtime: &mut Runtime<Surfaces>,
     selected: Signal<Value>,
@@ -141,6 +143,7 @@ fn dropdown_of<Value: Clone + PartialEq + 'static>(
         names.into(),
         shown.into(),
         chosen.into(),
+        ChosenMark::CheckMark,
         Rc::new(move |runtime, option| runtime.set(selected, values[option].clone())),
     )
 }

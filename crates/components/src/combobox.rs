@@ -6,6 +6,7 @@ use morok_core::{AccessibleItem, ElementId, Key, KeyEvent, KeyPhase, PointerEven
 use morok_reactive::{Memo, Runtime, Signal};
 use morok_style::{Declaration, Position, States};
 
+use crate::chosen_mark::ChosenMark;
 use crate::dropdown::Dropdown;
 use crate::dropdown_step::DropdownStep;
 use crate::field_elements::FieldElements;
@@ -153,7 +154,8 @@ impl Combobox {
 }
 
 /// The list of the options whose names hold the text of the signal, whatever the case, or of
-/// every option while `shows_every_option` holds; the option the text names in full is marked.
+/// every option while `shows_every_option` holds. The option the text names in full is the
+/// chosen one; the list shows no mark for it.
 fn dropdown_of(
     runtime: &mut Runtime<Surfaces>,
     value: Signal<String>,
@@ -179,6 +181,7 @@ fn dropdown_of(
         names,
         shown.into(),
         chosen.into(),
+        ChosenMark::NoMark,
         Rc::new(move |runtime, option| runtime.set(value, written[option].clone())),
     )
 }
