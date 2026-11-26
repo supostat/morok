@@ -4,11 +4,14 @@
 //! their properties to signals. This crate is the composition root — it gives the components
 //! the windows, the text and the renderer of the platform — and the one crate an application
 //! depends on: the layers of the kit are its modules.
+//!
+//! The [`guide`] is the way in: how an application is built on the kit, chapter by chapter.
 
 #![forbid(unsafe_code)]
 
 mod application;
 mod application_state;
+pub mod guide;
 mod hosted_surface;
 mod shared_canvas_painter;
 mod styles;
