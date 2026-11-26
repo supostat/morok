@@ -14,8 +14,10 @@ impl PseudoElement {
     pub(crate) const HINT: &'static str =
         "the pseudo-elements are `::placeholder` and `::selection`; draw anything else as an element of its own";
 
+    pub(crate) const ALL: [Self; 2] = [Self::Placeholder, Self::Selection];
+
     pub(crate) fn named(name: &str) -> Option<Self> {
-        [Self::Placeholder, Self::Selection]
+        Self::ALL
             .into_iter()
             .find(|pseudo_element| name.eq_ignore_ascii_case(pseudo_element.name()))
     }
