@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAFT 9 — a dark scene with the product</title>
+<link rel="stylesheet" href="../../system/tokens.css">
+<link rel="stylesheet" href="landing-draft-shared.css">
+<link rel="stylesheet" href="landing-draft-motion.css">
+<style>
+  /* DRAFT 9: a dark scene, whatever the theme of the system. The statement stands in the middle
+     under a faint light, and a real window of the kit rises from under it. The pictures are the
+     etalons of the test stand — what the kit is held to, pixel by pixel; the page itself will
+     show frames the kit renders.
+     The dark values below are a copy of the dark block of tokens.css: a draft may hold raw
+     values, the page takes them from one place. */
+  body.scene { --color-bg: #111317; --color-surface: #191C21; --color-surface-2: #1F2228; --color-surface-sunken: #0D0F12; --color-line: #2B3038; --color-line-strong: #3A404A; --color-text: #E8EBF0; --color-text-2: #A3AAB6; --color-text-3: #6C7380; --color-text-on-accent: #072720; --color-accent: #5ADBBC; --color-accent-hover: #74E4C9; --color-accent-active: #49C7A9; --color-accent-soft: #15332D; --color-focus: #5ADBBC; --color-selection: #1D4A40; background: var(--color-surface-sunken); color-scheme: dark; }
+
+  .nav { display: flex; align-items: center; gap: var(--space-6); padding: var(--space-5) 0; font-size: var(--text-md); }
+  .nav .gap { flex: 1; }
+  .nav a { color: var(--color-text-2); text-decoration: none; transition: color var(--motion-fast) var(--motion-ease); }
+  .nav a:hover { color: var(--color-text); }
+  .nav .action { padding: var(--space-2) var(--space-4); color: var(--color-text); }
+
+  /* The statement under a faint light */
+  .hero { position: relative; isolation: isolate; padding: calc(var(--space-12) * 2) 0 0; text-align: center; }
+  .light { position: absolute; inset: calc(var(--space-12) * -5) 0 auto; height: calc(var(--space-12) * 16); z-index: -1; background: radial-gradient(ellipse 45% 55% at 50% 0%, color-mix(in srgb, var(--color-accent) 24%, transparent), transparent 70%); animation: breathe var(--ambient) ease-in-out infinite alternate; pointer-events: none; }
+  @keyframes breathe { from { opacity: 0.55; transform: scale(1); } to { opacity: 1; transform: scale(1.18); } }
+  .badge { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-4); border: 1px solid var(--color-line); border-radius: var(--radius-full); background: color-mix(in srgb, var(--color-surface) 70%, transparent); color: var(--color-text-2); font-size: var(--text-sm); animation: rise calc(var(--motion-slow) * 2.5) var(--motion-ease-out) both; }
+  .badge b { color: var(--color-accent); font-weight: var(--text-weight-medium); }
+  h1 { max-width: none; margin: var(--space-6) auto; font-size: min(calc(var(--text-2xl) * 2.7), 12vw); line-height: 1.04; }
+  h1 .dim { color: var(--color-text-3); }
+  .lead-text { margin-inline: auto; color: var(--color-text-2); }
+  .hero .actions { justify-content: center; }
+
+  /* The window rises from under the statement and lies flat as it comes into view */
+  .rising { position: relative; margin-top: calc(var(--space-12) * 1.5); perspective: calc(var(--space-12) * 32); }
+  .rising::after { content: ""; position: absolute; inset: auto 0 0; height: calc(var(--space-12) * 3); background: linear-gradient(transparent, var(--color-surface-sunken)); pointer-events: none; }
+  .window { overflow: hidden; border: 1px solid var(--color-line-strong); border-bottom: 0; border-radius: var(--radius-xl) var(--radius-xl) 0 0; background: var(--color-bg); box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 14%, transparent), 0 calc(var(--space-8) * -1) calc(var(--space-12) * 3) color-mix(in srgb, var(--color-accent) 12%, transparent); transform-origin: 50% 100%; animation: arrive calc(var(--motion-slow) * 4) var(--motion-ease-out) both; animation-delay: calc(var(--motion-fast) * 12); }
+  .window-bar { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-line); background: var(--color-surface); color: var(--color-text-3); font-size: var(--text-sm); }
+  .window-bar i { width: var(--space-3); height: var(--space-3); border-radius: var(--radius-full); background: var(--color-line-strong); }
+  .window-bar span { flex: 1; margin-right: calc(var(--space-12) + var(--space-2)); }
+  .window img, .shot img { display: block; width: 100%; height: auto; }
+  @keyframes arrive { from { opacity: 0; translate: 0 var(--space-12); } to { opacity: 1; translate: 0 0; } }
+  @keyframes flatten { from { rotate: x 24deg; scale: 0.9; } to { rotate: x 0deg; scale: 1; } }
+
+  /* Three facts between hairlines */
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--space-12) * 5)), 1fr)); margin-top: var(--space-12); border-top: 1px solid var(--color-line); border-bottom: 1px solid var(--color-line); text-align: left; }
+  .facts div { padding: var(--space-8) var(--space-6); border-left: 1px solid var(--color-line); }
+  .facts div:first-child { border-left: 0; padding-left: 0; }
+  .facts h3 { margin-bottom: var(--space-2); font-size: var(--text-lg); font-weight: var(--text-weight-semibold); }
+  .facts p { color: var(--color-text-2); font-size: var(--text-md); }
+
+  /* Components: pictures of the kit in tiles */
+  .tile { background: color-mix(in srgb, var(--color-surface) 60%, transparent); }
+  .tile:hover { transform: translateY(calc(var(--space-1) * -1)); }
+  .shot { overflow: hidden; margin-top: auto; border: 1px solid var(--color-line); border-radius: var(--radius-lg); background: var(--color-bg); }
+  .shot img { transition: scale var(--motion-slow) var(--motion-ease); }
+  .tile:hover .shot img { scale: 1.03; }
+  @media (min-width: 62em) { .tile.tall { grid-row: span 2; } }
+
+  /* The last panel */
+  .panel { margin: var(--space-12) 0; padding: 0 var(--space-8); border: 1px solid var(--color-line); border-radius: calc(var(--radius-xl) * 2); background: radial-gradient(ellipse 60% 80% at 50% 0%, color-mix(in srgb, var(--color-accent) 16%, transparent), transparent 70%), var(--color-surface); }
+  .panel .start { align-items: center; text-align: center; }
+  .panel p { color: var(--color-text-2); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .window { animation: arrive calc(var(--motion-slow) * 4) var(--motion-ease-out) both, flatten linear both; animation-delay: calc(var(--motion-fast) * 12), 0s; animation-timeline: auto, view(); animation-range: normal, entry 5% cover 42%; }
+    }
+  }
+</style>
+</head>
+<body class="scene">
+<p class="draft-note">DRAFT 9 · a dark scene with the product · the pictures are etalons of the test stand</p>
+
+<div class="inner">
+  <nav class="nav">
+    <span class="brand">MOROK</span><span class="gap"></span>
+    <a href="#components">Components</a><a href="#code">Code</a><a href="https://github.com/supostat/morok/blob/main/crates/css/docs/css-subset.md">CSS subset</a><a href="https://github.com/supostat/morok">GitHub</a>
+    <a class="action" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Guide</a>
+  </nav>
+
+  <div class="hero">
+    <div class="light"></div>
+    <span class="badge"><b>Rust</b> · Core Text · Metal 4 · macOS 26</span>
+    <h1><span class="word" style="--i:1">It</span> <span class="word" style="--i:2">looks</span> <span class="word" style="--i:3">like</span> <span class="word" style="--i:4">CSS.</span><br><span class="dim"><span class="word" style="--i:6">There</span> <span class="word" style="--i:7">is</span> <span class="word" style="--i:8">no</span> <span class="word" style="--i:9">browser.</span></span></h1>
+    <p class="lead-text">MOROK is a UI kit for macOS that draws the whole interface itself. You style windows with CSS compiled at build time and change them by writing signals.</p>
+    <div class="actions"><a class="action primary" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Read the guide</a><a class="action" href="https://github.com/supostat/morok">GitHub</a></div>
+
+    <div class="rising">
+      <figure class="window" data-stand-in="a frame of the file manager of the catalog, rendered by the kit">
+        <div class="window-bar"><i></i><i></i><i></i><span>Quartz Commander</span></div>
+        <img src="../../../crates/teststand/etalons/screens/file-manager/dark.png" width="1800" height="840" alt="A two-pane file manager built on the kit: a toolbar with a filter, two tables of files and a status bar of commands">
+      </figure>
+    </div>
+
+    <div class="facts">
+      <div class="reveal"><h3>Drawn through Metal</h3><p>The kit lays out, shapes text with Core Text and paints every pixel itself. No AppKit controls, no web view.</p></div>
+      <div class="reveal"><h3>Styled by CSS</h3><p>109 properties and 7 states, compiled into tables when the application builds. What it does not take, it refuses at the line.</p></div>
+      <div class="reveal"><h3>Driven by signals</h3><p>A component runs once. A signal that changes updates exactly what follows it.</p></div>
+    </div>
+  </div>
+
+  <section id="components">
+    <h2 class="reveal">Components, as the kit draws them.</h2>
+    <div class="bento">
+      <div class="tile wide reveal"><h3>Whole screens</h3><p>A disk map with a sunburst drawn on a canvas, in the catalog beside the file manager above.</p><div class="shot"><img src="../../../crates/teststand/etalons/screens/disk-map/dark.png" width="1800" height="880" alt="A disk map: a sidebar of volumes, a sunburst chart and a list of folders by size"></div></div>
+      <div class="tile reveal"><h3>Menus and overlays</h3><p>Menus, popovers, dialogs and sheets, each open while a signal holds.</p><div class="shot"><img src="../../../crates/teststand/etalons/overlays/menu/dark.png" width="600" height="440" alt="A menu with icons, shortcuts and a submenu"></div></div>
+      <div class="tile tall reveal"><h3>Table — a million rows</h3><p>Only the rows in view have elements, and a scroll allocates nothing.</p><div class="shot"><img src="../../../crates/teststand/etalons/table/table-states/dark.png" width="904" height="744" alt="A table with sortable columns and selected rows"></div></div>
+      <div class="tile wide reveal"><h3>Buttons</h3><p>Pressed by a click, by Space and Return, by an assistive technology.</p><div class="shot"><img src="../../../crates/teststand/etalons/button/primary-states/dark.png" width="1216" height="152" alt="A primary button in each of its states"></div></div>
+      <div class="tile wide reveal"><h3>Text fields</h3><p>Core Text shapes the text; the kit lays out the lines and draws the glyphs.</p><div class="shot"><img src="../../../crates/teststand/etalons/text-fields/text-field-states/dark.png" width="1432" height="200" alt="A text field empty, focused, invalid and disabled"></div></div>
+    </div>
+  </section>
+
+  <section id="code">
+    <h2 class="reveal">A component in Rust. Its look in CSS.</h2>
+    <div class="pair">
+<pre class="code reveal">fn sign_in(mount: &amp;mut Mount&lt;'_&gt;) -&gt; ElementId {
+    let name = mount.runtime().signal(String::new());
+    let field = <span class="k">TextField</span>::new(name).placeholder("Name").mount(mount);
+    let button = <span class="k">Button</span>::new("Sign in").primary().mount(mount);
+    mount.element().class(CLASSES.<span class="same">form</span>).child(field).child(button).id()
+}</pre>
+<pre class="code reveal">.<span class="same">form</span> {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="reveal">What it is not.</h2>
+    <ul class="no">
+      <li><strong>A web view</strong><span>No browser and no JavaScript.</span></li>
+      <li><strong>A wrapper of AppKit</strong><span>The kit lays out, shapes text and paints itself.</span></li>
+      <li><strong>Cross-platform</strong><span>macOS 26 on Apple Silicon.</span></li>
+      <li><strong>All of CSS</strong><span>A subset the compiler checks.</span></li>
+    </ul>
+  </section>
+
+  <div class="panel">
+    <div class="start">
+      <h2 class="reveal">Start with one line.</h2>
+      <code class="pill">morok = { git = "https://github.com/supostat/morok" }</code>
+      <p>macOS 26 or later on Apple Silicon · Rust 1.94 or later</p>
+      <div class="actions"><a class="action primary" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Read the guide</a></div>
+    </div>
+  </div>
+
+  <footer class="foot">MIT or Apache-2.0 · Guide · CSS subset · GitHub</footer>
+</div>
+</body>
+</html>

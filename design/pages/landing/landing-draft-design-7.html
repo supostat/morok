@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAFT 7 — a scene the scroll plays</title>
+<link rel="stylesheet" href="../../system/tokens.css">
+<link rel="stylesheet" href="landing-draft-shared.css">
+<link rel="stylesheet" href="landing-draft-motion.css">
+<style>
+  /* DRAFT 7: after the statement the page holds still and the scroll plays one scene — the
+     rules of a stylesheet appear one by one, and each draws its part of the window. CSS alone.
+     Without scroll timelines, or with reduced motion, the scene stands finished and takes the
+     height of its content. On the page every moment of the scene is a frame the kit renders. */
+  .hero { padding: calc(var(--space-12) * 3) 0 calc(var(--space-12) * 2); }
+  .scene-stage { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: center; gap: var(--space-8); padding: var(--space-12) 0; }
+  .scene-code { display: flex; flex-direction: column; gap: var(--space-3); }
+  .scene-code h2 { margin-bottom: var(--space-3); }
+  .scene-code .code { padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); background: var(--color-surface); }
+  .scene-window .frame { box-shadow: var(--shadow-modal); }
+  .scene-window .frame-body { min-height: calc(var(--space-12) * 7); }
+  .caption { margin-top: var(--space-4); color: var(--color-text-2); font-size: var(--text-md); text-align: center; }
+  @keyframes appear { from { opacity: 0; transform: translateY(var(--space-5)); } to { opacity: 1; transform: none; } }
+  @media (max-width: 56em) {
+    .scene-stage { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+    .scene-code .code { padding: var(--space-2) var(--space-3); font-size: var(--text-xs); }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .scene { height: 480vh; view-timeline-name: --scene; }
+      .scene-stage { position: sticky; top: 0; height: 100vh; padding: calc(var(--space-12) * 1.5) 0 var(--space-6); }
+      .step, .part { animation: appear linear both; animation-timeline: --scene; }
+      .step-1, .part-1 { animation-range: contain 4% contain 20%; }
+      .step-2, .part-2 { animation-range: contain 27% contain 43%; }
+      .step-3, .part-3 { animation-range: contain 50% contain 66%; }
+      .step-4, .part-4 { animation-range: contain 73% contain 89%; }
+    }
+  }
+</style>
+</head>
+<body>
+<p class="draft-note">DRAFT 7 · a scene the scroll plays · frames are stand-ins for PNG frames of the kit</p>
+
+<header class="bar">
+  <span class="brand">MOROK</span>
+  <a href="#scene">How it draws</a><a href="#components">Components</a><a href="https://github.com/supostat/morok">GitHub</a>
+  <a class="action primary" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Guide</a>
+</header>
+
+<div class="band-accent top">
+  <div class="inner hero">
+    <h1><span class="word" style="--i:0">It</span> <span class="word" style="--i:1">looks</span> <span class="word" style="--i:2">like</span> <span class="word" style="--i:3">CSS.</span> <span class="word" style="--i:5">There</span> <span class="word" style="--i:6">is</span> <span class="word" style="--i:7">no</span> <span class="word" style="--i:8">browser.</span></h1>
+    <p class="lead-text">MOROK is a UI kit for macOS that draws the whole interface itself, through Metal. Scroll, and a stylesheet draws a window.</p>
+    <div class="actions"><a class="action primary" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Read the guide</a><a class="action" href="https://github.com/supostat/morok">GitHub</a></div>
+  </div>
+</div>
+
+<div class="scene" id="scene">
+  <div class="inner scene-stage">
+    <div class="scene-code">
+      <h2>A stylesheet draws a window.</h2>
+<pre class="code step step-1"><span class="k">.sidebar</span> {
+  width: 180px;
+  background-color: var(--color-surface-2);
+}</pre>
+<pre class="code step step-2"><span class="k">.button.primary</span> {
+  background-color: var(--color-accent);
+  border-radius: var(--radius-md);
+}</pre>
+<pre class="code step step-3"><span class="k">.field:focus-within</span> {
+  border-color: var(--color-focus);
+}</pre>
+<pre class="code step step-4"><span class="k">.table-row:checked</span> {
+  background-color: var(--color-selection);
+}</pre>
+    </div>
+    <div class="scene-window">
+      <figure class="frame" data-stand-in="five frames of one window, rendered by the kit (PNG)">
+        <div class="frame-bar"><span class="frame-dot"></span><span class="frame-dot"></span><span class="frame-dot"></span>Documents</div>
+        <div class="frame-body">
+          <div class="frame-side part part-1"><div class="frame-item on">Documents</div><div class="frame-item">Downloads</div><div class="frame-item">Projects</div><div class="frame-item">Archive</div></div>
+          <div class="frame-main">
+            <div class="mock-row part part-2"><span class="mock-button">Reveal</span><span class="mock-button primary">Clean up 4.2 GB</span></div>
+            <div class="mock-row part part-3"><span class="mock-field focus">quartz.local</span></div>
+            <div class="part part-4"><div class="mock-line"><span>Document 1</span><span>4.2 MB</span></div><div class="mock-line on"><span>Document 2</span><span>1.1 MB</span></div><div class="mock-line"><span>Document 3</span><span>9.0 MB</span></div></div>
+          </div>
+        </div>
+      </figure>
+      <p class="caption">Rust, Core Text and Metal 4. No browser drew this window.</p>
+    </div>
+  </div>
+</div>
+
+<div class="inner">
+  <div class="numbers">
+    <div><strong class="count to-109" aria-label="109"><span>109</span></strong><p>CSS properties, compiled at build time</p></div>
+    <div><strong class="count to-10" aria-label="10"><span>10</span></strong><p>families of components, with keyboard and accessibility</p></div>
+    <div><strong class="count to-0" aria-label="0"><span>0</span></strong><p>browsers, web views and AppKit controls</p></div>
+  </div>
+
+  <section id="components">
+    <h2 class="reveal">Components, at work.</h2>
+    <div class="bento">
+      <div class="tile reveal"><h3>Buttons</h3><p>Pressed by a click, by Space and Return, by an assistive technology.</p><div class="frame small"><div class="frame-main"><div class="mock-row"><span class="mock-button">Reveal</span><span class="mock-button primary pressed">Clean up</span></div></div></div></div>
+      <div class="tile reveal"><h3>Text fields</h3><p>Core Text shapes the text; the kit lays out the lines and draws the glyphs.</p><div class="frame small"><div class="frame-main"><div class="mock-row"><span class="mock-field focus"><span class="typed">quartz.local</span></span></div></div></div></div>
+      <div class="tile reveal"><h3>Overlays</h3><p>Menus, popovers, dialogs and sheets, each open while a signal holds.</p><div class="frame small"><div class="frame-main"><div class="mock-menu cycle"><div>Quick Look</div><div>Copy Path</div><div>Move to Trash</div></div></div></div></div>
+      <div class="tile wide reveal"><h3>Table — a million rows</h3><p>Only the rows in view have elements, and a scroll allocates nothing.</p><div class="frame small"><div class="frame-main cycle"><div class="mock-line"><span>Document 1</span><span>4.2 MB</span><span>Nov 3</span></div><div class="mock-line"><span>Document 2</span><span>1.1 MB</span><span>Nov 4</span></div><div class="mock-line"><span>Document 3</span><span>9.0 MB</span><span>Nov 5</span></div></div></div></div>
+      <div class="tile accent reveal"><h3>The whole set</h3><p>Ten families and two whole screens in the catalog.</p><code class="pill">cargo run -p morok-catalog</code></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="reveal">A component in Rust. Its look in CSS.</h2>
+    <div class="pair">
+<pre class="code reveal">fn sign_in(mount: &amp;mut Mount&lt;'_&gt;) -&gt; ElementId {
+    let name = mount.runtime().signal(String::new());
+    let field = <span class="k">TextField</span>::new(name).placeholder("Name").mount(mount);
+    let button = <span class="k">Button</span>::new("Sign in").primary().mount(mount);
+    mount.element().class(CLASSES.<span class="same">form</span>).child(field).child(button).id()
+}</pre>
+<pre class="code reveal">.<span class="same">form</span> {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="reveal">What it is not.</h2>
+    <ul class="no">
+      <li><strong>A web view</strong><span>No browser and no JavaScript.</span></li>
+      <li><strong>A wrapper of AppKit</strong><span>The kit lays out, shapes text and paints itself.</span></li>
+      <li><strong>Cross-platform</strong><span>macOS 26 on Apple Silicon.</span></li>
+      <li><strong>All of CSS</strong><span>A subset the compiler checks.</span></li>
+    </ul>
+  </section>
+</div>
+
+<div class="band-accent">
+  <div class="inner start">
+    <h2 class="reveal">Start with one line.</h2>
+    <code class="pill">morok = { git = "https://github.com/supostat/morok" }</code>
+    <p>macOS 26 or later on Apple Silicon · Rust 1.94 or later</p>
+    <div class="actions"><a class="action primary" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Read the guide</a></div>
+  </div>
+</div>
+
+<div class="inner"><footer class="foot">MIT or Apache-2.0 · Guide · CSS subset · GitHub</footer></div>
+</body>
+</html>

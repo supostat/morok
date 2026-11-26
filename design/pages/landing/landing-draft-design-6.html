@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAFT 6 — the poster, in motion</title>
+<link rel="stylesheet" href="../../system/tokens.css">
+<link rel="stylesheet" href="landing-draft-shared.css">
+<style>
+  /* DRAFT 6: variant 5 set in motion. Every animation is CSS alone and shows something the kit
+     does; with reduced motion, or without support for scroll timelines, the page stands still in
+     its final state. Durations are multiples of the motion tokens. */
+  @property --count { syntax: '<integer>'; initial-value: 0; inherits: false; }
+  html { scroll-behavior: smooth; }
+  body { --cycle: calc(var(--motion-slow) * 30); --ambient: calc(var(--motion-slow) * 22); overflow-x: hidden; }
+  .inner { max-width: calc(var(--space-12) * 24); margin: 0 auto; padding: 0 var(--space-6); }
+  h1, h2 { font-family: var(--font-display); font-weight: var(--text-weight-semibold); text-wrap: balance; }
+
+  /* A capsule of glass that stays at the top */
+  .bar { position: sticky; top: var(--space-3); z-index: 3; display: flex; align-items: center; gap: var(--space-5); width: fit-content; max-width: calc(100% - var(--space-6)); margin: var(--space-3) auto 0; padding: var(--space-2) var(--space-2) var(--space-2) var(--space-5); border: 1px solid color-mix(in srgb, var(--color-line) 60%, transparent); border-radius: var(--radius-full); background: color-mix(in srgb, var(--color-surface) 72%, transparent); backdrop-filter: blur(var(--space-4)) saturate(1.5); box-shadow: var(--shadow-float); font-size: var(--text-md); }
+  .bar a { text-decoration: none; }
+  .bar a:not(.action) { color: var(--color-text-2); transition: color var(--motion-fast) var(--motion-ease); }
+  .bar a:not(.action):hover { color: var(--color-text); }
+  .brand { color: var(--color-text); font-weight: var(--text-weight-semibold); letter-spacing: calc(var(--space-1) / 2); }
+  .bar .action { border-radius: var(--radius-full); color: var(--color-text-on-accent); }
+
+  /* The accent band: light drifts under a grid of dots */
+  .band-accent { position: relative; isolation: isolate; overflow: hidden; background: var(--color-accent); color: var(--color-text-on-accent); }
+  .band-accent::before { content: ""; position: absolute; inset: -30%; z-index: -2; background: radial-gradient(closest-side, var(--color-focus), transparent) 15% 20% / 55% 60% no-repeat, radial-gradient(closest-side, var(--color-accent-active), transparent) 90% 70% / 60% 70% no-repeat; filter: blur(var(--space-12)); animation: drift var(--ambient) var(--motion-ease) infinite alternate; }
+  .band-accent::after { content: ""; position: absolute; inset: 0; z-index: -1; background-image: radial-gradient(color-mix(in srgb, var(--color-text-on-accent) 28%, transparent) 1px, transparent 1px); background-size: var(--space-5) var(--space-5); mask-image: linear-gradient(to bottom, black, transparent 85%); }
+  @keyframes drift { from { transform: translate(-6%, -4%) rotate(0deg); } to { transform: translate(6%, 5%) rotate(14deg); } }
+
+  .top { margin-top: calc((var(--space-12) + var(--space-4)) * -1); }
+  .hero { padding: calc(var(--space-12) * 3) 0 calc(var(--space-12) * 5); }
+  h1 { max-width: 10em; margin-bottom: var(--space-6); font-size: min(calc(var(--text-2xl) * 3.2), 15vw); line-height: 0.98; letter-spacing: calc(var(--space-1) / -2); }
+  .word { display: inline-block; animation: rise calc(var(--motion-slow) * 2.5) var(--motion-ease-out) both; animation-delay: calc(var(--i) * var(--motion-fast)); }
+  .hero p { max-width: 30em; margin-bottom: var(--space-8); font-size: var(--text-xl); animation: rise calc(var(--motion-slow) * 2.5) var(--motion-ease-out) both; animation-delay: calc(var(--motion-fast) * 9); }
+  .hero .actions { animation: rise calc(var(--motion-slow) * 2.5) var(--motion-ease-out) both; animation-delay: calc(var(--motion-fast) * 11); }
+  @keyframes rise { from { opacity: 0; transform: translateY(var(--space-8)); } to { opacity: 1; transform: none; } }
+
+  .action { border-radius: var(--radius-full); padding: var(--space-3) var(--space-6); transition: transform var(--motion-base) var(--motion-ease), box-shadow var(--motion-base) var(--motion-ease); }
+  .action:hover { transform: translateY(calc(var(--space-1) / -2)); box-shadow: var(--shadow-float); }
+  .band-accent .action { border-color: var(--color-text-on-accent); background: transparent; color: var(--color-text-on-accent); }
+  .band-accent .action.primary { background: var(--color-text-on-accent); color: var(--color-accent); }
+
+  /* The frame steps over the edge of the band and lies flat as it scrolls into view */
+  .lifted { position: relative; z-index: 1; margin-top: calc(var(--space-12) * -4); }
+  .stage { position: relative; transform-origin: 50% 0; }
+  .stage .frame { box-shadow: var(--shadow-modal); }
+  @keyframes flatten { from { transform: perspective(calc(var(--space-12) * 26)) rotateX(24deg) scale(0.88); } to { transform: none; } }
+
+  /* The rule writes itself, and the button of the frame takes its look line by line */
+  .rule { position: absolute; right: calc(var(--space-4) * -1); bottom: calc(var(--space-8) * -1); max-width: 82%; border-color: var(--color-line-strong); background: color-mix(in srgb, var(--color-surface) 88%, transparent); backdrop-filter: blur(var(--space-3)); box-shadow: var(--shadow-modal); }
+  .rule .line { display: block; }
+  .rule .l1 { animation: line-1 var(--cycle) var(--motion-ease) infinite; }
+  .rule .l2 { animation: line-2 var(--cycle) var(--motion-ease) infinite; }
+  .rule .l3 { animation: line-3 var(--cycle) var(--motion-ease) infinite; }
+  @keyframes line-1 { 0%, 8% { opacity: 0; transform: translateX(calc(var(--space-3) * -1)); } 14%, 94% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+  @keyframes line-2 { 0%, 24% { opacity: 0; transform: translateX(calc(var(--space-3) * -1)); } 30%, 94% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+  @keyframes line-3 { 0%, 40% { opacity: 0; transform: translateX(calc(var(--space-3) * -1)); } 46%, 94% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+  .drawn { animation: drawn var(--cycle) var(--motion-ease) infinite; }
+  @keyframes drawn {
+    0%, 10% { background: transparent; color: var(--color-text); border-radius: 0; }
+    14%, 26% { background: var(--color-accent); color: var(--color-text); border-radius: 0; }
+    30%, 42% { background: var(--color-accent); color: var(--color-text-on-accent); border-radius: 0; }
+    46%, 94% { background: var(--color-accent); color: var(--color-text-on-accent); border-radius: var(--radius-md); }
+    100% { background: transparent; color: var(--color-text); border-radius: 0; }
+  }
+
+  /* Three numbers that count as they come into view */
+  .numbers { display: flex; flex-wrap: wrap; gap: var(--space-8); padding: calc(var(--space-12) * 2.5) 0 var(--space-12); }
+  .numbers div { flex: 1 1 calc(var(--space-12) * 4); }
+  .count { display: block; color: var(--color-accent); font-family: var(--font-display); font-size: min(calc(var(--text-2xl) * 3), 18vw); font-weight: var(--text-weight-semibold); line-height: 1; font-variant-numeric: tabular-nums; }
+  .numbers p { margin-top: var(--space-2); color: var(--color-text-2); }
+
+  section { padding: var(--space-12) 0; }
+  h2 { margin-bottom: var(--space-8); font-size: min(calc(var(--text-2xl) * 1.6), 9vw); line-height: 1.05; letter-spacing: calc(var(--space-1) / -4); }
+
+  /* Components: tiles of several sizes, each with its component at work */
+  .bento { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--space-12) * 6)), 1fr)); gap: var(--space-4); }
+  .tile { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6); border: 1px solid var(--color-line); border-radius: calc(var(--radius-xl) * 1.5); background: var(--color-surface); transition: transform var(--motion-base) var(--motion-ease), box-shadow var(--motion-base) var(--motion-ease), border-color var(--motion-base) var(--motion-ease); }
+  .tile:hover { transform: translateY(calc(var(--space-1) * -1)); border-color: var(--color-accent); box-shadow: var(--shadow-float); }
+  .tile h3 { font-size: var(--text-xl); font-weight: var(--text-weight-semibold); }
+  .tile p { color: var(--color-text-2); font-size: var(--text-md); }
+  .tile .frame { margin-top: auto; box-shadow: none; }
+  .tile.accent { border-color: transparent; background: var(--color-accent-soft); }
+  @media (min-width: 62em) {
+    .bento { grid-template-columns: repeat(6, 1fr); }
+    .tile { grid-column: span 2; }
+    .tile.wide { grid-column: span 4; }
+  }
+  .pressed { animation: press var(--cycle) var(--motion-ease) infinite; }
+  @keyframes press { 0%, 62%, 78%, 100% { transform: none; background: var(--color-accent); } 66%, 74% { transform: scale(0.95); background: var(--color-accent-active); } }
+  .typed { display: inline-block; overflow: hidden; width: 12ch; border-right: 1px solid var(--color-focus); font-family: var(--font-mono); white-space: nowrap; vertical-align: bottom; animation: type var(--cycle) steps(12) infinite; }
+  @keyframes type { 0%, 6% { width: 0; } 34%, 88% { width: 12ch; } 100% { width: 0; } }
+  .cycle > * { animation: chosen var(--cycle) var(--motion-ease) infinite; }
+  .cycle > :nth-child(2) { animation-delay: calc(var(--cycle) / 3); }
+  .cycle > :nth-child(3) { animation-delay: calc(var(--cycle) * 2 / 3); }
+  @keyframes chosen { 0%, 30% { background: var(--color-selection); color: var(--color-text); } 34%, 100% { background: transparent; } }
+  .mock-menu.cycle > * { animation-name: highlighted; }
+  @keyframes highlighted { 0%, 30% { background: var(--color-accent); color: var(--color-text-on-accent); } 34%, 100% { background: transparent; color: inherit; } }
+
+  /* One class, written in Rust and in CSS: both names light up together */
+  .pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--space-12) * 8)), 1fr)); gap: var(--space-4); }
+  .pair .code { border-radius: calc(var(--radius-xl) * 1.5); padding: var(--space-6); background: var(--color-surface); }
+  .same { border-radius: var(--radius-xs); animation: same calc(var(--cycle) / 3) var(--motion-ease) infinite; }
+  @keyframes same { 0%, 55%, 100% { background: transparent; } 70%, 85% { background: var(--color-accent-soft); box-shadow: 0 0 0 var(--space-1) var(--color-accent-soft); } }
+
+  /* What it is not: the line is drawn through each name as it comes into view */
+  .no li { display: flex; flex-wrap: wrap; gap: var(--space-4); padding: var(--space-5) 0; border-bottom: 1px solid var(--color-line); font-size: min(var(--text-2xl), 7vw); }
+  .no strong { flex: 0 0 auto; margin-right: var(--space-4); background: linear-gradient(var(--color-accent), var(--color-accent)) 0 58% / 100% calc(var(--space-1) / 1.5) no-repeat; font-weight: var(--text-weight-semibold); }
+  .no span { flex: 1 1 calc(var(--space-12) * 6); align-self: center; color: var(--color-text-2); font-size: var(--text-lg); }
+  @keyframes strike { from { background-size: 0% calc(var(--space-1) / 1.5); } to { background-size: 100% calc(var(--space-1) / 1.5); } }
+
+  /* The last band: one line, with light passing over it */
+  .start { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-6); padding: calc(var(--space-12) * 2.5) 0; }
+  .start h2 { margin: 0; font-size: min(calc(var(--text-2xl) * 2.4), 12vw); }
+  .band-accent .pill { border-color: color-mix(in srgb, var(--color-text-on-accent) 50%, transparent); background: linear-gradient(110deg, transparent 35%, color-mix(in srgb, var(--color-text-on-accent) 30%, transparent) 50%, transparent 65%) 150% 0 / 250% 100% no-repeat, color-mix(in srgb, var(--color-accent-active) 55%, transparent); color: var(--color-text-on-accent); font-size: var(--text-lg); animation: shine calc(var(--cycle) / 2) var(--motion-ease) infinite; }
+  @keyframes shine { 0%, 40% { background-position: 150% 0, 0 0; } 100% { background-position: -50% 0, 0 0; } }
+  .foot { padding: var(--space-6) 0; color: var(--color-text-3); font-size: var(--text-md); }
+
+  /* Scroll timelines, where the browser has them */
+  @supports (animation-timeline: view()) {
+    .stage { animation: flatten linear backwards; animation-timeline: view(); animation-range: entry 0% cover 42%; }
+    .reveal { animation: rise linear backwards; animation-timeline: view(); animation-range: entry 5% entry 70%; }
+    .no strong { animation: strike linear backwards; animation-timeline: view(); animation-range: entry 40% cover 35%; }
+    .count { counter-reset: n var(--count); animation: linear backwards; animation-timeline: view(); animation-range: entry 20% cover 40%; }
+    .count span { display: none; }
+    .count::after { content: counter(n); }
+    .count.to-109 { --count: 109; animation-name: to-109; }
+    .count.to-10 { --count: 10; animation-name: to-10; }
+    .count.to-0 { --count: 0; animation-name: to-0; }
+  }
+  @keyframes to-109 { from { --count: 0; } to { --count: 109; } }
+  @keyframes to-10 { from { --count: 0; } to { --count: 10; } }
+  @keyframes to-0 { from { --count: 9; } to { --count: 0; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<p class="draft-note">DRAFT 6 · the poster, in motion · frames are stand-ins for PNG frames of the kit</p>
+
+<header class="bar">
+  <span class="brand">MOROK</span>
+  <a href="#components">Components</a><a href="#code">Code</a><a href="https://github.com/supostat/morok">GitHub</a>
+  <a class="action primary" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Guide</a>
+</header>
+
+<div class="band-accent top">
+  <div class="inner hero">
+    <h1><span class="word" style="--i:0">It</span> <span class="word" style="--i:1">looks</span> <span class="word" style="--i:2">like</span> <span class="word" style="--i:3">CSS.</span> <span class="word" style="--i:5">There</span> <span class="word" style="--i:6">is</span> <span class="word" style="--i:7">no</span> <span class="word" style="--i:8">browser.</span></h1>
+    <p>MOROK is a UI kit for macOS that draws the whole interface itself, through Metal.</p>
+    <div class="actions"><a class="action primary" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Read the guide</a><a class="action" href="https://github.com/supostat/morok">GitHub</a></div>
+  </div>
+</div>
+
+<div class="inner lifted">
+  <div class="stage">
+    <figure class="frame" data-stand-in="frame of the catalog, rendered by the kit (PNG)">
+      <div class="frame-bar"><span class="frame-dot"></span><span class="frame-dot"></span><span class="frame-dot"></span>MOROK catalog</div>
+      <div class="frame-body">
+        <div class="frame-side"><div class="frame-item on">Buttons</div><div class="frame-item">Text fields</div><div class="frame-item">Controls</div><div class="frame-item">Table</div><div class="frame-item">Overlays</div><div class="frame-item">File manager</div></div>
+        <div class="frame-main">
+          <div class="mock-row"><span class="mock-button">Reveal</span><span class="mock-button primary drawn">Clean up 4.2 GB</span><span class="mock-button">Unavailable</span></div>
+          <div class="mock-row"><span class="mock-field">Search</span></div>
+          <div class="cycle"><div class="mock-line"><span>Document 1</span><span>4.2 MB</span></div><div class="mock-line"><span>Document 2</span><span>1.1 MB</span></div><div class="mock-line"><span>Document 3</span><span>9.0 MB</span></div></div>
+        </div>
+      </div>
+    </figure>
+<pre class="code rule"><span class="k">.button.primary</span> {
+<span class="line l1">  background-color: var(--color-accent);</span><span class="line l2">  color: var(--color-text-on-accent);</span><span class="line l3">  border-radius: var(--radius-md);</span>}</pre>
+  </div>
+
+  <div class="numbers">
+    <div><strong class="count to-109" aria-label="109"><span>109</span></strong><p>CSS properties, compiled at build time</p></div>
+    <div><strong class="count to-10" aria-label="10"><span>10</span></strong><p>families of components, with keyboard and accessibility</p></div>
+    <div><strong class="count to-0" aria-label="0"><span>0</span></strong><p>browsers, web views and AppKit controls</p></div>
+  </div>
+</div>
+
+<div class="inner">
+  <section id="components">
+    <h2 class="reveal">Components, at work.</h2>
+    <div class="bento">
+      <div class="tile reveal"><h3>Buttons</h3><p>Pressed by a click, by Space and Return, by an assistive technology.</p><div class="frame small" data-stand-in="frame of the Buttons page (PNG)"><div class="frame-main"><div class="mock-row"><span class="mock-button">Reveal</span><span class="mock-button primary pressed">Clean up</span></div></div></div></div>
+      <div class="tile reveal"><h3>Text fields</h3><p>Core Text shapes the text; the kit lays out the lines and draws the glyphs.</p><div class="frame small" data-stand-in="frame of the Text fields page (PNG)"><div class="frame-main"><div class="mock-row"><span class="mock-field focus"><span class="typed">quartz.local</span></span></div></div></div></div>
+      <div class="tile reveal"><h3>Overlays</h3><p>Menus, popovers, dialogs and sheets, each open while a signal holds.</p><div class="frame small" data-stand-in="frame of the Overlays page (PNG)"><div class="frame-main"><div class="mock-menu cycle"><div>Quick Look</div><div>Copy Path</div><div>Move to Trash</div></div></div></div></div>
+      <div class="tile wide reveal"><h3>Table — a million rows</h3><p>Only the rows in view have elements, and a scroll allocates nothing.</p><div class="frame small" data-stand-in="frame of the Table page (PNG)"><div class="frame-main cycle"><div class="mock-line"><span>Document 1</span><span>4.2 MB</span><span>Nov 3</span></div><div class="mock-line"><span>Document 2</span><span>1.1 MB</span><span>Nov 4</span></div><div class="mock-line"><span>Document 3</span><span>9.0 MB</span><span>Nov 5</span></div></div></div></div>
+      <div class="tile accent reveal"><h3>The whole set</h3><p>Ten families and two whole screens in the catalog.</p><code class="pill">cargo run -p morok-catalog</code></div>
+    </div>
+  </section>
+
+  <section id="code">
+    <h2 class="reveal">A component in Rust. Its look in CSS.</h2>
+    <div class="pair">
+<pre class="code reveal">fn sign_in(mount: &amp;mut Mount&lt;'_&gt;) -&gt; ElementId {
+    let name = mount.runtime().signal(String::new());
+    let field = <span class="k">TextField</span>::new(name).placeholder("Name").mount(mount);
+    let button = <span class="k">Button</span>::new("Sign in").primary().mount(mount);
+    mount.element().class(CLASSES.<span class="same">form</span>).child(field).child(button).id()
+}</pre>
+<pre class="code reveal">.<span class="same">form</span> {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="reveal">What it is not.</h2>
+    <ul class="no">
+      <li><strong>A web view</strong><span>No browser and no JavaScript.</span></li>
+      <li><strong>A wrapper of AppKit</strong><span>The kit lays out, shapes text and paints itself.</span></li>
+      <li><strong>Cross-platform</strong><span>macOS 26 on Apple Silicon.</span></li>
+      <li><strong>All of CSS</strong><span>A subset the compiler checks.</span></li>
+    </ul>
+  </section>
+</div>
+
+<div class="band-accent">
+  <div class="inner start">
+    <h2 class="reveal">Start with one line.</h2>
+    <code class="pill">morok = { git = "https://github.com/supostat/morok" }</code>
+    <p>macOS 26 or later on Apple Silicon · Rust 1.94 or later</p>
+    <div class="actions"><a class="action primary" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Read the guide</a></div>
+  </div>
+</div>
+
+<div class="inner"><footer class="foot">MIT or Apache-2.0 · Guide · CSS subset · GitHub</footer></div>
+</body>
+</html>

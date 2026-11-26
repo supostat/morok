@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAFT 5 — a poster on the accent color</title>
+<link rel="stylesheet" href="../../system/tokens.css">
+<link rel="stylesheet" href="landing-draft-shared.css">
+<style>
+  /* DRAFT 5: full-width bands; the first is the accent color with the statement in very large
+     type and the frame stepping over its lower edge; three numbers; bands alternate after it. */
+  .inner { max-width: calc(var(--space-12) * 23); margin: 0 auto; padding: 0 var(--space-6); }
+  .band-accent { background: var(--color-accent); color: var(--color-text-on-accent); }
+  .band-surface { background: var(--color-surface); }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-5) 0; font-size: var(--text-md); }
+  .brand { font-weight: var(--text-weight-semibold); letter-spacing: calc(var(--space-1) / 2); }
+  .bar nav { display: flex; flex-wrap: wrap; gap: var(--space-5); }
+  .bar a { text-decoration: none; }
+  .hero { padding: var(--space-12) 0 calc(var(--space-12) * 4); }
+  h1 { max-width: 11em; margin-bottom: var(--space-6); font-family: var(--font-display); font-size: min(calc(var(--text-2xl) * 2.8), 14vw); font-weight: var(--text-weight-semibold); line-height: 1; letter-spacing: calc(var(--space-1) / -2); }
+  .hero p { max-width: 32em; margin-bottom: var(--space-6); font-size: var(--text-xl); }
+  .band-accent .action { border-color: var(--color-text-on-accent); background: transparent; color: var(--color-text-on-accent); }
+  .band-accent .action.primary { background: var(--color-text-on-accent); color: var(--color-accent); }
+  .action { border-radius: var(--radius-full); padding: var(--space-3) var(--space-5); }
+  .lifted { margin-top: calc(var(--space-12) * -3); }
+  .lifted .frame { box-shadow: var(--shadow-modal); }
+  .numbers { display: flex; flex-wrap: wrap; gap: var(--space-8); padding: var(--space-12) 0; }
+  .numbers div { flex: 1 1 calc(var(--space-12) * 4); }
+  .numbers strong { display: block; color: var(--color-accent); font-family: var(--font-display); font-size: calc(var(--text-2xl) * 2); font-weight: var(--text-weight-semibold); line-height: 1.1; }
+  .numbers span { color: var(--color-text-2); }
+  section { padding: var(--space-12) 0; }
+  h2 { margin-bottom: var(--space-8); font-family: var(--font-display); font-size: calc(var(--text-2xl) * 1.3); font-weight: var(--text-weight-semibold); line-height: var(--text-leading-tight); }
+  .grid { display: flex; flex-wrap: wrap; gap: var(--space-5); }
+  .grid > * { flex: 1 1 calc(var(--space-12) * 6); min-width: 0; }
+  .tile { padding: var(--space-5); border-radius: var(--radius-xl); background: var(--color-accent-soft); }
+  .tile h3 { margin-bottom: var(--space-3); font-size: var(--text-lg); font-weight: var(--text-weight-semibold); }
+  .tile .frame { box-shadow: var(--shadow-raised); }
+  .no li { display: flex; flex-wrap: wrap; gap: var(--space-4); padding: var(--space-4) 0; border-bottom: 1px solid var(--color-line); font-size: var(--text-xl); }
+  .no strong { flex: 0 0 calc(var(--space-12) * 6); font-weight: var(--text-weight-semibold); text-decoration: line-through; text-decoration-color: var(--color-accent); }
+  .no span { flex: 1 1 calc(var(--space-12) * 6); color: var(--color-text-2); }
+  .start { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-5); padding: calc(var(--space-12) * 1.5) 0; }
+  .start h2 { margin: 0; font-size: min(calc(var(--text-2xl) * 2), 11vw); }
+  .band-accent .pill { border-color: var(--color-text-on-accent); background: transparent; color: var(--color-text-on-accent); }
+  .foot { padding: var(--space-6) 0; color: var(--color-text-3); font-size: var(--text-md); }
+</style>
+</head>
+<body>
+<p class="draft-note">DRAFT 5 · a poster on the accent color · frames are stand-ins for PNG frames of the kit</p>
+
+<div class="band-accent">
+  <div class="inner">
+    <header class="bar">
+      <span class="brand">MOROK</span>
+      <nav><a href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Guide</a><a href="https://github.com/supostat/morok/blob/main/crates/css/docs/css-subset.md">CSS subset</a><a href="https://github.com/supostat/morok">GitHub</a></nav>
+    </header>
+    <div class="hero">
+      <h1>It looks like CSS. There is no browser.</h1>
+      <p>MOROK is a UI kit for macOS that draws the whole interface itself, through Metal.</p>
+      <div class="actions"><a class="action primary" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Read the guide</a><a class="action" href="https://github.com/supostat/morok">GitHub</a></div>
+    </div>
+  </div>
+</div>
+
+<div class="inner lifted">
+  <figure class="frame" data-stand-in="frame of the catalog, rendered by the kit (PNG)">
+    <div class="frame-bar"><span class="frame-dot"></span><span class="frame-dot"></span><span class="frame-dot"></span>MOROK catalog</div>
+    <div class="frame-body">
+      <div class="frame-side"><div class="frame-item on">Buttons</div><div class="frame-item">Text fields</div><div class="frame-item">Controls</div><div class="frame-item">Table</div><div class="frame-item">Overlays</div><div class="frame-item">File manager</div></div>
+      <div class="frame-main">
+        <div class="mock-row"><span class="mock-button">Reveal</span><span class="mock-button primary">Clean up 4.2 GB</span><span class="mock-button">Unavailable</span></div>
+        <div class="mock-row"><span class="mock-field">Search</span></div>
+        <div class="mock-line"><span>Document 1</span><span>4.2 MB</span></div>
+        <div class="mock-line on"><span>Document 2</span><span>1.1 MB</span></div>
+        <div class="mock-line"><span>Document 3</span><span>9.0 MB</span></div>
+      </div>
+    </div>
+  </figure>
+
+  <div class="numbers">
+    <div><strong>109</strong><span>CSS properties, compiled at build time</span></div>
+    <div><strong>10</strong><span>families of components, with keyboard and accessibility</span></div>
+    <div><strong>0</strong><span>browsers, web views and AppKit controls</span></div>
+  </div>
+</div>
+
+<div class="band-surface">
+  <div class="inner">
+    <section>
+      <h2>Components</h2>
+      <div class="grid">
+        <div class="tile"><h3>Buttons</h3><div class="frame small" data-stand-in="frame of the Buttons page (PNG)"><div class="frame-main"><div class="mock-row"><span class="mock-button">Reveal</span><span class="mock-button primary">Clean up</span></div></div></div></div>
+        <div class="tile"><h3>Text fields</h3><div class="frame small" data-stand-in="frame of the Text fields page (PNG)"><div class="frame-main"><div class="mock-row"><span class="mock-field focus">quartz.local</span></div></div></div></div>
+        <div class="tile"><h3>Table — a million rows</h3><div class="frame small" data-stand-in="frame of the Table page (PNG)"><div class="frame-main"><div class="mock-line"><span>Document 1</span><span>4.2 MB</span></div><div class="mock-line on"><span>Document 2</span><span>1.1 MB</span></div></div></div></div>
+        <div class="tile"><h3>Overlays</h3><div class="frame small" data-stand-in="frame of the Overlays page (PNG)"><div class="frame-main"><div class="mock-menu"><div class="on">Quick Look</div><div>Copy Path</div></div></div></div></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="inner">
+  <section>
+    <h2>A component in Rust, its look in CSS</h2>
+    <div class="grid">
+<pre class="code">fn sign_in(mount: &amp;mut Mount&lt;'_&gt;) -&gt; ElementId {
+    let name = mount.runtime().signal(String::new());
+    let field = <span class="k">TextField</span>::new(name).placeholder("Name").mount(mount);
+    let button = <span class="k">Button</span>::new("Sign in").primary().mount(mount);
+    mount.element().class(CLASSES.form).child(field).child(button).id()
+}</pre>
+<pre class="code"><span class="k">.form</span> {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>What it is not</h2>
+    <ul class="no">
+      <li><strong>A web view</strong><span>No browser and no JavaScript.</span></li>
+      <li><strong>A wrapper of AppKit</strong><span>The kit lays out, shapes text and paints itself.</span></li>
+      <li><strong>Cross-platform</strong><span>macOS 26 on Apple Silicon.</span></li>
+      <li><strong>All of CSS</strong><span>A subset the compiler checks.</span></li>
+    </ul>
+  </section>
+</div>
+
+<div class="band-accent">
+  <div class="inner start">
+    <h2>Start with one line.</h2>
+    <code class="pill">morok = { git = "https://github.com/supostat/morok" }</code>
+    <p>macOS 26 or later on Apple Silicon · Rust 1.94 or later</p>
+    <div class="actions"><a class="action primary" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Read the guide</a></div>
+  </div>
+</div>
+
+<div class="inner"><footer class="foot">MIT or Apache-2.0 · Guide · CSS subset · GitHub</footer></div>
+</body>
+</html>

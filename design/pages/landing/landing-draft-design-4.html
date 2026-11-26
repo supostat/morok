@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAFT 4 — a manifest in numbered theses</title>
+<link rel="stylesheet" href="../../system/tokens.css">
+<link rel="stylesheet" href="landing-draft-shared.css">
+<style>
+  /* DRAFT 4: one narrow column read top to bottom, as a document: numbered theses in large
+     type, hairlines between them, labels in the monospace font, as the design book of the kit. */
+  body { background: var(--color-surface); }
+  .page { max-width: calc(var(--space-12) * 16); margin: 0 auto; padding: 0 var(--space-6) var(--space-12); }
+  .bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-4); padding: var(--space-5) 0; border-bottom: 1px solid var(--color-text); font-family: var(--font-mono); font-size: var(--text-sm); }
+  .bar a { text-decoration: none; }
+  .bar nav { display: flex; flex-wrap: wrap; gap: var(--space-4); }
+  .hero { padding: calc(var(--space-12) * 1.5) 0 var(--space-12); }
+  .hero .label { margin-bottom: var(--space-4); }
+  h1 { margin-bottom: var(--space-6); font-family: var(--font-display); font-size: min(calc(var(--text-2xl) * 2.4), 12vw); font-weight: var(--text-weight-semibold); line-height: 1.05; letter-spacing: calc(var(--space-1) / -4); }
+  .hero p { max-width: 30em; margin-bottom: var(--space-6); font-size: var(--text-xl); }
+  .label { color: var(--color-text-3); font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: calc(var(--space-1) / 4); text-transform: uppercase; }
+  .thesis { display: flex; flex-wrap: wrap; gap: var(--space-6); padding: var(--space-8) 0; border-top: 1px solid var(--color-line-strong); }
+  .number { flex: 0 0 calc(var(--space-12) * 1.5); color: var(--color-accent); font-family: var(--font-mono); font-size: var(--text-xl); }
+  .body { flex: 1 1 calc(var(--space-12) * 9); min-width: 0; display: flex; flex-direction: column; gap: var(--space-4); }
+  h2 { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: var(--text-weight-semibold); line-height: var(--text-leading-tight); }
+  .body > p { color: var(--color-text-2); }
+  .frame { box-shadow: none; border-radius: var(--radius-md); border-color: var(--color-text); }
+  .code { border-radius: var(--radius-sm); border-color: var(--color-line-strong); background: var(--color-bg); }
+  .terms { display: flex; flex-direction: column; }
+  .terms div { display: flex; flex-wrap: wrap; gap: var(--space-4); padding: var(--space-2) 0; border-bottom: 1px solid var(--color-line); }
+  .terms dt { flex: 0 0 calc(var(--space-12) * 3.5); font-weight: var(--text-weight-semibold); }
+  .terms dd { flex: 1 1 calc(var(--space-12) * 5); color: var(--color-text-2); }
+  .pill { border-radius: var(--radius-sm); border-color: var(--color-text); background: var(--color-bg); }
+  .action { border-radius: var(--radius-sm); border-color: var(--color-text); }
+  .action.primary { border-color: var(--color-text); background: var(--color-text); color: var(--color-surface); }
+  .foot { padding-top: var(--space-5); border-top: 1px solid var(--color-text); color: var(--color-text-3); font-family: var(--font-mono); font-size: var(--text-xs); }
+</style>
+</head>
+<body>
+<p class="draft-note">DRAFT 4 · a manifest in numbered theses · frames are stand-ins for PNG frames of the kit</p>
+<div class="page">
+  <header class="bar">
+    <span>MOROK — a UI kit for macOS</span>
+    <nav><a href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">guide</a><a href="https://github.com/supostat/morok/blob/main/crates/css/docs/css-subset.md">css subset</a><a href="https://github.com/supostat/morok">github</a></nav>
+  </header>
+
+  <div class="hero">
+    <div class="label">Rust · Core Text · Metal 4</div>
+    <h1>It looks like CSS. There is no browser.</h1>
+    <p>MOROK draws the whole interface itself. You style windows with CSS compiled at build time and change them by writing signals.</p>
+    <div class="actions"><a class="action primary" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Read the guide</a><a class="action" href="https://github.com/supostat/morok">GitHub</a></div>
+  </div>
+
+  <section class="thesis">
+    <div class="number">01</div>
+    <div class="body">
+      <h2>Every pixel is the kit's own.</h2>
+      <p>No AppKit controls and no web view: the kit lays out, shapes text and paints through Metal.</p>
+      <figure class="frame" data-stand-in="frame of the catalog, rendered by the kit (PNG)">
+        <div class="frame-bar"><span class="frame-dot"></span><span class="frame-dot"></span><span class="frame-dot"></span>MOROK catalog</div>
+        <div class="frame-body">
+          <div class="frame-side"><div class="frame-item on">Buttons</div><div class="frame-item">Text fields</div><div class="frame-item">Table</div><div class="frame-item">Overlays</div></div>
+          <div class="frame-main"><div class="mock-row"><span class="mock-button">Reveal</span><span class="mock-button primary">Clean up 4.2 GB</span></div><div class="mock-row"><span class="mock-field">Search</span></div><div class="mock-line"><span>Document 1</span><span>4.2 MB</span></div><div class="mock-line on"><span>Document 2</span><span>1.1 MB</span></div></div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="thesis">
+    <div class="number">02</div>
+    <div class="body">
+      <h2>The look is a stylesheet.</h2>
+      <p>109 properties and 7 states of CSS, compiled into tables when the application builds. What the compiler does not take, it refuses with a diagnostic at the place.</p>
+<pre class="code"><span class="k">.form</span> {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}</pre>
+    </div>
+  </section>
+
+  <section class="thesis">
+    <div class="number">03</div>
+    <div class="body">
+      <h2>A component runs once.</h2>
+      <p>It builds its elements and binds them to signals. From then on a signal that changes updates exactly what follows it.</p>
+<pre class="code">fn sign_in(mount: &amp;mut Mount&lt;'_&gt;) -&gt; ElementId {
+    let name = mount.runtime().signal(String::new());
+    let field = <span class="k">TextField</span>::new(name).placeholder("Name").mount(mount);
+    let button = <span class="k">Button</span>::new("Sign in").primary().mount(mount);
+    mount.element().class(CLASSES.form).child(field).child(button).id()
+}</pre>
+    </div>
+  </section>
+
+  <section class="thesis">
+    <div class="number">04</div>
+    <div class="body">
+      <h2>The components are there.</h2>
+      <dl class="terms">
+        <div><dt>Buttons</dt><dd>Button, IconButton</dd></div>
+        <div><dt>Text fields</dt><dd>TextField, SearchField, TextArea</dd></div>
+        <div><dt>Collections</dt><dd>List, Tree, Tabs, and a Table of a million rows</dd></div>
+        <div><dt>Overlays</dt><dd>Popover, Menu, Dialog, Sheet, Toast</dd></div>
+        <div><dt>All ten families</dt><dd>in the catalog: <code>cargo run -p morok-catalog</code></dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="thesis">
+    <div class="number">05</div>
+    <div class="body">
+      <h2>What it is not.</h2>
+      <dl class="terms">
+        <div><dt>Not a web view</dt><dd>No browser and no JavaScript.</dd></div>
+        <div><dt>Not cross-platform</dt><dd>macOS 26 on Apple Silicon.</dd></div>
+        <div><dt>Not all of CSS</dt><dd>A subset, listed property by property.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="thesis">
+    <div class="number">06</div>
+    <div class="body">
+      <h2>Start.</h2>
+      <p>macOS 26 or later on Apple Silicon. Rust 1.94 or later.</p>
+      <code class="pill">morok = { git = "https://github.com/supostat/morok" }</code>
+      <div class="actions"><a class="action primary" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Read the guide</a></div>
+    </div>
+  </section>
+
+  <footer class="foot">MIT or Apache-2.0</footer>
+</div>
+</body>
+</html>

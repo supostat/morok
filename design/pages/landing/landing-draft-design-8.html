@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAFT 8 — a page that answers the pointer</title>
+<link rel="stylesheet" href="../../system/tokens.css">
+<link rel="stylesheet" href="landing-draft-shared.css">
+<link rel="stylesheet" href="landing-draft-motion.css">
+<style>
+  /* DRAFT 8: the page answers the reader. In the first screen the lines of a rule are switches:
+     a line switched off leaves the button of the window without what it gave. Light follows the
+     pointer over the band, and every tile leans towards it. The switches are CSS alone; the
+     pointer needs the short script at the end, and without it the page stands as draft 6 does.
+     On the page every state of the button is a frame the kit renders: three lines, eight frames. */
+  .hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--space-12) * 8)), 1fr)); align-items: center; gap: var(--space-12); padding: calc(var(--space-12) * 3) 0 calc(var(--space-12) * 2); }
+  h1 { font-size: min(calc(var(--text-2xl) * 2.6), 13vw); }
+  .spot { position: absolute; inset: 0; z-index: -1; background: radial-gradient(circle calc(var(--space-12) * 7) at var(--mx, 70%) var(--my, 30%), color-mix(in srgb, var(--color-text-on-accent) 26%, transparent), transparent); pointer-events: none; }
+
+  /* The playground: a window, and the rule whose lines are switches */
+  .playground { display: flex; flex-direction: column; gap: var(--space-4); }
+  .playground .frame { box-shadow: var(--shadow-modal); }
+  .lines { display: flex; flex-direction: column; padding: var(--space-4); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--color-surface) 92%, transparent); color: var(--color-text); font-family: var(--font-mono); font-size: var(--text-sm); box-shadow: var(--shadow-float); }
+  .lines .k { color: var(--color-accent); }
+  .line { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); cursor: pointer; transition: background-color var(--motion-fast) var(--motion-ease), color var(--motion-fast) var(--motion-ease); }
+  .line:hover { background: var(--color-surface-sunken); }
+  .line input { accent-color: var(--color-accent); }
+  .line:has(input:not(:checked)) { color: var(--color-text-3); text-decoration: line-through; }
+  .hint { color: var(--color-text-on-accent); font-size: var(--text-md); opacity: 0.85; }
+  .live-button { transition: background-color var(--motion-base) var(--motion-ease), color var(--motion-base) var(--motion-ease), border-radius var(--motion-base) var(--motion-ease); }
+  .playground:has(#line-fill:not(:checked)) .live-button { background: transparent; }
+  .playground:has(#line-color:not(:checked)) .live-button { color: var(--color-text); }
+  .playground:has(#line-radius:not(:checked)) .live-button { border-radius: 0; }
+
+  /* What leans towards the pointer */
+  [data-tilt] { position: relative; transform: perspective(calc(var(--space-12) * 20)) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transform-style: preserve-3d; }
+  .tile[data-tilt] { overflow: hidden; }
+  .tile[data-tilt]::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at var(--tx, 50%) var(--ty, 0%), color-mix(in srgb, var(--color-accent) 18%, transparent), transparent 60%); opacity: 0; transition: opacity var(--motion-base) var(--motion-ease); pointer-events: none; }
+  .tile[data-tilt]:hover::after { opacity: 1; }
+</style>
+</head>
+<body>
+<p class="draft-note">DRAFT 8 · a page that answers the pointer · frames are stand-ins for PNG frames of the kit</p>
+
+<header class="bar">
+  <span class="brand">MOROK</span>
+  <a href="#components">Components</a><a href="#code">Code</a><a href="https://github.com/supostat/morok">GitHub</a>
+  <a class="action primary" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Guide</a>
+</header>
+
+<div class="band-accent top" data-spotlight>
+  <div class="spot"></div>
+  <div class="inner hero">
+    <div>
+      <h1><span class="word" style="--i:0">It</span> <span class="word" style="--i:1">looks</span> <span class="word" style="--i:2">like</span> <span class="word" style="--i:3">CSS.</span> <span class="word" style="--i:5">There</span> <span class="word" style="--i:6">is</span> <span class="word" style="--i:7">no</span> <span class="word" style="--i:8">browser.</span></h1>
+      <p class="lead-text">MOROK is a UI kit for macOS that draws the whole interface itself, through Metal. Switch a line of the rule off and see what it gave the button.</p>
+      <div class="actions"><a class="action primary" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Read the guide</a><a class="action" href="https://github.com/supostat/morok">GitHub</a></div>
+    </div>
+    <div class="playground">
+      <figure class="frame" data-tilt data-stand-in="eight frames of one window, rendered by the kit (PNG)">
+        <div class="frame-bar"><span class="frame-dot"></span><span class="frame-dot"></span><span class="frame-dot"></span>MOROK catalog</div>
+        <div class="frame-body">
+          <div class="frame-side"><div class="frame-item on">Buttons</div><div class="frame-item">Text fields</div><div class="frame-item">Table</div><div class="frame-item">Overlays</div></div>
+          <div class="frame-main">
+            <div class="mock-row"><span class="mock-button">Reveal</span><span class="mock-button primary live-button">Clean up 4.2 GB</span></div>
+            <div class="mock-row"><span class="mock-field">Search</span></div>
+            <div class="mock-line"><span>Document 1</span><span>4.2 MB</span></div>
+            <div class="mock-line on"><span>Document 2</span><span>1.1 MB</span></div>
+          </div>
+        </div>
+      </figure>
+      <div class="lines">
+        <span><span class="k">.button.primary</span> {</span>
+        <label class="line"><input type="checkbox" id="line-fill" checked>background-color: var(--color-accent);</label>
+        <label class="line"><input type="checkbox" id="line-color" checked>color: var(--color-text-on-accent);</label>
+        <label class="line"><input type="checkbox" id="line-radius" checked>border-radius: var(--radius-md);</label>
+        <span>}</span>
+      </div>
+      <p class="hint">Three lines of a stylesheet, compiled when the application builds.</p>
+    </div>
+  </div>
+</div>
+
+<div class="inner">
+  <div class="numbers">
+    <div><strong class="count to-109" aria-label="109"><span>109</span></strong><p>CSS properties, compiled at build time</p></div>
+    <div><strong class="count to-10" aria-label="10"><span>10</span></strong><p>families of components, with keyboard and accessibility</p></div>
+    <div><strong class="count to-0" aria-label="0"><span>0</span></strong><p>browsers, web views and AppKit controls</p></div>
+  </div>
+
+  <section id="components">
+    <h2 class="reveal">Components, at work.</h2>
+    <div class="bento">
+      <div class="tile" data-tilt><h3>Buttons</h3><p>Pressed by a click, by Space and Return, by an assistive technology.</p><div class="frame small"><div class="frame-main"><div class="mock-row"><span class="mock-button">Reveal</span><span class="mock-button primary pressed">Clean up</span></div></div></div></div>
+      <div class="tile" data-tilt><h3>Text fields</h3><p>Core Text shapes the text; the kit lays out the lines and draws the glyphs.</p><div class="frame small"><div class="frame-main"><div class="mock-row"><span class="mock-field focus"><span class="typed">quartz.local</span></span></div></div></div></div>
+      <div class="tile" data-tilt><h3>Overlays</h3><p>Menus, popovers, dialogs and sheets, each open while a signal holds.</p><div class="frame small"><div class="frame-main"><div class="mock-menu cycle"><div>Quick Look</div><div>Copy Path</div><div>Move to Trash</div></div></div></div></div>
+      <div class="tile wide" data-tilt><h3>Table — a million rows</h3><p>Only the rows in view have elements, and a scroll allocates nothing.</p><div class="frame small"><div class="frame-main cycle"><div class="mock-line"><span>Document 1</span><span>4.2 MB</span><span>Nov 3</span></div><div class="mock-line"><span>Document 2</span><span>1.1 MB</span><span>Nov 4</span></div><div class="mock-line"><span>Document 3</span><span>9.0 MB</span><span>Nov 5</span></div></div></div></div>
+      <div class="tile accent" data-tilt><h3>The whole set</h3><p>Ten families and two whole screens in the catalog.</p><code class="pill">cargo run -p morok-catalog</code></div>
+    </div>
+  </section>
+
+  <section id="code">
+    <h2 class="reveal">A component in Rust. Its look in CSS.</h2>
+    <div class="pair">
+<pre class="code reveal">fn sign_in(mount: &amp;mut Mount&lt;'_&gt;) -&gt; ElementId {
+    let name = mount.runtime().signal(String::new());
+    let field = <span class="k">TextField</span>::new(name).placeholder("Name").mount(mount);
+    let button = <span class="k">Button</span>::new("Sign in").primary().mount(mount);
+    mount.element().class(CLASSES.<span class="same">form</span>).child(field).child(button).id()
+}</pre>
+<pre class="code reveal">.<span class="same">form</span> {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="reveal">What it is not.</h2>
+    <ul class="no">
+      <li><strong>A web view</strong><span>No browser and no JavaScript.</span></li>
+      <li><strong>A wrapper of AppKit</strong><span>The kit lays out, shapes text and paints itself.</span></li>
+      <li><strong>Cross-platform</strong><span>macOS 26 on Apple Silicon.</span></li>
+      <li><strong>All of CSS</strong><span>A subset the compiler checks.</span></li>
+    </ul>
+  </section>
+</div>
+
+<div class="band-accent" data-spotlight>
+  <div class="spot"></div>
+  <div class="inner start">
+    <h2 class="reveal">Start with one line.</h2>
+    <code class="pill">morok = { git = "https://github.com/supostat/morok" }</code>
+    <p>macOS 26 or later on Apple Silicon · Rust 1.94 or later</p>
+    <div class="actions"><a class="action primary" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Read the guide</a></div>
+  </div>
+</div>
+
+<div class="inner"><footer class="foot">MIT or Apache-2.0 · Guide · CSS subset · GitHub</footer></div>
+
+<script>
+  // The pointer is followed only where there is one that hovers and motion is welcome.
+  const followsPointer =
+    matchMedia('(hover: hover)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const LEAN_DEGREES = 8;
+
+  if (followsPointer) {
+    for (const band of document.querySelectorAll('[data-spotlight]')) {
+      band.addEventListener('pointermove', (event) => {
+        const box = band.getBoundingClientRect();
+        band.style.setProperty('--mx', `${event.clientX - box.left}px`);
+        band.style.setProperty('--my', `${event.clientY - box.top}px`);
+      });
+    }
+    for (const leaning of document.querySelectorAll('[data-tilt]')) {
+      leaning.addEventListener('pointermove', (event) => {
+        const box = leaning.getBoundingClientRect();
+        const across = (event.clientX - box.left) / box.width;
+        const down = (event.clientY - box.top) / box.height;
+        leaning.style.setProperty('--ry', `${(across - 0.5) * LEAN_DEGREES}deg`);
+        leaning.style.setProperty('--rx', `${(0.5 - down) * LEAN_DEGREES}deg`);
+        leaning.style.setProperty('--tx', `${across * 100}%`);
+        leaning.style.setProperty('--ty', `${down * 100}%`);
+      });
+      leaning.addEventListener('pointerleave', () => {
+        leaning.style.removeProperty('--rx');
+        leaning.style.removeProperty('--ry');
+      });
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+/* MOROK · the dark values of the tokens, whatever the color scheme of the system.
+
+   A page that is dark by design links this file after tokens.css. Every value here mirrors the
+   dark block of tokens.css and nothing else: tokens.css holds two blocks the compiler of the kit
+   reads, and cannot hold a third. When tokens.css changes, this file changes with it; the
+   implementation of a page that links it generates it from tokens.css and tests that it did. */
+
+:root {
+  color-scheme: dark;
+
+  --color-bg: #111317;
+  --color-surface: #191C21;
+  --color-surface-2: #1F2228;
+  --color-surface-sunken: #0D0F12;
+  --color-line: #2B3038;
+  --color-line-strong: #3A404A;
+  --color-text: #E8EBF0;
+  --color-text-2: #A3AAB6;
+  --color-text-3: #6C7380;
+  --color-text-on-accent: #072720;
+  --color-knob: #FFFFFF;
+
+  --color-accent: #5ADBBC;
+  --color-accent-hover: #74E4C9;
+  --color-accent-active: #49C7A9;
+  --color-accent-soft: #15332D;
+  --color-focus: #5ADBBC;
+  --color-danger: #F2665B;
+  --color-danger-soft: #3A1D1B;
+  --color-warning: #E3A63B;
+  --color-success: #57C285;
+  --color-selection: #1D4A40;
+  --color-scrim: rgba(0, 0, 0, 0.5);
+
+  --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}

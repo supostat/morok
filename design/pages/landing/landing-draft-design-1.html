@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAFT 1 — the code beside what it draws</title>
+<link rel="stylesheet" href="../../system/tokens.css">
+<link rel="stylesheet" href="landing-draft-shared.css">
+<style>
+  /* DRAFT 1: a split hero, the stylesheet rule over the corner of the frame it styles; every
+     later section pairs a frame with its code. */
+  .page { max-width: calc(var(--space-12) * 24); margin: 0 auto; padding: 0 var(--space-6); }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-5) 0; }
+  .brand { font-family: var(--font-display); font-size: var(--text-xl); font-weight: var(--text-weight-semibold); letter-spacing: calc(var(--space-1) / 2); }
+  .links { display: flex; flex-wrap: wrap; gap: var(--space-5); color: var(--color-text-2); font-size: var(--text-md); }
+  .links a { text-decoration: none; }
+  .hero { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-12); padding: var(--space-12) 0 calc(var(--space-12) * 2); }
+  .hero > * { flex: 1 1 calc(var(--space-12) * 8); min-width: 0; }
+  .lead { display: flex; flex-direction: column; gap: var(--space-5); }
+  h1 { font-family: var(--font-display); font-size: min(calc(var(--text-2xl) * 1.8), 10vw); font-weight: var(--text-weight-semibold); line-height: var(--text-leading-tight); }
+  .lead p { color: var(--color-text-2); font-size: var(--text-xl); }
+  .stage { position: relative; }
+  .stage .code { position: absolute; right: calc(var(--space-5) * -1); bottom: calc(var(--space-8) * -1); max-width: 78%; background: var(--color-surface); box-shadow: var(--shadow-modal); }
+  section { padding: var(--space-12) 0; border-top: 1px solid var(--color-line); }
+  h2 { margin-bottom: var(--space-6); font-family: var(--font-display); font-size: var(--text-2xl); font-weight: var(--text-weight-semibold); line-height: var(--text-leading-tight); }
+  .pair { display: flex; flex-wrap: wrap; gap: var(--space-6); }
+  .pair > * { flex: 1 1 calc(var(--space-12) * 7); min-width: 0; }
+  .card { margin-bottom: var(--space-6); align-items: center; }
+  .card h3 { margin-bottom: var(--space-2); font-size: var(--text-lg); font-weight: var(--text-weight-semibold); }
+  .facts li { padding: var(--space-3) 0; border-bottom: 1px solid var(--color-line); }
+  .facts strong { font-weight: var(--text-weight-semibold); }
+  .muted { color: var(--color-text-2); }
+  .foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-4); padding: var(--space-6) 0; border-top: 1px solid var(--color-line); color: var(--color-text-3); font-size: var(--text-md); }
+</style>
+</head>
+<body>
+<p class="draft-note">DRAFT 1 · the code beside what it draws · frames are stand-ins for PNG frames of the kit</p>
+<div class="page">
+  <header class="bar">
+    <span class="brand">MOROK</span>
+    <nav class="links"><a href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Guide</a><a href="https://github.com/supostat/morok/blob/main/crates/css/docs/css-subset.md">CSS subset</a><a href="https://github.com/supostat/morok">GitHub</a></nav>
+  </header>
+
+  <div class="hero">
+    <div class="lead">
+      <h1>It looks like CSS. There is no browser.</h1>
+      <p>MOROK is a UI kit for macOS that draws the whole interface itself, through Metal. You style windows with CSS compiled at build time and change them by writing signals.</p>
+      <div class="actions"><a class="action primary" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Read the guide</a><a class="action" href="https://github.com/supostat/morok">GitHub</a></div>
+    </div>
+    <div class="stage">
+      <figure class="frame" data-stand-in="frame of the catalog, rendered by the kit (PNG)">
+        <div class="frame-bar"><span class="frame-dot"></span><span class="frame-dot"></span><span class="frame-dot"></span>MOROK catalog</div>
+        <div class="frame-body">
+          <div class="frame-side"><div class="frame-item on">Buttons</div><div class="frame-item">Text fields</div><div class="frame-item">Controls</div><div class="frame-item">Table</div><div class="frame-item">Overlays</div></div>
+          <div class="frame-main">
+            <div class="mock-row"><span class="mock-button">Reveal</span><span class="mock-button primary">Clean up 4.2 GB</span></div>
+            <div class="mock-row"><span class="mock-field">Search</span></div>
+            <div class="mock-line"><span>Document 1</span><span>4.2 MB</span></div>
+            <div class="mock-line"><span>Document 2</span><span>1.1 MB</span></div>
+          </div>
+        </div>
+      </figure>
+<pre class="code"><span class="k">.button.primary</span> {
+  background-color: var(--color-accent);
+  color: var(--color-text-on-accent);
+}</pre>
+    </div>
+  </div>
+
+  <section>
+    <h2>What it is, and what it is not</h2>
+    <div class="pair">
+      <ul class="facts">
+        <li><strong>Native.</strong> <span class="muted">Rust, Core Text and Metal 4.</span></li>
+        <li><strong>Styled by CSS.</strong> <span class="muted">109 properties, compiled into tables at build time.</span></li>
+        <li><strong>Driven by signals.</strong> <span class="muted">A component runs once; a signal changes exactly what follows it.</span></li>
+        <li><strong>Complete.</strong> <span class="muted">Buttons, fields, tables, menus, dialogs — with keyboard and accessibility.</span></li>
+      </ul>
+      <ul class="facts">
+        <li><strong>Not a web view.</strong> <span class="muted">No browser and no JavaScript.</span></li>
+        <li><strong>Not a wrapper.</strong> <span class="muted">No AppKit controls under it.</span></li>
+        <li><strong>Not cross-platform.</strong> <span class="muted">macOS 26 on Apple Silicon.</span></li>
+        <li><strong>Not all of CSS.</strong> <span class="muted">A subset the compiler checks, with a diagnostic at the place.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Components</h2>
+    <div class="pair card">
+      <figure class="frame small" data-stand-in="frame of the Buttons page (PNG)"><div class="frame-main"><div class="mock-row"><span class="mock-button">Reveal</span><span class="mock-button primary">Clean up 4.2 GB</span><span class="mock-button">Unavailable</span></div></div></figure>
+      <div><h3>Buttons</h3><pre class="code"><span class="k">Button</span>::new("Clean up 4.2 GB").primary().on_press(clean_up)</pre></div>
+    </div>
+    <div class="pair card">
+      <figure class="frame small" data-stand-in="frame of the Text fields page (PNG)"><div class="frame-main"><div class="mock-row"><span class="mock-field focus">quartz.local</span></div><div class="mock-row"><span class="mock-field">Search</span></div></div></figure>
+      <div><h3>Text fields</h3><pre class="code"><span class="k">TextField</span>::new(host).placeholder("Host").label("Host")</pre></div>
+    </div>
+    <div class="pair card">
+      <figure class="frame small" data-stand-in="frame of the Table page (PNG)"><div class="frame-main"><div class="mock-line"><span>Document 1</span><span>4.2 MB</span></div><div class="mock-line on"><span>Document 2</span><span>1.1 MB</span></div><div class="mock-line"><span>Document 3</span><span>9.0 MB</span></div></div></figure>
+      <div><h3>Table — a million rows</h3><pre class="code"><span class="k">Table</span>::new(1_000_000, columns, cell, selected, sort)</pre></div>
+    </div>
+    <div class="pair card">
+      <figure class="frame small" data-stand-in="frame of the Overlays page (PNG)"><div class="frame-main"><div class="mock-menu"><div class="on">Quick Look</div><div>Copy Path</div><div>Move to Trash</div></div></div></figure>
+      <div><h3>Overlays</h3><pre class="code"><span class="k">Menu</span>::new(is_open, items).attach(mount, anchor)</pre></div>
+    </div>
+    <p class="muted">Ten families and two whole screens are in the catalog: <code>cargo run -p morok-catalog</code>.</p>
+  </section>
+
+  <section>
+    <h2>How a window is written</h2>
+    <div class="pair">
+<pre class="code"><span class="c">// Rust: a component runs once</span>
+fn sign_in(mount: &amp;mut Mount&lt;'_&gt;) -&gt; ElementId {
+    let name = mount.runtime().signal(String::new());
+    let field = <span class="k">TextField</span>::new(name).placeholder("Name").mount(mount);
+    let button = <span class="k">Button</span>::new("Sign in").primary().mount(mount);
+    mount.element().class(CLASSES.form).child(field).child(button).id()
+}</pre>
+<pre class="code"><span class="c">/* CSS: compiled at build time */</span>
+<span class="k">.form</span> {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>Start</h2>
+    <div class="pair">
+      <ul class="facts"><li><strong>macOS 26</strong> <span class="muted">or later, on Apple Silicon.</span></li><li><strong>Rust 1.94</strong> <span class="muted">or later.</span></li></ul>
+      <div class="lead"><code class="pill">morok = { git = "https://github.com/supostat/morok" }</code><div class="actions"><a class="action primary" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Read the guide</a></div></div>
+    </div>
+  </section>
+
+  <footer class="foot"><span>MIT or Apache-2.0</span><span>Guide · CSS subset · GitHub</span></footer>
+</div>
+</body>
+</html>

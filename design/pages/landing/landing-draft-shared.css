@@ -1,0 +1,41 @@
+/* DRAFT helper of the landing drafts: what the five design variants share. The frames of the kit
+   are STAND-INS drawn here in CSS; the page itself will show PNG frames the kit renders. */
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-ui); font-size: var(--text-lg); line-height: var(--text-leading); -webkit-font-smoothing: antialiased; }
+h1, h2, h3, p, figure, ul, dl, dd { margin: 0; }
+ul { padding: 0; list-style: none; }
+a { color: inherit; }
+.draft-note { padding: var(--space-2) var(--space-4); background: var(--color-surface-sunken); color: var(--color-text-2); font-family: var(--font-mono); font-size: var(--text-xs); }
+
+/* Actions */
+.actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.action { display: inline-flex; align-items: center; padding: var(--space-2) var(--space-4); border: 1px solid var(--color-line-strong); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font-size: var(--text-md); font-weight: var(--text-weight-medium); text-decoration: none; }
+.action.primary { border-color: var(--color-accent); background: var(--color-accent); color: var(--color-text-on-accent); }
+
+/* Code */
+.code { margin: 0; padding: var(--space-4); overflow-x: auto; border: 1px solid var(--color-line); border-radius: var(--radius-lg); background: var(--color-surface-sunken); color: var(--color-text); font-family: var(--font-mono); font-size: var(--text-sm); line-height: var(--text-leading); }
+.code .k { color: var(--color-accent); }
+.code .c { color: var(--color-text-3); }
+.pill { display: block; max-width: 100%; overflow-x: auto; padding: var(--space-3) var(--space-4); border: 1px solid var(--color-line); border-radius: var(--radius-full); background: var(--color-surface); font-family: var(--font-mono); font-size: var(--text-sm); white-space: nowrap; }
+
+/* The stand-in of a frame of the kit */
+.frame { overflow: hidden; border: 1px solid var(--color-line-strong); border-radius: var(--radius-xl); background: var(--color-surface); box-shadow: var(--shadow-float); color: var(--color-text); font-size: var(--text-md); text-align: left; }
+.frame-bar { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-line); background: var(--color-surface-2); font-weight: var(--text-weight-semibold); }
+.frame-dot { width: var(--space-3); height: var(--space-3); border-radius: var(--radius-full); background: var(--color-line-strong); }
+.frame-body { display: flex; min-height: calc(var(--space-12) * 5); }
+.frame-side { flex: 0 0 30%; padding: var(--space-2); border-right: 1px solid var(--color-line); background: var(--color-surface-2); }
+.frame-item { padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); color: var(--color-text-2); }
+.frame-item.on { background: var(--color-selection); color: var(--color-text); }
+.frame-main { flex: 1; display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; padding: var(--space-4); }
+.frame.small .frame-main { min-height: calc(var(--space-12) * 3); }
+.mock-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.mock-button { padding: var(--space-1) var(--space-3); border: 1px solid var(--color-line-strong); border-radius: var(--radius-md); background: var(--color-surface); }
+.mock-button.primary { border-color: var(--color-accent); background: var(--color-accent); color: var(--color-text-on-accent); }
+.mock-field { flex: 1 1 40%; padding: var(--space-1) var(--space-3); border: 1px solid var(--color-line-strong); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text-3); }
+.mock-field.focus { border-color: var(--color-focus); color: var(--color-text); }
+.mock-line { display: flex; justify-content: space-between; padding: var(--space-1) var(--space-2); border-bottom: 1px solid var(--color-line); color: var(--color-text-2); }
+.mock-line.on { background: var(--color-selection); color: var(--color-text); }
+.mock-menu { align-self: flex-start; padding: var(--space-1); border: 1px solid var(--color-line); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-float); }
+.mock-menu div { padding: var(--space-1) var(--space-3); border-radius: var(--radius-sm); }
+.mock-menu .on { background: var(--color-accent); color: var(--color-text-on-accent); }

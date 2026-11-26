@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOROK — a UI kit for macOS that draws itself</title>
+<!-- Manifest of the etalon: what the switcher at the foot of the file can show. -->
+<meta name="design-fixtures" content="typical,minimal,extreme">
+<meta name="design-states" content="loaded,no-pictures,still">
+<link rel="stylesheet" href="../../system/tokens.css">
+<!-- Decision: the page is dark whatever the system says, so it takes the dark values alone. -->
+<link rel="stylesheet" href="../../system/tokens-dark.css">
+<style>
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { --ambient: calc(var(--motion-slow) * 22); margin: 0; background: var(--color-surface-sunken); color: var(--color-text); font-family: var(--font-ui); font-size: var(--text-lg); line-height: var(--text-leading); -webkit-font-smoothing: antialiased; }
+  h1, h2, h3, p, figure, ul { margin: 0; }
+  ul { padding: 0; list-style: none; }
+  a { color: inherit; }
+  .inner { max-width: calc(var(--space-12) * 24); margin: 0 auto; padding: 0 var(--space-6); }
+  h1, h2 { font-family: var(--font-display); font-weight: var(--text-weight-semibold); text-wrap: balance; }
+  h2 { margin-bottom: var(--space-8); font-size: min(calc(var(--text-2xl) * 1.6), 9vw); line-height: 1.05; letter-spacing: calc(var(--space-1) / -4); }
+  section { padding: var(--space-12) 0; }
+
+  /* Navigation. Decision: a plain row, the guide is its one button. */
+  .nav { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4) var(--space-6); padding: var(--space-5) 0; font-size: var(--text-md); }
+  .nav .gap { flex: 1; }
+  .nav a { color: var(--color-text-2); text-decoration: none; transition: color var(--motion-fast) var(--motion-ease); }
+  .nav a:hover { color: var(--color-text); }
+  .brand { font-weight: var(--text-weight-semibold); letter-spacing: calc(var(--space-1) / 2); }
+
+  /* Actions. Decision: one primary action a screen — the guide; the repository is the second. */
+  .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-3); }
+  .action { display: inline-flex; align-items: center; padding: var(--space-3) var(--space-6); border: 1px solid var(--color-line-strong); border-radius: var(--radius-full); background: var(--color-surface); color: var(--color-text); font-size: var(--text-md); font-weight: var(--text-weight-medium); text-decoration: none; transition: transform var(--motion-base) var(--motion-ease), box-shadow var(--motion-base) var(--motion-ease); }
+  .action:hover { transform: translateY(calc(var(--space-1) / -2)); box-shadow: var(--shadow-float); }
+  .action.primary { border-color: var(--color-accent); background: var(--color-accent); color: var(--color-text-on-accent); }
+  .nav .action { padding: var(--space-2) var(--space-4); color: var(--color-text); }
+
+  /* The statement under one faint light. Decision: one light for the scene, no halo elsewhere. */
+  .hero { position: relative; isolation: isolate; padding: calc(var(--space-12) * 2) 0 0; text-align: center; }
+  .light { position: absolute; inset: calc(var(--space-12) * -5) 0 auto; height: calc(var(--space-12) * 16); z-index: -1; background: radial-gradient(ellipse 45% 55% at 50% 0%, color-mix(in srgb, var(--color-accent) 24%, transparent), transparent 70%); animation: breathe var(--ambient) ease-in-out infinite alternate; pointer-events: none; }
+  .badge { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-4); border: 1px solid var(--color-line); border-radius: var(--radius-full); background: color-mix(in srgb, var(--color-surface) 70%, transparent); color: var(--color-text-2); font-size: var(--text-sm); animation: rise calc(var(--motion-slow) * 2.5) var(--motion-ease-out) both; }
+  .badge b { color: var(--color-accent); font-weight: var(--text-weight-medium); }
+  h1 { margin: var(--space-6) auto; font-size: min(calc(var(--text-2xl) * 2.7), 12vw); line-height: 1.04; letter-spacing: calc(var(--space-1) / -2); }
+  h1 .dim { color: var(--color-text-3); }
+  .word { display: inline-block; animation: rise calc(var(--motion-slow) * 2.5) var(--motion-ease-out) both; animation-delay: calc(var(--i) * var(--motion-fast)); }
+  .lead { max-width: 34em; margin: 0 auto var(--space-8); color: var(--color-text-2); font-size: var(--text-xl); animation: rise calc(var(--motion-slow) * 2.5) var(--motion-ease-out) both; animation-delay: calc(var(--motion-fast) * 10); }
+  .hero .actions { animation: rise calc(var(--motion-slow) * 2.5) var(--motion-ease-out) both; animation-delay: calc(var(--motion-fast) * 12); }
+
+  /* The window. Decision: a frame the kit rendered, under a title bar drawn here; it arrives
+     tilted and lies flat as it scrolls into view; its foot goes into the background. */
+  .rising { position: relative; margin-top: calc(var(--space-12) * 1.5); perspective: calc(var(--space-12) * 32); }
+  .rising::after { content: ""; position: absolute; inset: auto 0 0; height: calc(var(--space-12) * 3); background: linear-gradient(transparent, var(--color-surface-sunken)); pointer-events: none; }
+  .window { overflow: hidden; border: 1px solid var(--color-line-strong); border-bottom: 0; border-radius: var(--radius-xl) var(--radius-xl) 0 0; background: var(--color-bg); box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 14%, transparent), 0 calc(var(--space-8) * -1) calc(var(--space-12) * 3) color-mix(in srgb, var(--color-accent) 12%, transparent); transform-origin: 50% 100%; animation: arrive calc(var(--motion-slow) * 4) var(--motion-ease-out) both; animation-delay: calc(var(--motion-fast) * 14); }
+  .window-bar { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-line); background: var(--color-surface); color: var(--color-text-3); font-size: var(--text-sm); }
+  .window-bar i { width: var(--space-3); height: var(--space-3); border-radius: var(--radius-full); background: var(--color-line-strong); }
+  .window-bar span { flex: 1; margin-right: calc(var(--space-12) + var(--space-2)); }
+  img { display: block; width: 100%; height: auto; }
+
+  /* Three facts between hairlines. */
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--space-12) * 5)), 1fr)); margin-top: var(--space-12); border-top: 1px solid var(--color-line); border-bottom: 1px solid var(--color-line); text-align: left; }
+  .facts div { padding: var(--space-8) var(--space-6); border-left: 1px solid var(--color-line); }
+  .facts div:first-child { border-left: 0; padding-left: 0; }
+  .facts h3 { margin-bottom: var(--space-2); font-size: var(--text-lg); font-weight: var(--text-weight-semibold); }
+  .facts p { color: var(--color-text-2); font-size: var(--text-md); }
+
+  /* Components. Decision: four to six pictures, not the whole catalog; the catalog is one
+     command away and the tile at the end says which. */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--space-12) * 6)), 1fr)); gap: var(--space-4); }
+  .tile { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6); border: 1px solid var(--color-line); border-radius: calc(var(--radius-xl) * 1.5); background: color-mix(in srgb, var(--color-surface) 60%, transparent); transition: transform var(--motion-base) var(--motion-ease), box-shadow var(--motion-base) var(--motion-ease), border-color var(--motion-base) var(--motion-ease); }
+  .tile:hover { transform: translateY(calc(var(--space-1) * -1)); border-color: var(--color-accent); box-shadow: var(--shadow-float); }
+  .tile h3 { font-size: var(--text-xl); font-weight: var(--text-weight-semibold); }
+  .tile p { color: var(--color-text-2); font-size: var(--text-md); }
+  .shot { overflow: hidden; margin-top: auto; border: 1px solid var(--color-line); border-radius: var(--radius-lg); background: var(--color-bg); }
+  .shot img { transition: scale var(--motion-slow) var(--motion-ease); }
+  .tile:hover .shot img { scale: 1.03; }
+  @media (min-width: 62em) {
+    .tiles { grid-template-columns: repeat(6, 1fr); }
+    .tile { grid-column: span 2; }
+    .tile.wide { grid-column: span 4; }
+    .tile.tall { grid-row: span 2; }
+  }
+
+  /* Code. A long line scrolls inside its block; the page never scrolls sideways. */
+  .code { margin: 0; padding: var(--space-6); overflow-x: auto; border: 1px solid var(--color-line); border-radius: calc(var(--radius-xl) * 1.5); background: var(--color-surface); font-family: var(--font-mono); font-size: var(--text-sm); line-height: var(--text-leading); }
+  .code .k { color: var(--color-accent); }
+  .pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--space-12) * 8)), 1fr)); gap: var(--space-4); }
+  .same { border-radius: var(--radius-xs); animation: same calc(var(--motion-slow) * 10) var(--motion-ease) infinite; }
+
+  /* What it is not: the line is drawn through each name as it comes into view. */
+  .no li { display: flex; flex-wrap: wrap; gap: var(--space-4); padding: var(--space-5) 0; border-bottom: 1px solid var(--color-line); font-size: min(var(--text-2xl), 7vw); }
+  .no strong { flex: 0 0 auto; margin-right: var(--space-4); background: linear-gradient(var(--color-accent), var(--color-accent)) 0 58% / 100% calc(var(--space-1) / 1.5) no-repeat; font-weight: var(--text-weight-semibold); }
+  .no span { flex: 1 1 calc(var(--space-12) * 6); align-self: center; color: var(--color-text-2); font-size: var(--text-lg); }
+
+  /* The last panel: what the kit needs and the one line that starts an application. */
+  .panel { display: flex; flex-direction: column; align-items: center; gap: var(--space-6); margin: var(--space-12) 0; padding: calc(var(--space-12) * 2) var(--space-8); border: 1px solid var(--color-line); border-radius: calc(var(--radius-xl) * 2); background: radial-gradient(ellipse 60% 80% at 50% 0%, color-mix(in srgb, var(--color-accent) 16%, transparent), transparent 70%), var(--color-surface); text-align: center; }
+  .panel h2 { margin: 0; font-size: min(calc(var(--text-2xl) * 2.2), 11vw); }
+  .panel p { color: var(--color-text-2); }
+  .pill { display: block; max-width: 100%; overflow-x: auto; padding: var(--space-3) var(--space-5); border: 1px solid var(--color-line-strong); border-radius: var(--radius-full); background: var(--color-bg); font-family: var(--font-mono); font-size: var(--text-md); white-space: nowrap; }
+  .foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-4); padding: var(--space-6) 0; color: var(--color-text-3); font-size: var(--text-md); }
+  .foot a { text-decoration: none; }
+
+  /* A picture that did not load leaves its frame and says what it showed. */
+  .fallback { display: none; align-items: center; justify-content: center; min-height: calc(var(--space-12) * 4); padding: var(--space-6); color: var(--color-text-3); font-size: var(--text-md); text-align: center; }
+  body[data-active-state="no-pictures"] img { display: none; }
+  body[data-active-state="no-pictures"] .fallback { display: flex; }
+
+  @keyframes rise { from { opacity: 0; transform: translateY(var(--space-8)); } to { opacity: 1; transform: none; } }
+  @keyframes breathe { from { opacity: 0.55; transform: scale(1); } to { opacity: 1; transform: scale(1.18); } }
+  @keyframes arrive { from { opacity: 0; translate: 0 var(--space-12); } to { opacity: 1; translate: 0 0; } }
+  @keyframes flatten { from { rotate: x 24deg; scale: 0.9; } to { rotate: x 0deg; scale: 1; } }
+  @keyframes same { 0%, 55%, 100% { background: transparent; } 70%, 85% { background: var(--color-accent-soft); box-shadow: 0 0 0 var(--space-1) var(--color-accent-soft); } }
+  @keyframes strike { from { background-size: 0% calc(var(--space-1) / 1.5); } to { background-size: 100% calc(var(--space-1) / 1.5); } }
+
+  /* Motion tied to the scroll, where the browser has scroll timelines and motion is welcome. */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .window { animation: arrive calc(var(--motion-slow) * 4) var(--motion-ease-out) both, flatten linear both; animation-delay: calc(var(--motion-fast) * 14), 0s; animation-timeline: auto, view(); animation-range: normal, entry 5% cover 42%; }
+      .reveal { animation: rise linear backwards; animation-timeline: view(); animation-range: entry 5% entry 70%; }
+      .no strong { animation: strike linear backwards; animation-timeline: view(); animation-range: entry 40% cover 35%; }
+    }
+  }
+  /* The still form: reduced motion of the system, and the state of the same name. */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+  body[data-active-state="still"] *, body[data-active-state="still"] *::before, body[data-active-state="still"] *::after { animation: none !important; transition: none !important; }
+
+  /* Fixtures: a piece marked with fixtures shows only under one of them. */
+  body[data-active-fixture="typical"] main [data-fixture]:not([data-fixture~="typical"]),
+  body[data-active-fixture="minimal"] main [data-fixture]:not([data-fixture~="minimal"]),
+  body[data-active-fixture="extreme"] main [data-fixture]:not([data-fixture~="extreme"]) { display: none; }
+
+  /* The switcher is a tool of the etalon and no part of the page. */
+  .switch { position: fixed; right: var(--space-3); bottom: var(--space-3); z-index: 9; display: flex; flex-wrap: wrap; gap: var(--space-2); max-width: calc(100% - var(--space-6)); padding: var(--space-2); border: 1px solid var(--color-line-strong); border-radius: var(--radius-md); background: var(--color-surface-2); font-family: var(--font-mono); font-size: var(--text-xs); }
+  .switch button { padding: var(--space-1) var(--space-2); border: 1px solid var(--color-line); border-radius: var(--radius-sm); background: transparent; color: var(--color-text-2); font: inherit; cursor: pointer; }
+  .switch button[aria-pressed="true"] { border-color: var(--color-accent); color: var(--color-accent); }
+</style>
+</head>
+<body data-active-fixture="typical" data-active-state="loaded">
+<main class="inner">
+  <nav class="nav">
+    <span class="brand">MOROK</span><span class="gap"></span>
+    <a href="#components">Components</a><a href="#code">Code</a>
+    <a href="https://github.com/supostat/morok/blob/main/crates/css/docs/css-subset.md">CSS subset</a>
+    <a href="https://github.com/supostat/morok">GitHub</a>
+    <a class="action" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Guide</a>
+  </nav>
+
+  <div class="hero">
+    <div class="light"></div>
+    <!-- Facts of the badge: README.md, "What it needs". -->
+    <span class="badge"><b>Rust</b> · Core Text · Metal 4 · macOS 26</span>
+    <h1>
+      <span data-fixture="typical"><span class="word" style="--i:1">It</span> <span class="word" style="--i:2">looks</span> <span class="word" style="--i:3">like</span> <span class="word" style="--i:4">CSS.</span><br><span class="dim"><span class="word" style="--i:6">There</span> <span class="word" style="--i:7">is</span> <span class="word" style="--i:8">no</span> <span class="word" style="--i:9">browser.</span></span></span>
+      <span data-fixture="minimal">CSS. <span class="dim">No browser.</span></span>
+      <span data-fixture="extreme">It looks like the CSS you already write, selector for selector. <span class="dim">There is no browser, no web view and no JavaScript anywhere under it.</span></span>
+    </h1>
+    <p class="lead">
+      <span data-fixture="typical">MOROK is a UI kit for macOS that draws the whole interface itself. You style windows with CSS compiled at build time and change them by writing signals.</span>
+      <span data-fixture="minimal">A UI kit for macOS that draws itself.</span>
+      <span data-fixture="extreme">MOROK is a UI kit for macOS that draws the whole interface itself, through Metal: it lays out, shapes text with Core Text and paints every pixel. You style windows with a subset of CSS compiled into tables at build time and change them by writing signals; a component runs once.</span>
+    </p>
+    <div class="actions"><a class="action primary" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Read the guide</a><a class="action" href="https://github.com/supostat/morok">GitHub</a></div>
+
+    <div class="rising">
+      <!-- The picture is the etalon of the test stand for the file manager of the catalog; the
+           page shows the frame the kit itself renders of that screen. -->
+      <figure class="window">
+        <div class="window-bar"><i></i><i></i><i></i><span>Quartz Commander</span></div>
+        <img src="../../../crates/teststand/etalons/screens/file-manager/dark.png" width="1800" height="840" alt="A two-pane file manager built on the kit: a toolbar with a filter, two tables of files and a status bar of commands">
+        <span class="fallback" data-state="no-pictures">A two-pane file manager built on the kit</span>
+      </figure>
+    </div>
+
+    <!-- Numbers: crates/css/docs/css-subset.md holds 109 properties and 7 states. -->
+    <div class="facts">
+      <div class="reveal"><h3>Drawn through Metal</h3><p>The kit lays out, shapes text with Core Text and paints every pixel itself. No AppKit controls, no web view.<span data-fixture="extreme"> Windows, menus, text input and accessibility go through the system; everything a user sees inside a window is the kit's.</span></p></div>
+      <div class="reveal" data-fixture="typical extreme"><h3>Styled by CSS</h3><p>109 properties and 7 states, compiled into tables when the application builds. What it does not take, it refuses at the line.</p></div>
+      <div class="reveal" data-fixture="typical extreme"><h3>Driven by signals</h3><p>A component runs once. A signal that changes updates exactly what follows it.</p></div>
+    </div>
+  </div>
+
+  <section id="components">
+    <h2 class="reveal">Components, as the kit draws them.</h2>
+    <div class="tiles">
+      <div class="tile wide reveal"><h3>Whole screens</h3><p>A disk map with a sunburst drawn on a canvas, in the catalog beside the file manager above.</p><div class="shot"><img src="../../../crates/teststand/etalons/screens/disk-map/dark.png" width="1800" height="880" alt="A disk map: a sidebar of volumes, a sunburst chart and a list of folders by size"><span class="fallback">A disk map with a sunburst chart</span></div></div>
+      <div class="tile reveal" data-fixture="typical extreme"><h3>Menus and overlays</h3><p>Menus, popovers, dialogs and sheets, each open while a signal holds.</p><div class="shot"><img src="../../../crates/teststand/etalons/overlays/menu/dark.png" width="600" height="440" alt="A menu with icons, shortcuts and a submenu"><span class="fallback">A menu with icons and shortcuts</span></div></div>
+      <div class="tile tall reveal"><h3>Table — a million rows</h3><p>Only the rows in view have elements, and a scroll allocates nothing.</p><div class="shot"><img src="../../../crates/teststand/etalons/table/table-states/dark.png" width="904" height="744" alt="A table with sortable columns and selected rows"><span class="fallback">A table with sortable columns</span></div></div>
+      <div class="tile wide reveal" data-fixture="typical extreme"><h3>Buttons</h3><p>Pressed by a click, by Space and Return, by an assistive technology.</p><div class="shot"><img src="../../../crates/teststand/etalons/button/primary-states/dark.png" width="1216" height="152" alt="A primary button in each of its states"><span class="fallback">A primary button in each of its states</span></div></div>
+      <div class="tile wide reveal" data-fixture="typical extreme"><h3>Text fields</h3><p>Core Text shapes the text; the kit lays out the lines and draws the glyphs.</p><div class="shot"><img src="../../../crates/teststand/etalons/text-fields/text-field-states/dark.png" width="1432" height="200" alt="A text field empty, focused, invalid and disabled"><span class="fallback">A text field in each of its states</span></div></div>
+      <div class="tile reveal" data-fixture="extreme"><h3>Select and combobox with a name long enough to wrap onto a second line</h3><p>A list that drops down under its control, as wide as the control.</p><div class="shot"><img src="../../../crates/teststand/etalons/select-combobox/select-open/dark.png" alt="A select with its list open"><span class="fallback">A select with its list open</span></div></div>
+    </div>
+  </section>
+
+  <section id="code">
+    <h2 class="reveal">A component in Rust. Its look in CSS.</h2>
+    <!-- The Rust is the shape of the first example of crates/morok/docs/components.md. -->
+    <div class="pair">
+<pre class="code reveal">fn sign_in(mount: &amp;mut Mount&lt;'_&gt;) -&gt; ElementId {
+    let name = mount.runtime().signal(String::new());
+    let field = <span class="k">TextField</span>::new(name).placeholder("Name").mount(mount);
+    let button = <span class="k">Button</span>::new("Sign in").primary().mount(mount);
+    mount.element().class(CLASSES.<span class="same">form</span>).child(field).child(button).id()
+}</pre>
+<pre class="code reveal">.<span class="same">form</span> {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="reveal">What it is not.</h2>
+    <ul class="no">
+      <li><strong>A web view</strong><span>No browser and no JavaScript.</span></li>
+      <li><strong>A wrapper of AppKit</strong><span>The kit lays out, shapes text and paints itself.</span></li>
+      <li data-fixture="typical extreme"><strong>Cross-platform</strong><span>macOS 26 on Apple Silicon.</span></li>
+      <li data-fixture="typical extreme"><strong>All of CSS</strong><span>A subset the compiler checks.</span></li>
+    </ul>
+  </section>
+
+  <div class="panel">
+    <h2 class="reveal">Start with one line.</h2>
+    <code class="pill"><span data-fixture="typical minimal">morok = { git = "https://github.com/supostat/morok" }</span><span data-fixture="extreme">morok = { git = "https://github.com/supostat/morok", rev = "0e0f5797e9bdc3692a6fc1756602b035c3b31a06" }</span></code>
+    <p>macOS 26 or later on Apple Silicon · Rust 1.94 or later</p>
+    <div class="actions"><a class="action primary" href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Read the guide</a></div>
+  </div>
+
+  <footer class="foot"><span>MIT or Apache-2.0</span><span><a href="https://github.com/supostat/morok/blob/main/crates/morok/docs/overview.md">Guide</a> · <a href="https://github.com/supostat/morok/blob/main/crates/css/docs/css-subset.md">CSS subset</a> · <a href="https://github.com/supostat/morok">GitHub</a></span></footer>
+</main>
+
+<div class="switch" aria-label="Etalon switcher">
+  <button data-fixture="typical" aria-pressed="true">typical</button>
+  <button data-fixture="minimal" aria-pressed="false">minimal</button>
+  <button data-fixture="extreme" aria-pressed="false">extreme</button>
+  <button data-state="loaded" aria-pressed="true">loaded</button>
+  <button data-state="no-pictures" aria-pressed="false">no-pictures</button>
+  <button data-state="still" aria-pressed="false">still</button>
+</div>
+<script>
+  const page = document.body;
+  const controls = [...document.querySelectorAll('.switch button')];
+  for (const control of controls) {
+    control.addEventListener('click', () => {
+      const kind = control.dataset.fixture ? 'fixture' : 'state';
+      page.dataset[kind === 'fixture' ? 'activeFixture' : 'activeState'] = control.dataset[kind];
+      for (const other of controls) {
+        if (other.dataset[kind]) other.setAttribute('aria-pressed', String(other === control));
+      }
+    });
+  }
+</script>
+</body>
+</html>

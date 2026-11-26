@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAFT A — landing: the code beside what it draws</title>
+<link rel="stylesheet" href="../../system/tokens.css">
+<style>
+  /* DRAFT: structure only. Every box names what will stand in it. */
+  body { margin: 0; font-family: var(--font-ui); font-size: var(--text-md); line-height: var(--text-leading); color: var(--color-text); background: var(--color-bg); }
+  .draft-note { padding: var(--space-2) var(--space-4); border-bottom: 1px dashed var(--color-line-strong); color: var(--color-text-2); }
+  main { max-width: calc(var(--space-12) * 22); margin: 0 auto; padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-8); }
+  section { display: flex; flex-direction: column; gap: var(--space-3); }
+  .name { color: var(--color-text-3); font-family: var(--font-mono); font-size: var(--text-xs); }
+  .row { display: flex; gap: var(--space-4); flex-wrap: wrap; }
+  .box { flex: 1 1 calc(var(--space-12) * 5); min-height: calc(var(--space-12) * 2); padding: var(--space-3); border: 1px dashed var(--color-line-strong); }
+  .tall { min-height: calc(var(--space-12) * 6); }
+  .narrow { flex-grow: 0; }
+</style>
+</head>
+<body>
+<p class="draft-note">DRAFT A · the code beside what it draws · structure only</p>
+<main>
+  <section>
+    <span class="name">1 · bar</span>
+    <div class="row">
+      <div class="box narrow">Name of the kit</div>
+      <div class="box">Links: Guide · CSS subset · GitHub</div>
+    </div>
+  </section>
+
+  <section>
+    <span class="name">2 · hero — two halves</span>
+    <div class="row">
+      <div class="box tall">
+        Statement: what the kit is, in one sentence<br>
+        One paragraph under it<br>
+        Primary action: Read the guide<br>
+        Second action: GitHub
+      </div>
+      <div class="box tall">
+        A frame of a window of the kit (PNG)<br>
+        Over its corner: the stylesheet rule that styles what the frame shows
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <span class="name">3 · what it is, what it is not — two columns</span>
+    <div class="row">
+      <div class="box">It is: 3–4 lines</div>
+      <div class="box">It is not: 3–4 lines</div>
+    </div>
+  </section>
+
+  <section>
+    <span class="name">4 · components — 4 to 6 cards, each in two halves</span>
+    <div class="row">
+      <div class="box">Frame of a family of components (PNG)</div>
+      <div class="box">The Rust that builds it</div>
+    </div>
+    <div class="row">
+      <div class="box">Frame of a family of components (PNG)</div>
+      <div class="box">The Rust that builds it</div>
+    </div>
+    <div class="box">…the other cards · link: every family in the catalog</div>
+  </section>
+
+  <section>
+    <span class="name">5 · how a window is written — two panels side by side</span>
+    <div class="row">
+      <div class="box tall">Rust: a component with a signal</div>
+      <div class="box tall">CSS: the class that styles it, with tokens</div>
+    </div>
+    <div class="box">Two numbers: 109 properties, 7 states · link: the CSS subset</div>
+  </section>
+
+  <section>
+    <span class="name">6 · start</span>
+    <div class="row">
+      <div class="box">What it needs: macOS 26 on Apple Silicon · Rust 1.94</div>
+      <div class="box">The dependency line, scrolling inside its box · action: Read the guide</div>
+    </div>
+  </section>
+
+  <section>
+    <span class="name">7 · foot</span>
+    <div class="box">License · Guide · CSS subset · GitHub</div>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAFT C — landing: the components first</title>
+<link rel="stylesheet" href="../../system/tokens.css">
+<style>
+  /* DRAFT: structure only. Every box names what will stand in it. */
+  body { margin: 0; font-family: var(--font-ui); font-size: var(--text-md); line-height: var(--text-leading); color: var(--color-text); background: var(--color-bg); }
+  .draft-note { padding: var(--space-2) var(--space-4); border-bottom: 1px dashed var(--color-line-strong); color: var(--color-text-2); }
+  main { max-width: calc(var(--space-12) * 22); margin: 0 auto; padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-8); }
+  section { display: flex; flex-direction: column; gap: var(--space-3); }
+  .name { color: var(--color-text-3); font-family: var(--font-mono); font-size: var(--text-xs); }
+  .row { display: flex; gap: var(--space-4); flex-wrap: wrap; }
+  .box { flex: 1 1 calc(var(--space-12) * 5); min-height: calc(var(--space-12) * 2); padding: var(--space-3); border: 1px dashed var(--color-line-strong); }
+  .tall { min-height: calc(var(--space-12) * 7); }
+  .narrow { flex-grow: 0; }
+  .side { flex: 0 1 calc(var(--space-12) * 4); }
+</style>
+</head>
+<body>
+<p class="draft-note">DRAFT C · the components first · structure only</p>
+<main>
+  <section>
+    <span class="name">1 · bar</span>
+    <div class="row">
+      <div class="box narrow">Name of the kit</div>
+      <div class="box">Links: Guide · CSS subset · GitHub</div>
+    </div>
+  </section>
+
+  <section>
+    <span class="name">2 · hero — one row, no picture</span>
+    <div class="row">
+      <div class="box">Statement: what the kit is, in one sentence · one paragraph</div>
+      <div class="box narrow">Primary action: Read the guide<br>Second action: GitHub</div>
+    </div>
+  </section>
+
+  <section>
+    <span class="name">3 · components — a list of 4 to 6 families beside the chosen one</span>
+    <div class="row">
+      <div class="box side tall">
+        List of families: one is chosen<br>
+        Under the list — link: every family in the catalog
+      </div>
+      <div class="box tall">
+        Frame of the chosen family (PNG)<br>
+        Under it: the Rust that builds it
+      </div>
+    </div>
+    <div class="box">Without JavaScript: the families stand one under another, each with its frame and code</div>
+  </section>
+
+  <section>
+    <span class="name">4 · what it is, what it is not — two columns</span>
+    <div class="row">
+      <div class="box">It is: 3–4 lines</div>
+      <div class="box">It is not: 3–4 lines</div>
+    </div>
+  </section>
+
+  <section>
+    <span class="name">5 · how a window is styled — one panel</span>
+    <div class="box">CSS: a class with tokens · two numbers: 109 properties, 7 states · link: the CSS subset</div>
+  </section>
+
+  <section>
+    <span class="name">6 · start</span>
+    <div class="row">
+      <div class="box">What it needs: macOS 26 on Apple Silicon · Rust 1.94</div>
+      <div class="box">The dependency line, scrolling inside its box · action: Read the guide</div>
+    </div>
+  </section>
+
+  <section>
+    <span class="name">7 · foot</span>
+    <div class="box">License · Guide · CSS subset · GitHub</div>
+  </section>
+</main>
+</body>
+</html>
