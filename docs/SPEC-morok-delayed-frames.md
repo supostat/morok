@@ -16,7 +16,7 @@
 
 - Prior spec: `docs/SPEC-morok-frame.md` — all 6 phases closed (run 0ddbbf67), committed up to
   `7c03e3d`, pushed to `origin/main`.
-- Prior spec-hash: sha256:<placeholder — confirm>
+- Prior spec-hash: sha256:283efdcf27737b0840104e1b5a70e5a2e609b5fec5c4012eb30ed5f47a794fdd
 - The debt: `docs/SPEC-morok-frame.md` left out of scope that the frame loop of a window queues a
   new block on the main queue for every delayed frame request
   (`crates/platform/src/frame_loop.rs:41-57`), while the tree asks again in every frame as long as

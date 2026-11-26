@@ -18,7 +18,7 @@
 # Baseline
 
 - Prior spec: none — the first spec of the project.
-- Prior spec-hash: sha256:<placeholder — confirm>
+- Prior spec-hash: none — the first spec of the project.
 - Sources of truth: `docs/GRILL-morok.md` (the protocol — its 19 locked decisions and its Knowledge
   and Conventions seeds are given and not reopened here), `docs/MOROK-ARCHITECTURE.md`,
   `design/morok-design-book.html` (the visual etalon of the base theme and the catalog),

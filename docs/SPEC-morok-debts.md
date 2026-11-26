@@ -20,7 +20,7 @@
 
 - Prior spec: `docs/SPEC-morok.md` — all 24 phases closed (run f46aa0ca), committed up to
   `66017cb` and pushed to `origin/main`; HEAD is `8d44a6f`.
-- Prior spec-hash: sha256:a697f45e5feb3fab60af711cac3cf4fc56e549eae3612d87a061a2cb286cb374
+- Prior spec-hash: sha256:f6f5944b422199331044d47267ea1d107ec63bb2ca1c854d562eb0bcf8417c24
 - Exists and is not touched: `docs/GRILL-morok.md`, `design/morok-design-book.html`,
   `design/system/tokens.css`, `CLAUDE.md`; the dropdown of `Select` and `Combobox` stays on
   `VirtualRows` (`crates/components/src/option_list.rs`), not on `List`; a drop target shows its

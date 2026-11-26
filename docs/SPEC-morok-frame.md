@@ -18,7 +18,7 @@
 # Baseline
 
 - Prior spec: `docs/SPEC-morok-rebind.md` — its one phase closed (run 9241ca2b); HEAD is `bcd3572`.
-- Prior spec-hash: sha256:<placeholder — confirm>
+- Prior spec-hash: sha256:f2fc38225884387828668aea67535ba7e2bf9e3b6c5ba44216d7651ae734bae2
 - The canonical order exists only in the private `HostedSurface::frame`
   (`crates/morok/src/hosted_surface.rs:102-114`): `refresh_hover` → `follow_scrolls` →
   `run_due_timers` → flush → `resolve_styles` → `size_images` → `compute_layout` →
