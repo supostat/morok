@@ -115,6 +115,7 @@ impl<Content> Window<Content> {
         self.native.setContentSize(ns_size(content_size));
     }
 
+    /// What the frame loop of the window has done since the window opened.
     pub fn frame_statistics(&self) -> FrameStatistics {
         self.view.statistics()
     }

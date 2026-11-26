@@ -18,6 +18,7 @@ impl TextSelection {
         }
     }
 
+    /// Whether nothing is selected: the anchor and the head are at one place.
     pub const fn is_caret(&self) -> bool {
         self.anchor == self.head
     }

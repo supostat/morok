@@ -14,6 +14,7 @@ pub struct TextArea {
 }
 
 impl TextArea {
+    /// A text area that edits `value`.
     pub fn new(value: Signal<String>) -> Self {
         Self {
             parts: FieldParts::new(value),

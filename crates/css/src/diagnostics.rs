@@ -14,6 +14,7 @@ impl Diagnostics {
         Self(diagnostics)
     }
 
+    /// The errors, ordered by file and position.
     pub fn as_slice(&self) -> &[Diagnostic] {
         &self.0
     }

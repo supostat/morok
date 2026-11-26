@@ -50,6 +50,7 @@ impl List {
         }
     }
 
+    /// Says how many rows the user selects at once.
     #[must_use]
     pub fn selection(mut self, selection: RowSelection) -> Self {
         self.selection = selection;

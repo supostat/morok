@@ -58,10 +58,13 @@ impl<World> Default for Runtime<World> {
 }
 
 impl<World> Runtime<World> {
+    /// A graph with no signal, memo or effect in it yet.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// A value that handlers write and that memos and effects follow: what read it runs again
+    /// after it is written.
     pub fn signal<T: 'static>(&mut self, value: T) -> Signal<T> {
         Signal::new(self.insert(NodeContent::Signal(Box::new(value)), NodeState::Clean))
     }
@@ -117,6 +120,11 @@ impl<World> Runtime<World> {
         self.graph.dispose(scope.id);
     }
 
+    /// A copy of the value. The memo or effect that runs right now comes to depend on it.
+    ///
+    /// # Panics
+    ///
+    /// When a memo reads its own value while computing it.
     pub fn get<T: Clone + 'static>(&mut self, source: impl Into<Source<T>>) -> T {
         self.with(source, T::clone)
     }
@@ -142,6 +150,8 @@ impl<World> Runtime<World> {
         )
     }
 
+    /// Replaces the value. What depends on the signal becomes stale whether or not the new value
+    /// differs from the old one.
     pub fn set<T: 'static>(&mut self, signal: Signal<T>, value: T) {
         self.update(signal, |current| *current = value);
     }

@@ -30,6 +30,7 @@ impl ElementBuilder<'_, '_> {
         self.element
     }
 
+    /// Gives the element the class for as long as the element lives.
     pub fn class(&mut self, class: Class) -> &mut Self {
         self.mount.surface.tree.add_class(self.element, class);
         self

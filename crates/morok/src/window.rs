@@ -30,6 +30,7 @@ impl Window {
         self.platform.set_content_size(content_size);
     }
 
+    /// What the frame loop of the window has done since the window opened.
     pub fn frame_statistics(&self) -> FrameStatistics {
         self.platform.frame_statistics()
     }

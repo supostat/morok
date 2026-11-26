@@ -21,6 +21,8 @@ pub struct Checkbox {
 }
 
 impl Checkbox {
+    /// A check box that shows `is_checked` and writes to it what the user makes of it; `label` is
+    /// the text beside the box.
     pub fn new(is_checked: Signal<bool>, label: impl Into<Property<String>>) -> Self {
         Self {
             is_checked,

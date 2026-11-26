@@ -10,6 +10,7 @@ use crate::theme::Theme;
 
 /// A kind of value a design token can hold; names the theme table that stores it.
 pub trait ThemeValue: Sized + 'static {
+    /// The table of the theme that holds the values of this kind, indexed by their tokens.
     fn table(theme: &Theme) -> &[Self];
 }
 

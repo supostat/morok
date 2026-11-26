@@ -1,6 +1,7 @@
 use crate::layout::track_breadth::TrackBreadth;
 use crate::length_percentage::LengthPercentage;
 
+/// The size of one track of a grid.
 #[derive(Clone, Debug, PartialEq)]
 pub enum TrackSize {
     Breadth(TrackBreadth),

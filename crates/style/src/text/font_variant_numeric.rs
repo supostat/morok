@@ -1,3 +1,4 @@
+/// How the digits of a text are set.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum FontVariantNumeric {
     Normal,

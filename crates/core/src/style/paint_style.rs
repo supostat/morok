@@ -79,6 +79,8 @@ impl PaintStyle {
         }
     }
 
+    /// The width the outline is drawn with: zero when the style draws no outline, whatever
+    /// width it names.
     pub fn used_outline_width(&self) -> f32 {
         match self.outline_style {
             LineStyle::None => 0.0,

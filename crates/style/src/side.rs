@@ -1,3 +1,4 @@
+/// A side of a box.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Side {
     Top,

@@ -35,6 +35,7 @@ impl Application {
         })
     }
 
+    /// The renderer every window of the application draws with.
     pub fn renderer(&self) -> &Renderer {
         &self.renderer
     }

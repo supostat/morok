@@ -15,6 +15,7 @@ pub struct KeyEvent {
 }
 
 impl KeyEvent {
+    /// The key with the modifiers of the event, to compare with the chord of a shortcut.
     pub fn chord(&self) -> KeyChord {
         KeyChord {
             key: self.key,

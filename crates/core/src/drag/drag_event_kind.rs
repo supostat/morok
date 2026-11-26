@@ -1,3 +1,4 @@
+/// What a drag did over an element that takes drops.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DragEventKind {
     /// The drag came over the target.

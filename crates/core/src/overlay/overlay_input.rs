@@ -10,10 +10,12 @@ pub enum OverlayInput {
 }
 
 impl OverlayInput {
+    /// Whether the pointer acts on the overlay and not on what lies under it.
     pub const fn takes_pointer(self) -> bool {
         !matches!(self, Self::None)
     }
 
+    /// Whether the keys go to the overlay and not to the surface it is opened over.
     pub const fn takes_keyboard(self) -> bool {
         matches!(self, Self::PointerAndKeyboard)
     }

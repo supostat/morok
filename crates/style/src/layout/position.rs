@@ -1,3 +1,4 @@
+/// How an element is placed: in the flow, out of it, or held in view while an ancestor scrolls.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Position {
     Relative,

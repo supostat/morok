@@ -12,16 +12,19 @@ pub struct ShapedText {
 }
 
 impl ShapedText {
+    /// Forgets the lines and keeps the buffers for the next shaping.
     pub fn clear(&mut self) {
         self.lines.clear();
         self.runs.clear();
         self.glyphs.clear();
     }
 
+    /// The runs of one line, each set in one font.
     pub fn runs_of(&self, line: &ShapedLine) -> &[ShapedRun] {
         &self.runs[line.runs.as_range()]
     }
 
+    /// The glyphs of one run.
     pub fn glyphs_of(&self, run: &ShapedRun) -> &[ShapedGlyph] {
         &self.glyphs[run.glyphs.as_range()]
     }

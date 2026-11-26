@@ -19,6 +19,8 @@ pub struct Switch {
 }
 
 impl Switch {
+    /// A switch that shows `is_on` and writes to it what the user makes of it; `label` is the
+    /// text beside the track.
     pub fn new(is_on: Signal<bool>, label: impl Into<Property<String>>) -> Self {
         Self {
             is_on,

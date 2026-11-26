@@ -28,6 +28,8 @@ pub struct Menu {
 }
 
 impl Menu {
+    /// A menu of `items`, open while `is_open` holds. The menu writes `false` to the signal when
+    /// it closes itself: on a command chosen, on a press outside it and on Escape.
     pub fn new(is_open: Signal<bool>, items: Vec<MenuItem>) -> Self {
         Self {
             is_open,

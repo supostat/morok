@@ -1,5 +1,6 @@
 use crate::input::pointer_button::PointerButton;
 
+/// What the pointer did on a surface, as the host of the tree tells it to the tree.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PointerInputKind {
     Moved,

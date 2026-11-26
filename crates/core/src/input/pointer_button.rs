@@ -1,3 +1,4 @@
+/// A button of the pointing device.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum PointerButton {
     /// The button that presses and drags: the left one of a mouse.

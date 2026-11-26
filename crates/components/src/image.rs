@@ -23,6 +23,7 @@ impl Image {
         }
     }
 
+    /// Builds the picture: one element that shows it.
     pub fn mount(self, mount: &mut Mount<'_>) -> ElementId {
         mount
             .image(self.image)

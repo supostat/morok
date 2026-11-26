@@ -10,11 +10,13 @@ pub struct CaretLines {
 }
 
 impl CaretLines {
+    /// Forgets the lines and keeps the buffers for the next shaping.
     pub fn clear(&mut self) {
         self.lines.clear();
         self.stops.clear();
     }
 
+    /// The places of one line where a caret may stand.
     pub fn stops_of(&self, line: &CaretLine) -> &[CaretStop] {
         &self.stops[line.stops.as_range()]
     }

@@ -26,6 +26,7 @@ pub struct Tooltip {
 }
 
 impl Tooltip {
+    /// A tooltip that shows `text`.
     pub fn new(text: impl Into<Property<String>>) -> Self {
         Self { text: text.into() }
     }

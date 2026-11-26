@@ -6,13 +6,17 @@ use crate::motion::animatable_property::AnimatableProperty;
 pub struct AnimatableProperties(u64);
 
 impl AnimatableProperties {
+    /// The set of no property.
     pub const NONE: Self = Self(0);
+    /// The set of every property a transition can run.
     pub const ALL: Self = Self((1 << AnimatableProperty::ALL.len()) - 1);
 
+    /// The set of one property.
     pub const fn of(property: AnimatableProperty) -> Self {
         Self(1 << property.position())
     }
 
+    /// The properties either set holds.
     #[must_use]
     pub const fn union(self, other: Self) -> Self {
         Self(self.0 | other.0)
@@ -24,10 +28,12 @@ impl AnimatableProperties {
         Self(self.0 & !other.0)
     }
 
+    /// Whether the set holds `property`.
     pub const fn contains(self, property: AnimatableProperty) -> bool {
         self.0 & Self::of(property).0 != 0
     }
 
+    /// Whether the set holds no property.
     pub const fn is_empty(self) -> bool {
         self.0 == 0
     }

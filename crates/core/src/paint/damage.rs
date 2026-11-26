@@ -26,6 +26,7 @@ impl Damage {
         &self.rectangles
     }
 
+    /// Whether no pixel of the surface changed.
     pub fn is_empty(&self) -> bool {
         self.rectangles.is_empty()
     }

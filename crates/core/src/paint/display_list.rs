@@ -16,6 +16,7 @@ pub struct DisplayList {
 }
 
 impl DisplayList {
+    /// The items of the list in paint order: a later item is drawn over an earlier one.
     pub fn items(&self) -> &[DisplayItem] {
         &self.items
     }

@@ -35,6 +35,7 @@ pub enum KitIcon {
 }
 
 impl KitIcon {
+    /// Every icon of the kit, in the order they are declared in.
     pub const ALL: [Self; 23] = [
         Self::Bolt,
         Self::Check,

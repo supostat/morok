@@ -31,6 +31,7 @@ pub struct Surfaces {
 }
 
 impl Surfaces {
+    /// The surfaces of an application that has opened none yet.
     pub fn new() -> Self {
         Self::default()
     }

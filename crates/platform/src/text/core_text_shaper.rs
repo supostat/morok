@@ -30,6 +30,7 @@ pub struct CoreTextShaper {
 }
 
 impl CoreTextShaper {
+    /// A shaper that remembers no measurement yet.
     pub fn new() -> Self {
         Self::default()
     }

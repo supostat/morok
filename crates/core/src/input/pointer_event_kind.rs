@@ -1,5 +1,6 @@
 use crate::input::pointer_button::PointerButton;
 
+/// What the pointer did, as the tree tells it to an element.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PointerEventKind {
     /// The pointer came over the element. Told to every element it came over, the outermost

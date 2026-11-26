@@ -25,6 +25,7 @@ pub struct Theme {
 }
 
 impl Theme {
+    /// The value of a token under this theme.
     pub fn resolve<V: ThemeValue>(&self, token: Token<V>) -> &V {
         &V::table(self)[token.index()]
     }

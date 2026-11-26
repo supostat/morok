@@ -14,6 +14,7 @@ pub struct TextField {
 }
 
 impl TextField {
+    /// A text field that edits `value`.
     pub fn new(value: Signal<String>) -> Self {
         Self {
             parts: FieldParts::new(value),

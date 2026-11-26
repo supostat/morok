@@ -12,6 +12,7 @@ pub struct Sides<T> {
 }
 
 impl<T: Copy> Sides<T> {
+    /// The same value on all four sides.
     pub const fn uniform(value: T) -> Self {
         Self {
             top: value,

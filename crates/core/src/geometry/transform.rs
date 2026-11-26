@@ -16,6 +16,7 @@ pub struct Transform {
 }
 
 impl Transform {
+    /// The transform that leaves every point where it is.
     pub const IDENTITY: Self = Self {
         a: 1.0,
         b: 0.0,
@@ -25,6 +26,7 @@ impl Transform {
         ty: 0.0,
     };
 
+    /// A shift by `(x, y)`.
     pub const fn translation(x: f64, y: f64) -> Self {
         Self {
             tx: x,
@@ -33,6 +35,7 @@ impl Transform {
         }
     }
 
+    /// A scale about the origin: by `x` across and by `y` down.
     pub const fn scaling(x: f32, y: f32) -> Self {
         Self {
             a: x,
@@ -53,6 +56,7 @@ impl Transform {
         }
     }
 
+    /// Whether the transform leaves every point where it is.
     pub fn is_identity(&self) -> bool {
         *self == Self::IDENTITY
     }
@@ -70,6 +74,8 @@ impl Transform {
         }
     }
 
+    /// Where the transform takes `point`. The result is in single precision, as every point of a
+    /// surface is.
     pub fn apply(&self, point: Point) -> Point {
         Point {
             x: surface_coordinate(f64::from(self.a * point.x + self.c * point.y) + self.tx),
@@ -101,6 +107,8 @@ impl Transform {
         Rect::new(left, top, right - left, bottom - top)
     }
 
+    /// By how much the transform scales areas: negative when it mirrors, zero when it collapses
+    /// the plane onto a line.
     pub fn determinant(&self) -> f32 {
         self.a * self.d - self.b * self.c
     }

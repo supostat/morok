@@ -218,6 +218,8 @@ impl ElementTree {
         self.frame_requests.set_scheduler(frame_scheduler);
     }
 
+    /// The element every other element of the tree descends from. It is attached from the start
+    /// and cannot be removed.
     pub fn root(&self) -> ElementId {
         self.root
     }
@@ -332,22 +334,30 @@ impl ElementTree {
         self.timers.forget_removed(&self.elements);
     }
 
+    /// What the element is: the role it was created with.
     pub fn role(&self, element: ElementId) -> Role {
         self.elements[element].role
     }
 
+    /// The element that holds `element` as a child; none for the root and for an element no
+    /// other holds yet.
     pub fn parent(&self, element: ElementId) -> Option<ElementId> {
         self.elements[element].parent
     }
 
+    /// The children of the element, in the order of the document.
     pub fn children(&self, element: ElementId) -> &[ElementId] {
         &self.elements[element].children
     }
 
+    /// The classes of the element, in no order a caller may rely on: taking a class away moves
+    /// the others.
     pub fn classes(&self, element: ElementId) -> &[Class] {
         &self.elements[element].classes
     }
 
+    /// Gives the element a class and marks for restyling what the class may change. A class the
+    /// element already has is left alone.
     pub fn add_class(&mut self, element: ElementId, class: Class) {
         let classes = &mut self.elements[element].classes;
         if classes.contains(&class) {
@@ -357,6 +367,8 @@ impl ElementTree {
         self.selector_marker().mark(element, SelectorChange::ClassAdded);
     }
 
+    /// Takes a class from the element and marks for restyling what the class may have changed.
+    /// A class the element does not have is left alone.
     pub fn remove_class(&mut self, element: ElementId, class: Class) {
         let classes = &mut self.elements[element].classes;
         let Some(position) = classes.iter().position(|held| *held == class) else {
@@ -368,6 +380,7 @@ impl ElementTree {
         self.elements[element].classes.pop();
     }
 
+    /// The states of the element that are on.
     pub fn states(&self, element: ElementId) -> States {
         self.elements[element].states
     }
@@ -646,6 +659,7 @@ impl ElementTree {
         &self.elements[element].text_layout.lines
     }
 
+    /// What the surface draws, as the last frame of the tree built it.
     pub fn display_list(&self) -> &DisplayList {
         &self.display_list
     }
@@ -1108,6 +1122,7 @@ impl ElementTree {
             || self.scroll_by_key(event)
     }
 
+    /// Whether the element takes focus and whether the Tab key stops on it.
     pub fn focusability(&self, element: ElementId) -> Focusability {
         self.elements[element].focusability
     }

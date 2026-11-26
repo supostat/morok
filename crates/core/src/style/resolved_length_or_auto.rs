@@ -11,6 +11,7 @@ pub enum ResolvedLengthOrAuto {
 }
 
 impl ResolvedLengthOrAuto {
+    /// A length of zero, which is not the automatic value.
     pub const ZERO: Self = Self::Length(ResolvedLength::ZERO);
 
     pub(crate) fn of(length: &LengthPercentageAuto, theme: &Theme) -> Self {

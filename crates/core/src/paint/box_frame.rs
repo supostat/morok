@@ -15,6 +15,7 @@ pub struct BoxFrame {
 }
 
 impl BoxFrame {
+    /// The box inside the borders: the border box without the space its borders take.
     pub fn padding_box(&self) -> Rect {
         self.border_box.expanded(Sides {
             top: -self.border_widths.top,

@@ -11,8 +11,10 @@ pub struct ResolvedLength {
 }
 
 impl ResolvedLength {
+    /// The length of nothing, with no percentage.
     pub const ZERO: Self = Self::pixels(0.0);
 
+    /// A length in pixels alone, with no percentage.
     pub const fn pixels(pixels: f32) -> Self {
         Self { pixels, fraction: None }
     }

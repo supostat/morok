@@ -69,6 +69,13 @@ impl Renderer {
         Self::with_options(&RendererOptions::default())
     }
 
+    /// The renderer of the default GPU of the system, with the memory its atlases and its image
+    /// textures may take.
+    ///
+    /// # Errors
+    ///
+    /// When the system has no GPU, when the GPU does not run Metal 4, or when Metal fails to
+    /// make an object the renderer needs.
     pub fn with_options(options: &RendererOptions) -> Result<Self, RendererError> {
         let device = MTLCreateSystemDefaultDevice().ok_or(RendererError::NoDevice)?;
         if !device.supportsFamily(MTLGPUFamily::Metal4) {

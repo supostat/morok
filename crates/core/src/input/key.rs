@@ -1,3 +1,4 @@
+/// A key of the keyboard, named by what it does and not by where it sits.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Key {
     /// A key that types a character, named by the lower-case character it types with no

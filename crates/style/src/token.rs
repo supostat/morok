@@ -9,6 +9,8 @@ pub struct Token<V> {
 }
 
 impl<V> Token<V> {
+    /// The token at `index` in the theme table of its kind of value: the compiler of the tokens
+    /// gives every token its index.
     pub const fn new(index: u32) -> Self {
         Self {
             index,
@@ -16,6 +18,7 @@ impl<V> Token<V> {
         }
     }
 
+    /// The place of the value in the theme table of its kind.
     pub fn index(self) -> usize {
         self.index as usize
     }

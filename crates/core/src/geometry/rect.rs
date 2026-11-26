@@ -12,8 +12,10 @@ pub struct Rect {
 }
 
 impl Rect {
+    /// The rectangle of no size at the origin.
     pub const ZERO: Self = Self::new(0.0, 0.0, 0.0, 0.0);
 
+    /// The rectangle whose top left corner is at `(x, y)`.
     pub const fn new(x: f32, y: f32, width: f32, height: f32) -> Self {
         Self { x, y, width, height }
     }
@@ -23,6 +25,7 @@ impl Rect {
         Point { x: self.x, y: self.y }
     }
 
+    /// The width and the height.
     pub fn size(&self) -> Size {
         Size {
             width: self.width,
@@ -30,10 +33,12 @@ impl Rect {
         }
     }
 
+    /// The `x` of the right edge.
     pub fn right(&self) -> f32 {
         self.x + self.width
     }
 
+    /// The `y` of the bottom edge; `y` grows downwards.
     pub fn bottom(&self) -> f32 {
         self.y + self.height
     }
@@ -43,6 +48,7 @@ impl Rect {
         self.width <= 0.0 || self.height <= 0.0
     }
 
+    /// Whether `other` lies wholly inside the rectangle; sharing an edge counts as inside.
     pub fn contains(&self, other: &Self) -> bool {
         self.x <= other.x && self.y <= other.y && self.right() >= other.right() && self.bottom() >= other.bottom()
     }

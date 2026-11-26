@@ -1,3 +1,4 @@
+/// How the white space and the line breaks of a text are kept, and whether its lines wrap.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum WhiteSpace {
     Normal,

@@ -1,5 +1,7 @@
 use crate::step_position::StepPosition;
 
+/// How the progress of a transition or an animation runs between its start and its end: the
+/// timing function of CSS.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Easing {
     Linear,

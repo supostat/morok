@@ -42,6 +42,7 @@ impl IconButton {
         self
     }
 
+    /// A disabled button takes no focus and no press.
     #[must_use]
     pub fn disabled(mut self, is_disabled: impl Into<Property<bool>>) -> Self {
         self.is_disabled = is_disabled.into();

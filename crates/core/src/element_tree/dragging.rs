@@ -21,6 +21,7 @@ use crate::transfer::payload_type::PayloadType;
 /// to the system, and the drags that began outside the tree — of the system, or of another
 /// surface of the application — that the host of the tree carries over its surface.
 impl ElementTree {
+    /// Whether the pointer may drag the element.
     pub fn is_drag_source(&self, element: ElementId) -> bool {
         self.elements[element].is_drag_source()
     }

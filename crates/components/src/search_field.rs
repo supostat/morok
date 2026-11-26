@@ -13,6 +13,7 @@ pub struct SearchField {
 }
 
 impl SearchField {
+    /// A search field that edits `query`.
     pub fn new(query: Signal<String>) -> Self {
         Self {
             parts: FieldParts::new(query),

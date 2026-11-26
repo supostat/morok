@@ -6,6 +6,7 @@ pub struct ItemRange {
 }
 
 impl ItemRange {
+    /// The run as a range of indices into its buffer.
     pub fn as_range(self) -> std::ops::Range<usize> {
         self.start as usize..self.end as usize
     }

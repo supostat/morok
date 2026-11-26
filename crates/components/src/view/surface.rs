@@ -191,6 +191,7 @@ impl Surface {
         self.tree.perform_text_command(command, &mut dispatch)
     }
 
+    /// The tree of the surface, to read its elements by.
     pub fn tree(&self) -> &ElementTree {
         &self.tree
     }

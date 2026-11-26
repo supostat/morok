@@ -11,6 +11,8 @@ pub struct Spinner {
 }
 
 impl Spinner {
+    /// A spinner an assistive technology has no name for until [`label`](Self::label) gives it
+    /// one.
     pub fn new() -> Self {
         Self {
             label: Property::Fixed(String::new()),

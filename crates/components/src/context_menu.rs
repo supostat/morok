@@ -32,6 +32,8 @@ pub struct ContextMenu {
 }
 
 impl ContextMenu {
+    /// A context menu of `items`: the menu of the system, until [`custom`](Self::custom) says
+    /// otherwise.
     pub fn new(items: Vec<MenuItem>) -> Self {
         Self {
             items,

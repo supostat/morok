@@ -1,3 +1,4 @@
+/// A corner of a box.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Corner {
     TopLeft,

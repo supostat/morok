@@ -10,6 +10,8 @@ pub struct SourceFile {
 }
 
 impl SourceFile {
+    /// A stylesheet whose text is already at hand: no file is read, and `path` is only what
+    /// diagnostics name it by.
     pub fn new(path: impl Into<PathBuf>, text: impl Into<String>) -> Self {
         Self {
             path: path.into(),
@@ -17,16 +19,19 @@ impl SourceFile {
         }
     }
 
+    /// The stylesheet read from the file at `path`.
     pub fn read(path: impl Into<PathBuf>) -> io::Result<Self> {
         let path = path.into();
         let text = fs::read_to_string(&path)?;
         Ok(Self { path, text })
     }
 
+    /// The path diagnostics name the stylesheet by.
     pub fn path(&self) -> &Path {
         &self.path
     }
 
+    /// The text of the stylesheet.
     pub fn text(&self) -> &str {
         &self.text
     }
