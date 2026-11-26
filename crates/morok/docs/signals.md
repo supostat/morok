@@ -37,6 +37,10 @@ assert_eq!(runtime.get(total), 20);
 | `update(signal, change)` | Changes the value in place. |
 | `untracked(read)` | Reads without making what runs right now depend on what is read. |
 
+A value of a signal is any type that is `'static`. `get` asks it to be `Clone`; `with` asks
+nothing more. The value of a memo is `PartialEq` as well: that is how a memo tells that nothing
+changed. An item of `for_each` is `Clone`, and its key `PartialEq`.
+
 ## Writes and flushes
 
 A write only marks what depends on the signal. The effects run in a **flush**: however many
@@ -120,6 +124,10 @@ fn title(mount: &mut Mount<'_>) -> ElementId {
 What a list shows is a memo over the signals it depends on — here the notes and the query of a
 search field — and `for_each` follows the memo. A button that empties the field writes the same
 signal the field edits.
+
+The example shows the signals alone: its column is a plain element. What gives a window its
+background, its font and the room around its content is in
+[Elements](elements.md#the-outermost-element-of-a-window).
 
 ```rust
 use morok::components::view::Mount;

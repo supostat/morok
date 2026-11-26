@@ -49,7 +49,8 @@ the application. [Elements](elements.md) tells what it does with the `Mount`.
 
 `Styles::of_kit()` holds the stylesheets of the components under the base theme of the kit, and
 nothing else: an application built on it lays its own elements out with inline declarations
-([Elements](elements.md#inline-declarations)). An application with classes and tokens of its own
+([Elements](elements.md#inline-declarations)) and gives its window a background and a font through
+its outermost element ([Elements](elements.md#the-outermost-element-of-a-window)). An application with classes and tokens of its own
 compiles them at build time. The catalog is the example to copy; its parts are:
 
 | Part | In the catalog | What it does |

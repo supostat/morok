@@ -104,7 +104,10 @@ application in the order of their paths. An inline declaration is over every rul
 Both are compiled into one style sheet, so a selector of an application may name a class of the
 kit, as the catalog does to size its lists with `.page-row > .scroll-view` in
 `crates/catalog/styles/pages.css`. The classes of the kit are declared in the stylesheets beside
-the components, in `crates/components/src`.
+the components: `crates/components/src/button.css` for `Button`. That is also where the sizes
+and the font of a component are written. A component built of the parts of another shares its
+classes: the box of a `SearchField` is the `.field` of `crates/components/src/text_field.css`,
+28 pixels high and at least 220 wide.
 
 ## Pseudo-elements
 

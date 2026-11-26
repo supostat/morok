@@ -6,6 +6,8 @@ doc comment at the source says the rest.
 
 ## The facade: `morok`
 
+Beside the names of the table the crate holds the module `guide`: this guide.
+
 | Name | What it is for | In the catalog | Source |
 |---|---|---|---|
 | `Application` | The running application: opens windows, holds the signal graph, runs the event loop. | `crates/catalog/src/catalog.rs` | `crates/morok/src/application.rs` |
@@ -29,6 +31,10 @@ doc comment at the source says the rest.
 | `style` | The module of compiled styles: classes, tokens, declarations, themes. | `crates/catalog/src/token_set.rs` | `crates/style/src/lib.rs` |
 
 ## The components: `morok::components`
+
+Beside the names of the table the module holds three modules: `view`, in the last table;
+`tokens`, with the `TOKENS` of the kit and their values `LIGHT` and `DARK`; and `styles`, with
+the `CLASSES` and the `STYLE_SHEET` of the kit. `Styles::of_kit` is built of the last two.
 
 | Name | What it is for | In the catalog | Source |
 |---|---|---|---|

@@ -3,10 +3,14 @@ use std::path::Path;
 use std::process::Command;
 
 use crate::comment_check;
+use crate::public_docs_check;
 use crate::workspace;
 
 const RUSTFMT_CHECK: [&str; 3] = ["fmt", "--all", "--check"];
 const CLIPPY: [&str; 6] = ["clippy", "--workspace", "--all-targets", "--", "--deny", "warnings"];
+const SUBSET_REFERENCE_TEST: [&str; 5] = ["test", "--package", "morok-css", "--test", "subset_reference"];
+const GUIDE_DOCTESTS: [&str; 4] = ["test", "--package", "morok", "--doc"];
+const GUIDE_TEST: [&str; 5] = ["test", "--package", "morok", "--test", "guide"];
 
 /// Runs every check even after one fails, so a single run reports everything there is to fix.
 pub(crate) fn is_clean() -> bool {
@@ -15,6 +19,16 @@ pub(crate) fn is_clean() -> bool {
         ("rustfmt", cargo_succeeds(&workspace_root, &RUSTFMT_CHECK)),
         ("clippy", cargo_succeeds(&workspace_root, &CLIPPY)),
         ("comment rules", comment_check::is_clean(&workspace::crates_directory())),
+        ("public documentation", public_docs_check::is_clean(&workspace_root)),
+        (
+            "reference of the CSS subset",
+            cargo_succeeds(&workspace_root, &SUBSET_REFERENCE_TEST),
+        ),
+        (
+            "doctests of the guide",
+            cargo_succeeds(&workspace_root, &GUIDE_DOCTESTS),
+        ),
+        ("guide test", cargo_succeeds(&workspace_root, &GUIDE_TEST)),
     ];
     let failed_steps: Vec<&str> = steps
         .into_iter()

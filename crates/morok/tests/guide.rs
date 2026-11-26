@@ -9,7 +9,10 @@ const WORKSPACE_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");
 const GUIDE_DIRECTORY: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/docs");
 const GUIDE_MODULE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/guide.rs");
 
+const README: &str = "README.md";
 const OVERVIEW: &str = "overview.md";
+/// The overview as the README links to it: from the root of the repository.
+const OVERVIEW_FROM_ROOT: &str = "crates/morok/docs/overview.md";
 const INDEX: &str = "index.md";
 /// The tables of the index: the module the heading of each names, and the source file whose
 /// exports the table lists.
@@ -28,8 +31,8 @@ const REPOSITORY_DIRECTORIES: [&str; 3] = ["crates/", "design/", "docs/"];
 const REEXPORT: &str = "\npub use ";
 const TYPE_ALIAS: &str = "\npub type ";
 
-/// A file of the guide.
-struct Chapter {
+/// A markdown file of the kit: a chapter of the guide, or the README that leads to it.
+struct MarkdownFile {
     file_name: String,
     text: String,
 }
@@ -42,8 +45,8 @@ struct FencedBlock {
     line: usize,
 }
 
-impl Chapter {
-    fn all() -> Vec<Self> {
+impl MarkdownFile {
+    fn chapters() -> Vec<Self> {
         let mut chapters: Vec<Self> = fs::read_dir(GUIDE_DIRECTORY)
             .expect("the directory of the guide is readable")
             .map(|entry| {
@@ -62,11 +65,18 @@ impl Chapter {
         chapters
     }
 
-    fn named(file_name: &str) -> Self {
-        Self::all()
+    fn chapter(file_name: &str) -> Self {
+        Self::chapters()
             .into_iter()
             .find(|chapter| chapter.file_name == file_name)
             .unwrap_or_else(|| panic!("the guide has the chapter {file_name}"))
+    }
+
+    fn readme() -> Self {
+        Self {
+            file_name: README.to_owned(),
+            text: workspace_file(README),
+        }
     }
 
     fn fenced_blocks(&self) -> Vec<FencedBlock> {
@@ -220,7 +230,7 @@ fn names_of_item(item: &str) -> Vec<String> {
 
 #[test]
 fn the_index_has_a_row_for_every_exported_name() {
-    let index = Chapter::named(INDEX);
+    let index = MarkdownFile::chapter(INDEX);
     for (module, source) in INDEX_TABLES {
         let exported = exported_names(&workspace_file(source));
         let indexed = index.table_names(module);
@@ -236,7 +246,7 @@ fn the_index_has_a_row_for_every_exported_name() {
 
 #[test]
 fn every_row_of_the_index_names_an_exported_name() {
-    let index = Chapter::named(INDEX);
+    let index = MarkdownFile::chapter(INDEX);
     for (module, source) in INDEX_TABLES {
         let exported = exported_names(&workspace_file(source));
         let indexed = index.table_names(module);
@@ -255,7 +265,7 @@ fn every_row_of_the_index_names_an_exported_name() {
 fn every_chapter_is_attached_to_the_documentation_of_the_facade() {
     let guide_module = fs::read_to_string(GUIDE_MODULE).expect("the module of the guide is readable");
 
-    let unattached: Vec<String> = Chapter::all()
+    let unattached: Vec<String> = MarkdownFile::chapters()
         .into_iter()
         .map(|chapter| chapter.file_name)
         .filter(|file_name| !guide_module.contains(&format!("include_str!(\"../docs/{file_name}\")")))
@@ -269,7 +279,7 @@ fn every_chapter_is_attached_to_the_documentation_of_the_facade() {
 
 #[test]
 fn no_fence_is_tagged_ignore() {
-    let ignored: Vec<String> = Chapter::all()
+    let ignored: Vec<String> = MarkdownFile::chapters()
         .iter()
         .flat_map(|chapter| {
             chapter
@@ -289,7 +299,7 @@ fn every_css_fence_compiles_as_a_stylesheet_over_the_tokens_of_the_kit() {
     let tokens = compile_tokens(&SourceFile::new(KIT_TOKENS.path, KIT_TOKENS.text))
         .unwrap_or_else(|diagnostics| panic!("the tokens of the kit compile:\n{diagnostics}"));
     let mut compiled = 0;
-    for chapter in Chapter::all() {
+    for chapter in MarkdownFile::chapters() {
         for block in chapter.fenced_blocks() {
             if block.tags.first().map(String::as_str) != Some(STYLESHEET_LANGUAGE) {
                 continue;
@@ -311,7 +321,7 @@ fn every_css_fence_compiles_as_a_stylesheet_over_the_tokens_of_the_kit() {
 
 #[test]
 fn every_path_of_the_repository_the_guide_names_exists() {
-    let missing: Vec<String> = Chapter::all()
+    let missing: Vec<String> = MarkdownFile::chapters()
         .iter()
         .flat_map(|chapter| {
             chapter
@@ -328,13 +338,23 @@ fn every_path_of_the_repository_the_guide_names_exists() {
 
 #[test]
 fn the_overview_leads_to_every_chapter() {
-    let linked = Chapter::named(OVERVIEW).linked_chapters();
+    let linked = MarkdownFile::chapter(OVERVIEW).linked_chapters();
 
-    let unreachable: Vec<String> = Chapter::all()
+    let unreachable: Vec<String> = MarkdownFile::chapters()
         .into_iter()
         .map(|chapter| chapter.file_name)
         .filter(|file_name| file_name != OVERVIEW && !linked.contains(file_name))
         .collect();
 
     assert!(unreachable.is_empty(), "the overview links to no {unreachable:?}");
+}
+
+#[test]
+fn the_readme_leads_to_the_overview() {
+    let targets = MarkdownFile::readme().link_targets();
+
+    assert!(
+        targets.iter().any(|target| target == OVERVIEW_FROM_ROOT),
+        "{README} links to no {OVERVIEW_FROM_ROOT}: {targets:?}"
+    );
 }

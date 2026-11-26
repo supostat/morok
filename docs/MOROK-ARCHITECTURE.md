@@ -46,7 +46,21 @@ layering is held by the compiler: a crate cannot reach a layer it does not depen
 
 Unpublished: `crates/catalog` (`morok-catalog`, the catalog application, built on `morok` alone),
 `crates/teststand` (`morok-teststand`, the Chrome-vs-MOROK stand), `crates/bench` (`morok-bench`,
-the budget gates) and `crates/xtask` (formatting, clippy and comment rules).
+the budget gates) and `crates/xtask` (formatting, clippy, the comment rules and the documentation
+checks).
+
+The documentation an application is written from travels with the crates and is held to the code
+by `cargo xtask check`:
+
+- The reference is the doc comment of every public item of the published crates. The rule
+  `cargo xtask public-docs` fails on a public item without one.
+- The guide is the chapters of `crates/morok/docs`, attached to the documentation of `morok` as
+  the module `guide`; the root `README.md` leads to its overview. Its Rust examples are doctests
+  of `morok`, and `crates/morok/tests/guide.rs` keeps its index equal to the exports, its `css`
+  examples inside the subset and the paths it names real.
+- The reference of the CSS subset, `crates/css/docs/css-subset.md`, is rendered from the tables
+  of the compiler by `morok_css::subset_reference()`; `crates/css/tests/subset_reference.rs`
+  fails when the committed file differs from what the tables render.
 
 ## 3. Style schema
 

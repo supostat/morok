@@ -87,7 +87,7 @@ fn status(mount: &mut Mount<'_>) -> ElementId {
 | `inline(declaration)` | One property of its style, over every rule of the style sheet. |
 | `placeholder(text)` | What an edited text shows while it is empty. |
 | `focusable(focusability)` | Whether it takes focus and whether the Tab key stops on it. |
-| `accessible_role(role)`, `accessible_name(name)` and the other `accessible_…` methods | Its node in the accessibility tree. The role comes first: the others panic on an element without one. |
+| `accessible_role(role)`, `accessible_name(name)` and the other `accessible_…` methods | Its node in the accessibility tree ([below](#accessibility)). The role comes first: the others panic on an element without one. |
 
 ## Classes
 
@@ -103,9 +103,27 @@ styles its own elements with its own classes.
 ## Inline declarations
 
 An application without stylesheets of its own lays out its elements with `inline`. A
-`Declaration` is one longhand property with its value: the enum `morok::style::Declaration` has a
-variant for every longhand of the subset. A keyword is a variant of its enum; a color is a token
-of `morok::components::tokens::TOKENS`.
+`Declaration` is one longhand property with its value. The enum is `morok::style::Declaration`,
+and `crates/style/src/declaration.rs` lists its variants: that file is where to look a property
+up.
+
+- A variant is named after its longhand: `flex-grow` is `Declaration::FlexGrow`, `column-gap` is
+  `Declaration::ColumnGap`. A shorthand has none: `gap` is a `RowGap` and a `ColumnGap`.
+- The longhands of the four sides share one variant, which takes the side first: `padding-top` is
+  `Declaration::Padding(Side::Top, …)`, and `Margin`, `Inset`, `BorderWidth`, `BorderStyle` and
+  `BorderColor` are written the same way. The sides are `Side::Top`, `Side::Right`,
+  `Side::Bottom` and `Side::Left`, and `Side::ALL` is the four of them. `BorderRadius` takes a
+  `Corner` in the same way.
+- A keyword is a variant of its enum, written in camel case: `center` is
+  `ItemAlignment::Center`, `flex-start` is `ItemAlignment::FlexStart`, `space-between` is
+  `ContentAlignment::SpaceBetween`, `nowrap` is `FlexWrap::NoWrap`. `morok::style` exports the
+  enums; each is declared in a file of its own under `crates/style/src/layout`,
+  `crates/style/src/paint`, `crates/style/src/text` or `crates/style/src/effect`, and the
+  imports at the top of `crates/style/src/declaration.rs` name the file of each.
+- A number is an `f32`: `Declaration::FlexGrow(1.0)`, `Declaration::Opacity(0.5)`.
+- A color is a `ColorValue`: a token of `morok::components::tokens::TOKENS`,
+  `ColorValue::Transparent` or `ColorValue::CurrentColor`.
+- A length is written in full, as shown below.
 
 ```rust
 use morok::components::tokens::TOKENS;
@@ -128,8 +146,9 @@ fn column(mount: &mut Mount<'_>, children: &[ElementId]) -> ElementId {
 }
 ```
 
-A length is written in full: pixels, a fraction of the percentage basis and token terms. A
-function of the application keeps that in one place.
+A length is written in full: pixels, a fraction of the percentage basis and token terms. Two
+functions of the application keep that in one place; the examples of this chapter call them
+`pixels` and `space`.
 
 ```rust
 use std::borrow::Cow;
@@ -146,7 +165,7 @@ fn pixels(pixels: f32) -> LengthPercentage {
     }
 }
 
-/// The length a space token holds under the theme of the window.
+/// The length a token holds under the theme of the window.
 fn space(token: Token<Pixels>) -> LengthPercentage {
     LengthPercentage {
         pixels: Pixels(0.0),
@@ -170,14 +189,108 @@ fn panel() -> [Declaration; 4] {
 }
 ```
 
+A declaration reaches an element a component built through `Mount::build`: this is how a field
+is told to take the room its row leaves.
+
+```rust
+use morok::components::view::Mount;
+use morok::core::ElementId;
+use morok::style::{Declaration, Display};
+
+fn search_row(mount: &mut Mount<'_>, field: ElementId, button: ElementId) -> ElementId {
+    mount.build(field).inline(Declaration::FlexGrow(1.0));
+    mount
+        .element()
+        .inline(Declaration::Display(Display::Flex))
+        .child(field)
+        .child(button)
+        .id()
+}
+```
+
 What an element looks like before any declaration reaches it:
 
-- `display: block`, no margin, no padding, `box-sizing: border-box`.
-- A transparent background, the root of the window included: an application that wants a
-  background gives one to its outermost element.
+- `display: block`, no margin, no padding, `box-sizing: border-box`. Every other property of
+  layout has its initial value of CSS: a flex container is a row that does not wrap, and nothing
+  in it grows.
+- The children of a block stand one under another, each as wide as the block. A text is such a
+  child, and breaks into lines at that width. There is no inline flow: two texts in one element
+  are two boxes, one under the other, and what stands side by side stands in a flex container.
+- As tall as its content, the outermost element of a window included.
+- A transparent background, the root of the window included.
 - Text in the font of the system at 16 pixels, in black. The color and the properties of text
-  pass from an element to its children, so one `Declaration::Color` on the outermost element
-  colors every text inside it — and the texts of the components carry their own.
+  pass from an element to its children.
+
+## The outermost element of a window
+
+An application on the styles of the kit alone gives its outermost element what a stylesheet would
+give its window: the height of the surface, a background, the color and the font of its texts,
+and room around its content.
+
+- **The height.** Without `height: 100%` the element ends where its content does, and so does its
+  background.
+- **The font.** The components set their own texts in `--font-ui` at `--text-md`, 13 pixels. A
+  text the application creates with `Mount::text` takes the font and the color of the elements
+  around it: given here once, they hold for all of them.
+- **The background.** The catalog paints its window with `--color-surface`.
+
+```rust
+use std::borrow::Cow;
+
+use morok::components::tokens::TOKENS;
+use morok::components::view::Mount;
+use morok::core::ElementId;
+use morok::style::{
+    ColorValue, Declaration, Display, FlexDirection, Length, LengthPercentage, LengthPercentageAuto, LineHeight,
+    Pixels, Side, Token, TokenTerm,
+};
+
+/// The length a token holds under the theme of the window.
+fn space(token: Token<Pixels>) -> LengthPercentage {
+    LengthPercentage {
+        pixels: Pixels(0.0),
+        fraction: None,
+        tokens: Cow::Owned(vec![TokenTerm { token, factor: 1.0 }]),
+    }
+}
+
+/// The outermost element of a window: a column over the whole surface, in the colors and the
+/// font of the kit, with room around what it holds.
+fn window(mount: &mut Mount<'_>, content: &[ElementId]) -> ElementId {
+    let whole_surface = LengthPercentageAuto::LengthPercentage(LengthPercentage {
+        pixels: Pixels(0.0),
+        fraction: Some(1.0),
+        tokens: Cow::Borrowed(&[]),
+    });
+    let room = space(TOKENS.space_4);
+    let mut window = mount.element();
+    window
+        .inline(Declaration::Height(whole_surface))
+        .inline(Declaration::Display(Display::Flex))
+        .inline(Declaration::FlexDirection(FlexDirection::Column))
+        .inline(Declaration::RowGap(room.clone()))
+        .inline(Declaration::BackgroundColor(ColorValue::Token(TOKENS.color_surface)))
+        .inline(Declaration::Color(ColorValue::Token(TOKENS.color_text)))
+        .inline(Declaration::FontFamily(TOKENS.font_ui))
+        .inline(Declaration::FontSize(Length {
+            pixels: Pixels(0.0),
+            tokens: Cow::Owned(vec![TokenTerm {
+                token: TOKENS.text_md,
+                factor: 1.0,
+            }]),
+        }))
+        .inline(Declaration::LineHeight(LineHeight::Token(TOKENS.text_leading)));
+    for side in Side::ALL {
+        window.inline(Declaration::Padding(side, room.clone()));
+    }
+    for child in content {
+        window.child(*child);
+    }
+    window.id()
+}
+```
+
+The component of a window calls it last, with what it built: `window(mount, &[search, notes])`.
 
 ## Children that come and go
 
@@ -277,3 +390,34 @@ Other handlers of the builder:
 
 A handler never touches a window: it writes signals, and it hands what opens or closes a window
 to `Application::defer` ([An application](application.md#defer-what-a-handler-cannot-do-at-once)).
+
+## Accessibility
+
+An element is in the accessibility tree only when it has a role: an element without one is
+passed over, and its children are read as the children of the element around it. The components
+of the kit give their elements roles, names and actions themselves. What an application builds
+of its own elements gets none until the application gives it one.
+
+- The role is a `morok::core::accesskit::Role`.
+- A text with a role gives its text to its node. A text without one is not read at all.
+- A box with a role is named by `accessible_name`, and says what may be asked of it with
+  `accessible_actions`.
+
+```rust
+use morok::components::view::Mount;
+use morok::core::ElementId;
+use morok::core::accesskit::Role;
+
+fn notes(mount: &mut Mount<'_>, texts: &[&str]) -> ElementId {
+    let items: Vec<ElementId> = texts
+        .iter()
+        .map(|text| mount.text(*text).accessible_role(Role::ListItem).id())
+        .collect();
+    let mut list = mount.element();
+    list.accessible_role(Role::List).accessible_name("Notes");
+    for item in items {
+        list.child(item);
+    }
+    list.id()
+}
+```
