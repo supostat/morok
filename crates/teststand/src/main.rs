@@ -1,11 +1,12 @@
 #![forbid(unsafe_code)]
 
+use std::path::Path;
 use std::process::ExitCode;
 
-use morok_teststand::{Stand, StandError, Suite, SuiteReport, check, etalons, suites};
+use morok_teststand::{Stand, StandError, Suite, SuiteReport, check, etalons, frames, suites};
 
-const USAGE: &str =
-    "usage: morok-teststand <etalons render <suite> | etalons verify <suite> | check <suite>>, `all` for every suite";
+const USAGE: &str = "usage: morok-teststand <etalons render <suite> | etalons verify <suite> | check <suite> | \
+                     frames <list>>, `all` for every suite";
 const CLEAN: u8 = 0;
 /// The command names nothing the stand has, or the stand could not do its work.
 const COULD_NOT_RUN: u8 = 2;
@@ -23,6 +24,10 @@ fn main() -> ExitCode {
             etalons::verify(suite, &stand).map(|report| reported(&report))
         }),
         ["check", suite] => on_suite(suite, |suite| check(suite, &stand).map(|report| reported(&report))),
+        ["frames", list] => frames::write(Path::new(list)).map(|written| {
+            println!("{written} frames written");
+            CLEAN
+        }),
         _ => {
             eprintln!("{USAGE}");
             Ok(COULD_NOT_RUN)
