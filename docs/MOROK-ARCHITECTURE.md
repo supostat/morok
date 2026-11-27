@@ -46,8 +46,8 @@ layering is held by the compiler: a crate cannot reach a layer it does not depen
 
 Unpublished: `crates/catalog` (`morok-catalog`, the catalog application, built on `morok` alone),
 `crates/teststand` (`morok-teststand`, the Chrome-vs-MOROK stand), `crates/bench` (`morok-bench`,
-the budget gates) and `crates/xtask` (formatting, clippy, the comment rules and the documentation
-checks).
+the budget gates) and `crates/xtask` (formatting, clippy, the comment rules, the documentation
+checks and the check of the site).
 
 The documentation an application is written from travels with the crates and is held to the code
 by `cargo xtask check`:
@@ -246,6 +246,10 @@ event ─► signals/effects ─► style(flags) ─► layout(dirty) ─► dis
   gate counts the pixels that are not anti-aliasing whose CIEDE2000 difference exceeds 2.0 and
   fails above 0.5 % of the area or a mean above 1.0 (`crates/teststand/thresholds.toml`). A
   failing case writes a diff PNG under `target/teststand/`.
+- **Frames.** `frames <list>` writes what the kit draws of the cases a list names, each entry a
+  suite, a case, a color scheme and a file under the directory of the list. These are the
+  pictures of the kit a page shows: drawn by the kit, where an etalon is drawn by Chrome. The
+  command opens no window and needs Metal.
 - **Benchmarks.** `crates/bench` gates the budgets of §7 with failing exit codes
   (`crates/bench/budgets.toml`): `frame` on the reference scene of 2,000 boxes and on the two
   screens of the catalog, `idle`, `cold-start`, `input-latency`, `scroll-1m` (the table of a
@@ -256,6 +260,17 @@ event ─► signals/effects ─► style(flags) ─► layout(dirty) ─► dis
 
 - macOS 26 Tahoe+, Apple Silicon, Metal 4.
 - License MIT/Apache-2.0, crates.io: `morok`.
+- **The site.** `site/` is the landing page as GitHub Pages serves it:
+  `.github/workflows/pages.yml` uploads the folder as it is and builds nothing. The page is the
+  etalon `design/pages/landing/landing.html` with its styles in `site/landing.css`. Its pictures
+  are frames of the kit: the stand writes them from the list `site/frames.toml`, on a Mac, and
+  they are committed. Its token files are derived: `cargo xtask site-tokens .` renders them from
+  `design/system/tokens.css`.
+- **What holds the site.** `cargo xtask site .`, a step of `cargo xtask check`, fails when a token
+  file differs from what the tokens render, when the page asks its folder for a file that is not
+  there, when a picture is not a frame of the list or its tag declares another size than its
+  PNG has, and when a link to a file of the repository names none. It does not draw the frames
+  again: a frame is as fresh as the last run of the command.
 
 ## 14. Reference: Facet
 

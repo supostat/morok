@@ -10,7 +10,9 @@ present the kit.
 - `tokens.css` — the tokens of the kit, light and dark by the color scheme of the system. The
   compiler of the kit reads this file: a page never adds a token to it.
 - `tokens-dark.css` — the dark values alone, for a page that is dark whatever the system says.
-  It mirrors the dark block of `tokens.css` and holds nothing of its own.
+  It mirrors the dark block of `tokens.css` and holds nothing of its own. No hand writes it:
+  `cargo xtask site-tokens .` renders it from the tokens, and `cargo xtask check` fails while it
+  differs from what they render.
 - `components.html` — the patterns pages share, once a pattern has appeared on two of them.
 
 A page links the layer and never copies a value out of it: every color, size and duration in a

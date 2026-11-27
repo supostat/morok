@@ -4,6 +4,7 @@ use std::process::Command;
 
 use crate::comment_check;
 use crate::public_docs_check;
+use crate::site_check;
 use crate::workspace;
 
 const RUSTFMT_CHECK: [&str; 3] = ["fmt", "--all", "--check"];
@@ -20,6 +21,7 @@ pub(crate) fn is_clean() -> bool {
         ("clippy", cargo_succeeds(&workspace_root, &CLIPPY)),
         ("comment rules", comment_check::is_clean(&workspace::crates_directory())),
         ("public documentation", public_docs_check::is_clean(&workspace_root)),
+        ("site", site_check::is_clean(&workspace_root)),
         (
             "reference of the CSS subset",
             cargo_succeeds(&workspace_root, &SUBSET_REFERENCE_TEST),
