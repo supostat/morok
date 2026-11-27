@@ -5,6 +5,7 @@ use std::path::Path;
 use crate::dark_tokens::DarkTokens;
 use crate::derived_file::DerivedFile;
 use crate::finding::Finding;
+use crate::line_number;
 
 const TOKENS: &str = "design/system/tokens.css";
 /// The dark tokens for the etalons of the pages, which link them beside the tokens.
@@ -12,7 +13,6 @@ const DESIGN_MIRROR: &str = "design/system/tokens-dark.css";
 const SITE_TOKENS: &str = "site/tokens.css";
 const SITE_MIRROR: &str = "site/tokens-dark.css";
 
-const FIRST_LINE: usize = 1;
 const NO_DARK_BLOCK: &str = "the tokens file has no dark block to render the dark tokens of a page from: \
                              declare it in `@media (prefers-color-scheme: dark) { :root { … } }`";
 
@@ -68,7 +68,7 @@ fn derived_files(workspace: &Path) -> io::Result<Result<Vec<DerivedFile>, Findin
     let Some(dark_tokens) = DarkTokens::of(&tokens_text) else {
         return Ok(Err(Finding {
             path: tokens_file,
-            line: FIRST_LINE,
+            line: line_number::FIRST,
             reason: NO_DARK_BLOCK.to_owned(),
         }));
     };

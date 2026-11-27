@@ -1,0 +1,38 @@
+# The pictures of the page are frames the kit draws. The stand writes them from this list:
+# cargo run -p morok-teststand -- frames site/frames.toml
+
+[[frame]]
+suite = "screens"
+case = "file-manager"
+color_scheme = "dark"
+file = "frames/file-manager.png"
+
+[[frame]]
+suite = "screens"
+case = "disk-map"
+color_scheme = "dark"
+file = "frames/disk-map.png"
+
+[[frame]]
+suite = "overlays"
+case = "menu"
+color_scheme = "dark"
+file = "frames/menu.png"
+
+[[frame]]
+suite = "table"
+case = "table-states"
+color_scheme = "dark"
+file = "frames/table.png"
+
+[[frame]]
+suite = "button"
+case = "primary-states"
+color_scheme = "dark"
+file = "frames/button.png"
+
+[[frame]]
+suite = "text-fields"
+case = "text-field-states"
+color_scheme = "dark"
+file = "frames/text-field.png"

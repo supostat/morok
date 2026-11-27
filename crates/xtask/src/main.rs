@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
 
+mod cargo_manifest;
 mod check;
 mod comment;
 mod comment_check;
@@ -9,12 +10,17 @@ mod dark_tokens;
 mod derived_file;
 mod finding;
 mod finding_report;
+mod frame_files;
+mod line_number;
+mod png_size;
 mod public_crates;
 mod public_docs_check;
 mod site_check;
+mod site_page;
 mod site_tokens;
 mod source_files;
 mod source_language;
+mod start_tag;
 mod undocumented_item;
 mod workspace;
 

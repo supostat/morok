@@ -12,10 +12,20 @@ const USAGE_ERROR: Option<i32> = Some(2);
 const CHECK: &str = "site";
 const WRITE_TOKENS: &str = "site-tokens";
 
+/// What opens the line that counts the findings of a report.
+const SUMMARY_OPENING: &str = "xtask: ";
+
+const MANIFEST: &str = "Cargo.toml";
+const GUIDE: &str = "docs/guide.md";
 const TOKENS: &str = "design/system/tokens.css";
 const DESIGN_MIRROR: &str = "design/system/tokens-dark.css";
 const SITE_TOKENS: &str = "site/tokens.css";
 const SITE_MIRROR: &str = "site/tokens-dark.css";
+const PAGE: &str = "site/index.html";
+const STYLESHEET: &str = "site/landing.css";
+const SCRIPT: &str = "site/fallback.js";
+const FRAME_LIST: &str = "site/frames.toml";
+const PICTURE: &str = "site/frames/window.png";
 
 const LIGHT_BACKGROUND: &str = "#FFFFFF";
 const DARK_BACKGROUND: &str = "#000000";
@@ -51,6 +61,51 @@ const LINES_OF_KIT_MIRROR: usize = 7;
 /// Tokens with the light block alone.
 const TOKENS_WITHOUT_DARK_BLOCK: &str = ":root {\n  --color-bg: #FFFFFF;\n}\n";
 
+const KIT_MANIFEST: &str = "[workspace.package]\nrepository = \"https://example.org/kit\"\n";
+/// The page of a small site. It asks its folder for two stylesheets, a script and a picture,
+/// and links a file of the repository; an address with a scheme, a place of the page itself
+/// and the repository as a whole are nothing the folder or the workspace is asked for.
+const KIT_PAGE: &str = r##"<!doctype html>
+<html lang="en">
+<head>
+<link rel="preconnect" href="https://example.org">
+<link rel="icon" href="#">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="landing.css">
+<script src="fallback.js"></script>
+</head>
+<body>
+<img src="frames/window.png" width="4" height="2" alt="A window">
+<a href="https://example.org/kit/blob/main/docs/guide.md">Guide</a>
+<a href="https://example.org/kit">Repository</a>
+</body>
+</html>
+"##;
+const STYLESHEET_LINE: usize = 7;
+const SCRIPT_LINE: usize = 8;
+const BODY_OPENING: &str = "<body>\n";
+const PICTURE_LINE: usize = 11;
+const GUIDE_LINK_LINE: usize = 12;
+const PICTURE_WIDTH: u32 = 4;
+const PICTURE_HEIGHT: u32 = 2;
+/// The list of the one frame of the small site.
+const KIT_FRAME_LIST: &str = "[[frame]]
+suite = \"screens\"
+case = \"window\"
+color_scheme = \"dark\"
+file = \"frames/window.png\"
+";
+const FRAME_LINE: usize = 1;
+/// A second frame of the list, which nothing has written.
+const UNWRITTEN_FRAME: &str = "
+[[frame]]
+suite = \"screens\"
+case = \"dialog\"
+color_scheme = \"dark\"
+file = \"frames/dialog.png\"
+";
+const FILE_LINE_OF_UNWRITTEN_FRAME: usize = 11;
+
 struct Workspace {
     root: PathBuf,
 }
@@ -71,15 +126,23 @@ impl Workspace {
         Self { root }.with_file(TOKENS, tokens)
     }
 
-    /// A workspace whose derived files were written from the tokens of the small kit.
-    fn with_written_tokens(test_name: &str) -> Self {
-        let workspace = Self::of_tokens(test_name, KIT_TOKENS);
+    /// A workspace whose site is whole: the token files written from the tokens of the small
+    /// kit, the page with everything it asks for, and the list of its one frame.
+    fn whole(test_name: &str) -> Self {
+        let workspace = Self::of_tokens(test_name, KIT_TOKENS)
+            .with_file(MANIFEST, KIT_MANIFEST)
+            .with_file(GUIDE, "# Guide\n")
+            .with_file(PAGE, KIT_PAGE)
+            .with_file(STYLESHEET, "body { margin: 0; }\n")
+            .with_file(SCRIPT, "")
+            .with_file(FRAME_LIST, KIT_FRAME_LIST)
+            .with_file(PICTURE, png_header(PICTURE_WIDTH, PICTURE_HEIGHT));
         let written = workspace.run(WRITE_TOKENS);
         assert_eq!(written.exit_code, CLEAN, "{}", written.report);
         workspace
     }
 
-    fn with_file(self, relative_path: &str, contents: &str) -> Self {
+    fn with_file(self, relative_path: &str, contents: impl AsRef<[u8]>) -> Self {
         let path = self.root.join(relative_path);
         fs::create_dir_all(path.parent().expect("a file of the workspace has a parent directory"))
             .expect("the parent directory is created");
@@ -145,10 +208,33 @@ impl XtaskRun {
         );
     }
 
+    /// The report holds one finding: it is at the place and it says the claim.
+    fn assert_only_finding(&self, place: &str, claim: &str) {
+        assert_eq!(self.exit_code, FINDINGS, "{}", self.report);
+        let findings: Vec<&str> = self
+            .report
+            .lines()
+            .filter(|line| !line.starts_with(SUMMARY_OPENING))
+            .collect();
+        assert!(
+            matches!(findings.as_slice(), [finding] if finding.starts_with(place) && finding.contains(claim)),
+            "expected one finding, at `{place}`, that says `{claim}` in:\n{}",
+            self.report
+        );
+    }
+
     fn assert_clean(&self) {
         assert_eq!(self.exit_code, CLEAN, "{}", self.report);
         assert_eq!(self.report, "");
     }
+}
+
+/// The header of a PNG of the size: all of a picture the check reads.
+fn png_header(width: u32, height: u32) -> Vec<u8> {
+    let mut header = b"\x89PNG\r\n\x1a\n\0\0\0\rIHDR".to_vec();
+    header.extend(width.to_be_bytes());
+    header.extend(height.to_be_bytes());
+    header
 }
 
 #[test]
@@ -161,13 +247,15 @@ fn the_token_files_are_written_as_the_tokens_render_them_and_the_folder_is_creat
     assert_eq!(workspace.text_of(DESIGN_MIRROR), KIT_MIRROR);
     assert_eq!(workspace.text_of(SITE_MIRROR), KIT_MIRROR);
     assert_eq!(workspace.text_of(SITE_TOKENS), KIT_TOKENS);
-    workspace.run(CHECK).assert_clean();
+    let checked = workspace.run(CHECK);
+    for token_file in [DESIGN_MIRROR, SITE_MIRROR, SITE_TOKENS] {
+        checked.assert_reports_nothing_of(&workspace.file(token_file));
+    }
 }
 
 #[test]
 fn a_mirror_of_the_design_behind_the_dark_block_fails() {
-    let workspace =
-        Workspace::with_written_tokens("design-mirror-behind").with_change(TOKENS, DARK_BACKGROUND, "#111111");
+    let workspace = Workspace::whole("design-mirror-behind").with_change(TOKENS, DARK_BACKGROUND, "#111111");
 
     let checked = workspace.run(CHECK);
 
@@ -176,7 +264,7 @@ fn a_mirror_of_the_design_behind_the_dark_block_fails() {
 
 #[test]
 fn a_mirror_of_the_site_edited_by_hand_fails() {
-    let workspace = Workspace::with_written_tokens("site-mirror-edited");
+    let workspace = Workspace::whole("site-mirror-edited");
     let edited = format!("{KIT_MIRROR}:root {{ --color-bg: #222222; }}\n");
     let workspace = workspace.with_file(SITE_MIRROR, &edited);
 
@@ -189,8 +277,7 @@ fn a_mirror_of_the_site_edited_by_hand_fails() {
 
 #[test]
 fn the_tokens_of_the_site_behind_the_tokens_of_the_kit_fail() {
-    let workspace =
-        Workspace::with_written_tokens("site-tokens-behind").with_change(TOKENS, LIGHT_BACKGROUND, "#EEEEEE");
+    let workspace = Workspace::whole("site-tokens-behind").with_change(TOKENS, LIGHT_BACKGROUND, "#EEEEEE");
 
     let checked = workspace.run(CHECK);
 
@@ -201,7 +288,7 @@ fn the_tokens_of_the_site_behind_the_tokens_of_the_kit_fail() {
 
 #[test]
 fn a_derived_file_that_is_missing_fails() {
-    let workspace = Workspace::with_written_tokens("missing").without_file(SITE_TOKENS);
+    let workspace = Workspace::whole("missing").without_file(SITE_TOKENS);
 
     let checked = workspace.run(CHECK);
 
@@ -228,4 +315,222 @@ fn a_subcommand_without_a_workspace_is_a_usage_error() {
 
         assert_eq!(output.status.code(), USAGE_ERROR, "{subcommand}");
     }
+}
+
+#[test]
+fn a_whole_folder_is_clean() {
+    let workspace = Workspace::whole("whole");
+
+    let checked = workspace.run(CHECK);
+
+    checked.assert_clean();
+}
+
+#[test]
+fn a_folder_without_its_page_fails() {
+    let workspace = Workspace::whole("no-page").without_file(PAGE);
+
+    let checked = workspace.run(CHECK);
+
+    checked.assert_only_finding(&workspace.place(PAGE, 1), "the page of the site is missing");
+}
+
+#[test]
+fn a_folder_without_its_list_of_frames_fails() {
+    let workspace = Workspace::whole("no-list").without_file(FRAME_LIST);
+
+    let checked = workspace.run(CHECK);
+
+    checked.assert_only_finding(
+        &workspace.place(FRAME_LIST, 1),
+        "the list of the frames of the page is missing",
+    );
+}
+
+#[test]
+fn a_list_that_does_not_read_as_a_list_of_frames_fails() {
+    let unreadable_lists = [
+        (
+            "list-malformed",
+            "frame = ]\n".to_owned(),
+            "does not read as a list of frames",
+        ),
+        (
+            "list-without-frames",
+            "title = \"frames\"\n".to_owned(),
+            "names no frames",
+        ),
+        (
+            "list-without-file",
+            KIT_FRAME_LIST.replace("file = ", "picture = "),
+            "names no `file`",
+        ),
+    ];
+    for (test_name, list, claim) in unreadable_lists {
+        let workspace = Workspace::whole(test_name).with_file(FRAME_LIST, list);
+
+        let checked = workspace.run(CHECK);
+
+        checked.assert_only_finding(&workspace.place(FRAME_LIST, FRAME_LINE), claim);
+    }
+}
+
+#[test]
+fn a_local_reference_names_a_file_under_the_folder() {
+    let broken_references = [
+        (
+            "reference-picture",
+            "frames/window.png",
+            "frames/absent.png",
+            PICTURE_LINE,
+            "holds no file `frames/absent.png`",
+        ),
+        (
+            "reference-stylesheet",
+            "landing.css",
+            "absent.css",
+            STYLESHEET_LINE,
+            "holds no file `absent.css`",
+        ),
+        (
+            "reference-script",
+            "fallback.js",
+            "absent.js",
+            SCRIPT_LINE,
+            "holds no file `absent.js`",
+        ),
+        (
+            "reference-outside",
+            "landing.css",
+            "../design/system/tokens.css",
+            STYLESHEET_LINE,
+            "`../design/system/tokens.css` is no path under the folder of the site",
+        ),
+    ];
+    for (test_name, reference, broken_reference, line, claim) in broken_references {
+        let workspace = Workspace::whole(test_name).with_change(PAGE, reference, broken_reference);
+
+        let checked = workspace.run(CHECK);
+
+        checked.assert_only_finding(&workspace.place(PAGE, line), claim);
+    }
+}
+
+#[test]
+fn a_picture_that_is_no_frame_of_the_list_fails() {
+    let workspace = Workspace::whole("picture-unlisted")
+        .with_file("site/frames/stray.png", png_header(PICTURE_WIDTH, PICTURE_HEIGHT))
+        .with_change(PAGE, "frames/window.png", "frames/stray.png");
+
+    let checked = workspace.run(CHECK);
+
+    checked.assert_only_finding(
+        &workspace.place(PAGE, PICTURE_LINE),
+        "`frames/stray.png` is no frame the list of frames names",
+    );
+}
+
+#[test]
+fn a_picture_from_outside_the_folder_fails() {
+    let pictures_from_elsewhere = [
+        (
+            "picture-remote",
+            "src=\"frames/window.png\"",
+            "src=\"https://example.org/window.png\"",
+        ),
+        ("picture-without-source", "src=\"frames/window.png\" ", ""),
+    ];
+    for (test_name, source, source_from_elsewhere) in pictures_from_elsewhere {
+        let workspace = Workspace::whole(test_name).with_change(PAGE, source, source_from_elsewhere);
+
+        let checked = workspace.run(CHECK);
+
+        checked.assert_only_finding(&workspace.place(PAGE, PICTURE_LINE), "names no file of the site");
+    }
+}
+
+#[test]
+fn a_frame_of_the_list_that_is_not_written_fails() {
+    let list = format!("{KIT_FRAME_LIST}{UNWRITTEN_FRAME}");
+    let workspace = Workspace::whole("frame-unwritten").with_file(FRAME_LIST, list);
+
+    let checked = workspace.run(CHECK);
+
+    checked.assert_only_finding(
+        &workspace.place(FRAME_LIST, FILE_LINE_OF_UNWRITTEN_FRAME),
+        "the frame `frames/dialog.png` is not written",
+    );
+}
+
+#[test]
+fn a_picture_that_does_not_declare_the_size_of_its_png_fails() {
+    let wrong_sizes = [
+        ("size-height", "height=\"2\"", "height=\"3\""),
+        ("size-without-width", " width=\"4\"", ""),
+    ];
+    for (test_name, declared, wrongly_declared) in wrong_sizes {
+        let workspace = Workspace::whole(test_name).with_change(PAGE, declared, wrongly_declared);
+
+        let checked = workspace.run(CHECK);
+
+        checked.assert_only_finding(&workspace.place(PAGE, PICTURE_LINE), "`width=\"4\" height=\"2\"`");
+    }
+}
+
+#[test]
+fn a_picture_that_is_no_png_fails() {
+    let files_that_are_no_png = [
+        ("picture-short", "no picture"),
+        ("picture-of-text", "no picture, whatever the name of the file says"),
+    ];
+    for (test_name, contents) in files_that_are_no_png {
+        let workspace = Workspace::whole(test_name).with_file(PICTURE, contents);
+
+        let checked = workspace.run(CHECK);
+
+        checked.assert_only_finding(
+            &workspace.place(PAGE, PICTURE_LINE),
+            "`frames/window.png` is no PNG file",
+        );
+    }
+}
+
+#[test]
+fn a_link_into_the_repository_to_a_file_the_workspace_does_not_hold_fails() {
+    let workspace = Workspace::whole("link-broken").with_change(PAGE, "docs/guide.md", "docs/absent.md");
+
+    let checked = workspace.run(CHECK);
+
+    checked.assert_only_finding(
+        &workspace.place(PAGE, GUIDE_LINK_LINE),
+        "the link names `docs/absent.md`",
+    );
+}
+
+#[test]
+fn a_comment_and_the_text_of_a_script_or_a_style_are_not_read() {
+    let unread = "<body>
+<!-- <img src=\"frames/absent.png\"> -->
+<script>const picture = '<img src=\"frames/absent.png\">';</script>
+<style>/* <img src=\"frames/absent.png\"> */</style>
+";
+    let workspace = Workspace::whole("unread").with_change(PAGE, BODY_OPENING, unread);
+
+    let checked = workspace.run(CHECK);
+
+    checked.assert_clean();
+}
+
+#[test]
+fn a_tag_is_read_whatever_the_case_it_is_written_in() {
+    let workspace = Workspace::whole("capitals")
+        .with_change(PAGE, BODY_OPENING, "<body>\n<STYLE>a { color: red; }</STYLE>\n")
+        .with_change(PAGE, "<img src=\"frames/window.png\"", "<IMG SRC=\"frames/absent.png\"");
+
+    let checked = workspace.run(CHECK);
+
+    checked.assert_only_finding(
+        &workspace.place(PAGE, PICTURE_LINE + 1),
+        "holds no file `frames/absent.png`",
+    );
 }

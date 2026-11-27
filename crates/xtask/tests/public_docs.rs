@@ -280,6 +280,7 @@ fn a_missing_workspace_directory_exits_with_two() {
     assert_eq!(output.status.code(), USAGE_ERROR);
     assert_eq!(
         String::from_utf8_lossy(&output.stderr),
-        "usage: cargo xtask <check | comments <directory> | public-docs <workspace directory>>\n"
+        "usage: cargo xtask <check | comments <directory> | public-docs <workspace directory> | \
+         site <workspace directory> | site-tokens <workspace directory>>\n"
     );
 }

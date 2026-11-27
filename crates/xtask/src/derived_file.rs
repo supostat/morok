@@ -3,8 +3,8 @@ use std::io;
 use std::path::PathBuf;
 
 use crate::finding::Finding;
+use crate::line_number;
 
-const FIRST_LINE: usize = 1;
 const MISSING: &str = "the file is missing: `cargo xtask site-tokens .` writes it";
 const BEHIND: &str = "the file is not what the tokens of the kit render: `cargo xtask site-tokens .` writes it again";
 
@@ -32,7 +32,9 @@ impl DerivedFile {
         match fs::read_to_string(&self.path) {
             Ok(found) if found == self.text => Ok(None),
             Ok(found) => Ok(Some(self.finding_at(self.first_differing_line(&found), BEHIND))),
-            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(Some(self.finding_at(FIRST_LINE, MISSING))),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                Ok(Some(self.finding_at(line_number::FIRST, MISSING)))
+            }
             Err(error) => Err(error),
         }
     }
@@ -43,7 +45,7 @@ impl DerivedFile {
             .zip(self.text.lines())
             .take_while(|(found_line, line)| found_line == line)
             .count();
-        same_lines + FIRST_LINE
+        same_lines + line_number::FIRST
     }
 
     fn finding_at(&self, line: usize, reason: &str) -> Finding {
